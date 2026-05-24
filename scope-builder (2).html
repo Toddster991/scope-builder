@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scope of Work Builder</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f7f7f5;--bg3:#f0efe9;
+  --bg-info:#e6f1fb;--bg-success:#eaf3de;--bg-danger:#fcebeb;--bg-warn:#faeeda;
+  --text:#1a1a18;--text2:#5f5e5a;--text3:#9a9994;
+  --text-info:#185fa5;--text-success:#3b6d11;--text-danger:#a32d2d;--text-warn:#854f0b;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);
+  --radius:8px;--radius-lg:12px;--blue:#185fa5;--blue-dark:#0c447c;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg3);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+.topbar{height:48px;background:var(--bg);border-bottom:0.5px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:0;flex-shrink:0}
+.app-title{font-size:15px;font-weight:700;color:var(--text);margin-right:10px;letter-spacing:-.02em;white-space:nowrap}
+.divider-v{width:0.5px;height:20px;background:var(--border2);margin:0 10px;flex-shrink:0}
+.project-crumb{display:flex;align-items:center;gap:6px;margin-right:8px}
+.crumb-sep{color:var(--text3);font-size:14px}
+.crumb-proj{font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;padding:3px 6px;border-radius:var(--radius)}
+.crumb-proj:hover{background:var(--bg2);color:var(--text)}
+.crumb-ver{font-size:13px;color:var(--text);font-weight:500;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-tabs{display:flex;gap:2px;margin-left:8px}
+.nav-tab{padding:6px 13px;font-size:12px;border-radius:var(--radius);cursor:pointer;color:var(--text2);border:none;background:none;font-family:inherit;transition:background .1s,color .1s;white-space:nowrap}
+.nav-tab:hover{background:var(--bg2);color:var(--text)}
+.nav-tab.active{background:var(--bg-info);color:var(--text-info);font-weight:500}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.btn{padding:6px 13px;font-size:12px;font-weight:500;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;transition:background .1s;white-space:nowrap}
+.btn:hover{background:var(--bg2)}
+.btn.primary{background:var(--blue);color:#e6f1fb;border-color:var(--blue)}
+.btn.primary:hover{background:var(--blue-dark)}
+.btn.success-btn{background:#3b6d11;color:#eaf3de;border-color:#3b6d11}
+.btn.danger:hover{background:var(--bg-danger);color:var(--text-danger);border-color:#f09595}
+.btn.sm{padding:4px 9px;font-size:11px}
+.workspace{flex:1;overflow:hidden;display:flex}
+.page{display:none;width:100%;height:100%}
+.page.active{display:flex}
+.panel{background:var(--bg);border-right:0.5px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.panel-head{padding:11px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:8px}
+.panel-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em}
+.panel-body{flex:1;overflow-y:auto;padding:10px}
+.field{margin-bottom:14px}
+.field label{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:4px;display:block}
+.field label .hint{font-weight:400;color:var(--text3)}
+input[type=text],input[type=date],select,textarea{width:100%;padding:7px 10px;font-size:13px;font-family:inherit;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none;transition:border-color .15s}
+input[type=text]:focus,input[type=date]:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,95,165,.1)}
+textarea{resize:vertical;min-height:52px;line-height:1.5}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* DASHBOARD */
+.dash-layout{display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden}
+.dash-head{padding:20px 28px 14px;border-bottom:0.5px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.dash-title{font-size:20px;font-weight:700;color:var(--text)}
+.dash-body{flex:1;overflow-y:auto;padding:24px 28px}
+.dash-section-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px}
+.project-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:28px}
+.project-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:border-color .15s}
+.project-card:hover{border-color:var(--border2)}
+.project-card.new-card{border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:120px;color:var(--text3)}
+.project-card.new-card:hover{border-color:var(--blue);color:var(--blue);background:var(--bg-info)}
+.pc-client{font-size:15px;font-weight:600;color:var(--text);margin-bottom:2px}
+.pc-address{font-size:12px;color:var(--text3);margin-bottom:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc-meta{display:flex;align-items:center;gap:8px}
+.pc-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--bg2);color:var(--text2)}
+.pc-badge.active{background:var(--bg-success);color:var(--text-success)}
+.pc-badge.bid{background:var(--bg-warn);color:var(--text-warn)}
+.pc-date{font-size:11px;color:var(--text3);margin-left:auto}
+.pc-versions{font-size:11px;color:var(--text3);margin-top:8px}
+
+/* PROJECT VIEW */
+.pv-layout{display:grid;grid-template-columns:270px 1fr;width:100%;height:100%;overflow:hidden}
+.pv-sidebar{background:var(--bg);border-right:0.5px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.pv-sidebar-head{padding:14px;border-bottom:0.5px solid var(--border);flex-shrink:0}
+.pv-proj-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px}
+.pv-proj-addr{font-size:11px;color:var(--text3);margin-bottom:10px}
+.pv-sidebar-body{flex:1;overflow-y:auto;padding:8px}
+.ver-row{padding:8px 10px;border-radius:var(--radius);cursor:pointer;display:flex;align-items:flex-start;gap:8px;transition:background .1s;margin-bottom:2px}
+.ver-row:hover{background:var(--bg2)}
+.ver-row.active{background:var(--bg-info)}
+.ver-dot{width:8px;height:8px;border-radius:50%;background:var(--border2);flex-shrink:0;margin-top:4px}
+.ver-row.active .ver-dot{background:var(--blue)}
+.ver-name{font-size:13px;color:var(--text)}
+.ver-row.active .ver-name{color:var(--text-info);font-weight:500}
+.ver-date{font-size:10px;color:var(--text3);margin-top:1px}
+.ver-actions{display:flex;gap:3px;opacity:0;transition:opacity .1s;margin-left:auto;flex-shrink:0}
+.ver-row:hover .ver-actions{opacity:1}
+.pv-main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg3)}
+.pv-main-head{padding:11px 18px;border-bottom:0.5px solid var(--border);background:var(--bg);display:flex;align-items:center;gap:10px;flex-shrink:0}
+
+/* PROJECT SETUP TAB */
+.setup-layout{display:grid;grid-template-columns:220px 1fr;width:100%;height:100%;overflow:hidden}
+.setup-nav{background:var(--bg);border-right:0.5px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.setup-nav-head{padding:12px 14px;border-bottom:0.5px solid var(--border);font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;flex-shrink:0}
+.setup-nav-body{flex:1;overflow-y:auto;padding:8px}
+.setup-nav-item{padding:8px 10px;border-radius:var(--radius);cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);transition:background .1s;margin-bottom:2px}
+.setup-nav-item:hover{background:var(--bg2);color:var(--text)}
+.setup-nav-item.active{background:var(--bg-info);color:var(--text-info);font-weight:500}
+.setup-nav-item i{font-size:15px}
+.setup-main{display:flex;flex-direction:column;overflow:hidden}
+.setup-main-head{padding:12px 20px;border-bottom:0.5px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.setup-main-title{font-size:14px;font-weight:600;color:var(--text)}
+.setup-main-body{flex:1;overflow-y:auto;padding:20px;background:var(--bg3)}
+
+/* PDF UPLOAD ZONE */
+.pdf-upload-zone{border:1.5px dashed var(--border2);border-radius:var(--radius-lg);padding:32px;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg)}
+.pdf-upload-zone:hover{border-color:var(--blue);background:var(--bg-info)}
+.pdf-upload-zone.has-pdf{border-style:solid;border-color:var(--border);background:var(--bg);cursor:default;padding:16px;text-align:left}
+.pdf-upload-icon{font-size:32px;color:var(--text3);margin-bottom:8px}
+.pdf-upload-label{font-size:13px;font-weight:500;color:var(--text2)}
+.pdf-upload-hint{font-size:11px;color:var(--text3);margin-top:4px}
+.pdf-info-row{display:flex;align-items:center;gap:12px}
+.pdf-info-name{font-size:13px;font-weight:500;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pdf-info-pages{font-size:11px;color:var(--text3)}
+
+/* PAGE THUMBNAILS */
+.thumb-strip{display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px;flex-wrap:wrap}
+.thumb-item{flex-shrink:0;cursor:pointer;border-radius:var(--radius);overflow:hidden;border:2px solid transparent;transition:border-color .15s;position:relative}
+.thumb-item:hover{border-color:var(--border2)}
+.thumb-item.selected{border-color:var(--blue)}
+.thumb-item canvas{display:block;width:100px;height:130px;object-fit:contain;background:var(--bg2)}
+.thumb-label{font-size:10px;color:var(--text3);text-align:center;padding:3px 2px}
+.thumb-assigned{position:absolute;top:3px;right:3px;background:var(--blue);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px}
+
+/* PLAN SECTIONS */
+.plan-section{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);margin-bottom:14px;overflow:hidden}
+.plan-section-head{padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:0.5px solid var(--border);background:var(--bg2)}
+.plan-section-title{font-size:13px;font-weight:600;color:var(--text);flex:1}
+.plan-section-body{padding:14px 16px}
+.plan-page-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--bg-info);color:var(--text-info);cursor:pointer}
+.plan-page-badge:hover{background:#b5d4f4}
+
+/* ROOM LIST IN SETUP */
+.room-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.room-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border)}
+.room-item input{flex:1;border:none;background:transparent;font-size:13px;color:var(--text);outline:none;padding:0}
+.room-color-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;background:#378ADD}
+
+/* CANVAS DRAWING AREA */
+.draw-area-wrap{position:relative;overflow:auto;background:var(--bg3);border-radius:var(--radius);border:0.5px solid var(--border);margin-top:12px}
+.draw-canvas-container{position:relative;display:inline-block}
+.draw-canvas-container canvas{display:block}
+#draw-overlay{position:absolute;top:0;left:0;cursor:crosshair}
+
+/* ASSEMBLY BUILDER */
+.ab-layout{display:grid;grid-template-columns:260px 1fr;width:100%;height:100%;overflow:hidden}
+.ab-sidebar{background:var(--bg);border-right:0.5px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.ab-main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg3)}
+.ab-main-head{padding:11px 18px;border-bottom:0.5px solid var(--border);background:var(--bg);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.ab-main-body{flex:1;overflow-y:auto;padding:20px}
+.ab-footer{padding:10px 18px;border-top:0.5px solid var(--border);background:var(--bg);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.cat-group{margin-bottom:6px}
+.cat-head{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:6px 8px 3px}
+.asm-row{padding:7px 10px;border-radius:var(--radius);cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .1s}
+.asm-row:hover{background:var(--bg2)}
+.asm-row.active{background:var(--bg-info)}
+.asm-row-name{font-size:13px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.asm-row.active .asm-row-name{color:var(--text-info);font-weight:500}
+.asm-count{font-size:10px;color:var(--text3);background:var(--bg2);border-radius:10px;padding:2px 7px}
+.asm-row.active .asm-count{background:#b5d4f4;color:var(--blue-dark)}
+.canvas-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.canvas-chip{padding:4px 11px;border-radius:20px;border:0.5px solid var(--border2);font-size:12px;cursor:pointer;color:var(--text2);background:var(--bg);transition:all .1s;user-select:none}
+.canvas-chip:hover{border-color:var(--blue);color:var(--blue)}
+.canvas-chip.on{background:var(--bg-info);border-color:#85b7eb;color:var(--text-info);font-weight:500}
+.section-divider{display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;padding-bottom:8px;border-bottom:0.5px solid var(--border)}
+.section-title{font-size:14px;font-weight:600;color:var(--text)}
+.section-sub{font-size:12px;color:var(--text3);font-weight:400;margin-left:6px}
+.trade-card{border:0.5px solid var(--border);border-radius:var(--radius-lg);margin-bottom:10px;background:var(--bg);overflow:hidden}
+.trade-card-head{padding:9px 13px;background:var(--bg2);display:flex;align-items:center;gap:10px}
+.trade-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.trade-name-lbl{font-size:13px;font-weight:500;color:var(--text);flex:1}
+.trade-card-body{padding:10px 13px;display:flex;flex-direction:column;gap:8px}
+.line-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start}
+.line-row textarea{font-size:13px;min-height:50px}
+.icon-btn{padding:5px 6px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg);color:var(--text3);cursor:pointer;font-family:inherit;font-size:13px;line-height:1;display:flex;align-items:center;transition:all .1s}
+.icon-btn:hover{background:var(--bg-danger);color:var(--text-danger);border-color:#f09595}
+.trade-card-footer{padding:8px 13px;border-top:0.5px solid var(--border)}
+.add-trade-card{border:0.5px dashed var(--border2);border-radius:var(--radius-lg);padding:13px;margin-bottom:10px;background:var(--bg)}
+.saved-badge{font-size:12px;color:var(--text-success);display:none;align-items:center;gap:5px}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;color:var(--text3)}
+.empty-icon{font-size:36px}
+
+/* FLOOR PLAN WORK AREA */
+.fp-layout{display:grid;grid-template-columns:260px 1fr 285px;width:100%;height:100%;overflow:hidden}
+.fp-canvas-area{display:flex;flex-direction:column;background:var(--bg3);overflow:hidden}
+.fp-canvas-head{padding:9px 14px;border-bottom:0.5px solid var(--border);background:var(--bg);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.fp-canvas-wrap{flex:1;overflow:auto;padding:20px;display:flex;align-items:flex-start;justify-content:flex-start}
+.floor-plan{position:relative;background:var(--bg);border:1.5px solid #888;border-radius:3px;flex-shrink:0}
+.room{position:absolute;border:2px solid rgba(24,95,165,.6);background:rgba(24,95,165,.08);cursor:pointer;border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:6px 4px 4px;overflow:hidden;transition:background .15s,border-color .15s}
+.room:hover{background:rgba(24,95,165,.15);border-color:rgba(24,95,165,.9)}
+.room.selected{background:rgba(24,95,165,.2);border-color:var(--blue);border-width:2px}
+.room-label{font-size:11px;font-weight:600;color:#0c447c;pointer-events:none;white-space:nowrap;text-shadow:0 0 3px rgba(255,255,255,.8)}
+.room-chips{display:flex;flex-wrap:wrap;gap:2px;margin-top:3px;justify-content:center;pointer-events:none}
+.room-chip{font-size:9px;padding:1px 5px;border-radius:10px;background:var(--bg-info);color:var(--blue-dark);white-space:nowrap}
+.drop-hover{background:rgba(24,95,165,.25)!important;border-color:var(--blue)!important}
+.lib-cat{margin-bottom:8px}
+.lib-cat-head{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:6px 6px 3px}
+.lib-item{padding:8px 10px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg);margin-bottom:5px;cursor:grab;user-select:none;transition:border-color .1s}
+.lib-item:hover{border-color:var(--border2)}
+.lib-item:active{cursor:grabbing}
+.lib-item.dragging{opacity:.4}
+.lib-item-name{font-size:12px;font-weight:500;color:var(--text)}
+.lib-item-trades{font-size:10px;color:var(--text3);margin-top:2px}
+.fp-right{background:var(--bg);border-left:0.5px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.tab-row{display:flex;border-bottom:0.5px solid var(--border);flex-shrink:0}
+.tab{flex:1;padding:9px 4px;text-align:center;font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-.5px;transition:color .1s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.fp-right-body{flex:1;overflow-y:auto;padding:12px}
+.fp-right-footer{padding:10px 12px;border-top:0.5px solid var(--border);flex-shrink:0}
+.asm-tag{display:flex;align-items:center;justify-content:space-between;padding:6px 9px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);margin-bottom:4px}
+.asm-tag-name{font-size:12px;font-weight:500;color:var(--text)}
+.asm-tag-trades{font-size:10px;color:var(--text3)}
+.scope-section{margin-bottom:16px}
+.scope-room-title{font-size:13px;font-weight:600;color:var(--text);padding-bottom:5px;border-bottom:0.5px solid var(--border);margin-bottom:8px}
+.scope-trade-block{margin-bottom:7px}
+.scope-trade-name{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.scope-trade-text{font-size:12px;color:var(--text);line-height:1.6}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* FLOOR PLAN SELECTOR IN WORK AREA */
+.fp-floor-selector{display:flex;gap:6px;padding:0 14px 0 0;overflow-x:auto}
+.fp-floor-tab{padding:5px 12px;font-size:12px;border-radius:var(--radius);cursor:pointer;color:var(--text2);border:0.5px solid var(--border);background:var(--bg);white-space:nowrap;transition:all .1s}
+.fp-floor-tab:hover{border-color:var(--border2)}
+.fp-floor-tab.active{background:var(--bg-info);color:var(--text-info);border-color:#85b7eb;font-weight:500}
+
+/* MODAL */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:var(--bg);border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:24px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:16px;font-weight:600;color:var(--text);margin-bottom:18px}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:16px;border-top:0.5px solid var(--border)}
+
+/* PAGE PICKER MODAL */
+.page-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:12px;max-height:60vh;overflow-y:auto}
+.page-pick-item{cursor:pointer;border-radius:var(--radius);border:2px solid transparent;overflow:hidden;transition:border-color .15s;text-align:center}
+.page-pick-item:hover{border-color:var(--border2)}
+.page-pick-item.selected{border-color:var(--blue)}
+.page-pick-item canvas{display:block;width:100%;height:130px;object-fit:contain;background:var(--bg2)}
+.page-pick-label{font-size:11px;color:var(--text3);padding:4px 2px}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="app-title">ScopeBuilder</div>
+  <div class="divider-v"></div>
+  <button class="btn sm" onclick="goToDashboard()"><i class="ti ti-layout-grid"></i> All Projects</button>
+  <div class="project-crumb" id="project-crumb" style="display:none">
+    <span class="crumb-sep">/</span>
+    <span class="crumb-proj" id="crumb-proj-name" onclick="openProject(currentProjectId)"></span>
+    <span class="crumb-sep" id="crumb-ver-sep" style="display:none">/</span>
+    <span class="crumb-ver" id="crumb-ver-name"></span>
+  </div>
+  <div class="nav-tabs" id="nav-tabs" style="display:none">
+    <button class="nav-tab" id="nav-setup" onclick="switchWorkTab('setup')"><i class="ti ti-settings"></i> Project Setup</button>
+    <button class="nav-tab" id="nav-fp" onclick="switchWorkTab('floorplan')"><i class="ti ti-layout-2"></i> Floor Plan</button>
+    <button class="nav-tab" id="nav-site" onclick="switchWorkTab('site')"><i class="ti ti-trees"></i> Site</button>
+    <button class="nav-tab" id="nav-elev" onclick="switchWorkTab('elevations')"><i class="ti ti-building"></i> Elevations</button>
+  </div>
+  <div class="topbar-right">
+    <button class="btn" id="btn-open-ver" onclick="reopenVersion()" style="display:none"><i class="ti ti-versions"></i> Back to Work</button>
+    <button class="btn" onclick="switchPage('assemblies')"><i class="ti ti-stack-2"></i> Assembly Library</button>
+    <button class="btn primary" id="btn-gen-scope" onclick="generateScope()" style="display:none"><i class="ti ti-sparkles"></i> Generate Scope</button>
+    <button class="btn" id="btn-save-ver" onclick="saveVersion()" style="display:none"><i class="ti ti-device-floppy"></i> Save</button>
+  </div>
+</div>
+
+<div class="workspace">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="dash-layout">
+      <div class="dash-head">
+        <div>
+          <div class="dash-title">Projects</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px" id="dash-subtitle"></div>
+        </div>
+        <button class="btn primary" onclick="showNewProjectModal()"><i class="ti ti-plus"></i> New project</button>
+      </div>
+      <div class="dash-body">
+        <div class="dash-section-label">Active jobs</div>
+        <div class="project-grid" id="dash-active-grid"></div>
+        <div class="dash-section-label" id="dash-arch-label" style="display:none">Completed / archived</div>
+        <div class="project-grid" id="dash-arch-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECT VIEW -->
+  <div class="page" id="page-project">
+    <div class="pv-layout">
+      <div class="pv-sidebar">
+        <div class="pv-sidebar-head">
+          <div class="pv-proj-name" id="pv-proj-name"></div>
+          <div class="pv-proj-addr" id="pv-proj-addr"></div>
+          <div style="display:flex;gap:6px">
+            <button class="btn sm" onclick="showNewVersionModal()"><i class="ti ti-plus"></i> New version</button>
+            <button class="btn sm" onclick="showEditProjectModal()"><i class="ti ti-edit"></i> Edit</button>
+          </div>
+        </div>
+        <div style="padding:8px 10px 2px;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em">Versions</div>
+        <div class="pv-sidebar-body" id="pv-ver-list"></div>
+      </div>
+      <div class="pv-main">
+        <div class="pv-main-head" id="pv-main-head"><span style="font-size:13px;color:var(--text3)">Select a version to open</span></div>
+        <div style="flex:1;overflow-y:auto" id="pv-main-body">
+          <div class="empty-state"><i class="ti ti-versions empty-icon"></i><span style="font-size:13px">Select a version or create a new one</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ASSEMBLY LIBRARY -->
+  <div class="page" id="page-assemblies">
+    <div class="ab-layout">
+      <div class="ab-sidebar">
+        <div class="panel-head"><span class="panel-label">Assemblies</span><button class="btn sm" onclick="newAssembly()"><i class="ti ti-plus"></i> New</button></div>
+        <div class="panel-body" id="ab-sidebar-body"></div>
+      </div>
+      <div class="ab-main">
+        <div class="ab-main-head" id="ab-main-head"><i class="ti ti-stack-2" style="color:var(--text3)"></i><span style="font-size:13px;color:var(--text3)">Select or create an assembly</span></div>
+        <div class="ab-main-body" id="ab-main-body"><div class="empty-state"><i class="ti ti-stack-2 empty-icon"></i><span>Select an assembly or click New</span></div></div>
+        <div class="ab-footer" id="ab-footer" style="display:none">
+          <button class="btn primary" onclick="saveAssembly()"><i class="ti ti-check"></i> Save assembly</button>
+          <span class="saved-badge" id="saved-badge"><i class="ti ti-check"></i> Saved</span>
+          <button class="btn danger" style="margin-left:auto" onclick="deleteAssembly()"><i class="ti ti-trash"></i> Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECT SETUP -->
+  <div class="page" id="page-setup">
+    <div class="setup-layout">
+      <div class="setup-nav">
+        <div class="setup-nav-head">Project Setup</div>
+        <div class="setup-nav-body">
+          <div class="setup-nav-item active" id="snav-planset" onclick="switchSetupSection('planset')"><i class="ti ti-file-upload"></i> Plan Set</div>
+          <div class="setup-nav-item" id="snav-floors" onclick="switchSetupSection('floors')"><i class="ti ti-layout-2"></i> Floor Plans</div>
+          <div class="setup-nav-item" id="snav-site" onclick="switchSetupSection('site')"><i class="ti ti-trees"></i> Site Plan</div>
+          <div class="setup-nav-item" id="snav-elevations" onclick="switchSetupSection('elevations')"><i class="ti ti-building"></i> Elevations</div>
+        </div>
+      </div>
+      <div class="setup-main">
+        <div class="setup-main-head">
+          <div class="setup-main-title" id="setup-section-title">Plan Set Upload</div>
+          <div id="setup-section-actions"></div>
+        </div>
+        <div class="setup-main-body" id="setup-main-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOOR PLAN WORK AREA -->
+  <div class="page" id="page-floorplan">
+    <div class="fp-layout">
+      <div class="panel">
+        <div class="panel-head"><span class="panel-label">Assembly Library</span></div>
+        <div class="panel-body" id="fp-library"></div>
+      </div>
+      <div class="fp-canvas-area">
+        <div class="fp-canvas-head">
+          <div class="fp-floor-selector" id="fp-floor-selector"></div>
+          <span style="margin-left:auto;font-size:11px;color:var(--text3)">Drag assemblies onto rooms</span>
+        </div>
+        <div class="fp-canvas-wrap" id="fp-canvas-wrap">
+          <div id="fp-plan-container"></div>
+        </div>
+      </div>
+      <div class="fp-right">
+        <div class="tab-row">
+          <div class="tab active" id="fp-tab-room" onclick="switchFpTab('room')">Room detail</div>
+          <div class="tab" id="fp-tab-scope" onclick="switchFpTab('scope')">Scope output</div>
+        </div>
+        <div class="fp-right-body" id="fp-right-body">
+          <div class="empty-state" style="height:200px"><i class="ti ti-click empty-icon"></i><span style="font-size:12px">Click a room to see its assemblies</span></div>
+        </div>
+        <div class="fp-right-footer" id="fp-right-footer" style="display:none">
+          <button class="btn primary" style="width:100%" onclick="generateScope()"><i class="ti ti-sparkles"></i> Generate Scope of Work</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SITE WORK AREA -->
+  <div class="page" id="page-site">
+    <div style="display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden">
+      <div style="padding:9px 14px;border-bottom:0.5px solid var(--border);background:var(--bg);display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <i class="ti ti-trees" style="color:var(--text3)"></i>
+        <span style="font-size:12px;font-weight:500;color:var(--text2)">Site Plan</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--text3)">Drag assemblies onto zones</span>
+      </div>
+      <div style="flex:1;overflow:auto;padding:20px;display:flex;align-items:flex-start" id="site-canvas-wrap">
+        <div id="site-plan-container"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ELEVATIONS WORK AREA -->
+  <div class="page" id="page-elevations">
+    <div style="display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden">
+      <div style="padding:9px 14px;border-bottom:0.5px solid var(--border);background:var(--bg);display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <i class="ti ti-building" style="color:var(--text3)"></i>
+        <div id="elev-selector" style="display:flex;gap:6px;overflow-x:auto"></div>
+        <span style="margin-left:auto;font-size:11px;color:var(--text3)">Drag assemblies onto areas</span>
+      </div>
+      <div style="flex:1;overflow:auto;padding:20px;display:flex;align-items:flex-start" id="elev-canvas-wrap">
+        <div id="elev-plan-container"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="modal-container"></div>
+<input type="file" id="pdf-file-input" accept=".pdf" style="display:none">
+
+<script>
+/* ════ PDF.js setup ════ */
+pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+
+/* ════ CONSTANTS ════ */
+const TRADES=[
+  {id:"framing",    name:"Framing / Carpentry",color:"#378ADD"},
+  {id:"plumbing",   name:"Plumbing",           color:"#1D9E75"},
+  {id:"electrical", name:"Electrical",         color:"#EF9F27"},
+  {id:"hvac",       name:"HVAC",               color:"#7F77DD"},
+  {id:"insulation", name:"Insulation",         color:"#5DCAA5"},
+  {id:"drywall",    name:"Drywall",            color:"#D4537E"},
+  {id:"tile",       name:"Tile",               color:"#D85A30"},
+  {id:"flooring",   name:"Flooring",           color:"#BA7517"},
+  {id:"painting",   name:"Painting",           color:"#639922"},
+  {id:"siding",     name:"Siding / Exterior",  color:"#993C1D"},
+  {id:"roofing",    name:"Roofing",            color:"#534AB7"},
+  {id:"windows",    name:"Windows / Doors",    color:"#185FA5"},
+  {id:"masonry",    name:"Masonry / Concrete", color:"#5F5E5A"},
+  {id:"landscaping",name:"Landscaping / Site", color:"#3B6D11"},
+  {id:"cabinets",   name:"Cabinets / Millwork",color:"#712B13"},
+  {id:"countertops",name:"Countertops",        color:"#083344"},
+  {id:"appliances", name:"Appliances",         color:"#444441"},
+  {id:"general",    name:"General Contractor", color:"#888780"},
+];
+const CATEGORIES=["Doors & Windows","Kitchen","Bath","Structural","Rough-in","Finishes","Site & Exterior","Roofing","Demo & Prep","Mechanical","Other"];
+const CANVASES=["Interior","Site","Elevations","Utilities"];
+const STATUSES=["Bidding","Active","On Hold","Completed","Archived"];
+
+/* ════ STATE ════ */
+const LS_KEY="scopebuilder_v3";
+let state={
+  assemblies:[
+    {id:"asm-window-new",name:"New Window Location",category:"Doors & Windows",canvases:["Interior","Elevations"],notes:"Coordinate rough opening size with window unit specs before framing.",trades:[
+      {tradeId:"framing",    lines:["Frame new rough opening to manufacturer's specified dimensions. Install structural header sized per engineer or code for span."]},
+      {tradeId:"windows",    lines:["Furnish new window unit per owner selection — size, style, and finish to be confirmed.","Install window unit plumb, level, and square. Flash window per manufacturer requirements integrating with existing WRB."]},
+      {tradeId:"siding",     lines:["Tie in existing siding around new window opening. Install PVC exterior casing and sill. Patch and match siding."]},
+      {tradeId:"insulation", lines:["Insulate around window perimeter in stud cavity with low-expansion spray foam."]},
+      {tradeId:"drywall",    lines:["Patch interior drywall at window opening. Tape, coat, and sand to match existing wall texture."]},
+      {tradeId:"cabinets",   lines:["Install interior window casing and stool per owner-selected profile."]},
+      {tradeId:"painting",   lines:["Paint exterior casing, sill, and patched siding to match existing.","Paint interior wall, window casing, and stool."]},
+    ]},
+    {id:"asm-shower",name:"Shower Rebuild",category:"Bath",canvases:["Interior"],notes:"Verify pan slope and drain location before tile layout.",trades:[
+      {tradeId:"framing",  lines:["Remove existing shower enclosure to studs. Install cement board on all wet walls."]},
+      {tradeId:"plumbing", lines:["Rough in new shower valve and drain."]},
+      {tradeId:"tile",     lines:["Install waterproof membrane. Set mortar bed sloped to drain.","Install tile per owner-selected pattern. Grout and seal all joints."]},
+      {tradeId:"windows",  lines:["Furnish and install frameless glass enclosure per owner selection."]},
+      {tradeId:"painting", lines:["Paint ceiling and drywall areas above tile line."]},
+    ]},
+    {id:"asm-kitchen-full",name:"Full Kitchen Remodel",category:"Kitchen",canvases:["Interior"],notes:"Confirm appliance specs and cabinet order before rough-in.",trades:[
+      {tradeId:"framing",     lines:["Demo existing cabinets. Frame any new openings."]},
+      {tradeId:"plumbing",    lines:["Relocate or extend supply and drain lines to new sink and dishwasher locations."]},
+      {tradeId:"electrical",  lines:["Install new dedicated circuits for all appliances.","Add under-cabinet lighting and additional receptacles per code."]},
+      {tradeId:"cabinets",    lines:["Install new base and upper cabinets per layout. Include crown, toe kick, and all hardware."]},
+      {tradeId:"countertops", lines:["Template and fabricate stone countertops. Install and caulk."]},
+      {tradeId:"tile",        lines:["Install tile backsplash per owner-selected material and pattern."]},
+      {tradeId:"appliances",  lines:["Install range, hood, dishwasher, and refrigerator. Make final connections."]},
+      {tradeId:"painting",    lines:["Paint walls and ceiling. Caulk all transitions."]},
+    ]},
+  ],
+  projects:[
+    {id:"proj-demo1",client:"Smith Residence",address:"142 Oak Street, Fairfield CT",status:"Active",created:"2026-03-10",notes:"Full first-floor remodel",
+     setup:{planSetName:null,planSetPageCount:0,floors:[{id:"fl-1",name:"First Floor",pageIndex:null,rooms:[]},{id:"fl-2",name:"Second Floor",pageIndex:null,rooms:[]}],site:{pageIndex:null,zones:[]},elevations:[{id:"el-1",name:"Front Elevation",pageIndex:null,areas:[]},{id:"el-2",name:"Rear Elevation",pageIndex:null,areas:[]},{id:"el-3",name:"Left Side",pageIndex:null,areas:[]},{id:"el-4",name:"Right Side",pageIndex:null,areas:[]}]},
+     versions:[
+       {id:"ver-1a",name:"Original scope",created:"2026-03-10",roomAssemblies:{}},
+       {id:"ver-1b",name:"Revised after walkthrough",created:"2026-04-02",roomAssemblies:{}},
+     ]},
+    {id:"proj-demo2",client:"Johnson Kitchen",address:"88 Maple Ave, Trumbull CT",status:"Bidding",created:"2026-05-01",notes:"",
+     setup:{planSetName:null,planSetPageCount:0,floors:[{id:"fl-1",name:"First Floor",pageIndex:null,rooms:[]}],site:{pageIndex:null,zones:[]},elevations:[]},
+     versions:[{id:"ver-2a",name:"v1 — full scope",created:"2026-05-01",roomAssemblies:{}}]},
+  ],
+};
+
+function persist(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
+function loadState(){try{const s=localStorage.getItem(LS_KEY);if(s){const p=JSON.parse(s);if(p.assemblies&&p.projects)state=p;}}catch(e){}}
+
+/* PDF storage via IndexedDB (handles large files) */
+const DB_NAME='ScopeBuilderPDFs',DB_VER=1,DB_STORE='pdfs';
+let db=null;
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,DB_VER);r.onupgradeneeded=e=>{e.target.result.createObjectStore(DB_STORE);};r.onsuccess=e=>{db=e.target.result;res(db);};r.onerror=()=>rej();});}
+function savePDF(projectId,arrayBuffer){return openDB().then(db=>new Promise((res,rej)=>{const tx=db.transaction(DB_STORE,'readwrite');tx.objectStore(DB_STORE).put(arrayBuffer,projectId);tx.oncomplete=()=>res();tx.onerror=()=>rej();}));}
+function loadPDF(projectId){return openDB().then(db=>new Promise((res,rej)=>{const tx=db.transaction(DB_STORE,'readonly');const req=tx.objectStore(DB_STORE).get(projectId);req.onsuccess=e=>res(e.target.result);req.onerror=()=>rej();}));}
+
+/* ════ HELPERS ════ */
+function uid(){return 'id-'+Date.now()+'-'+Math.floor(Math.random()*99999);}
+function tradeById(id){return TRADES.find(t=>t.id===id)||TRADES[TRADES.length-1];}
+function fmtDate(d){if(!d)return'';return new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function today(){return new Date().toISOString().slice(0,10);}
+function getProject(id){return state.projects.find(p=>p.id===id);}
+function getVersion(p,vid){return(p.versions||[]).find(v=>v.id===vid);}
+function getSetup(projId){const p=getProject(projId);if(!p.setup)p.setup={planSetName:null,planSetPageCount:0,floors:[],site:{pageIndex:null,zones:[]},elevations:[]};return p.setup;}
+
+/* ════ ROUTING ════ */
+let currentProjectId=null,currentVersionId=null,currentAsmId=null,asmDraft=null;
+let draggingAsm=null,selectedRoom=null,fpTab="room",activeFloorId=null,activeElevId=null;
+let pdfDoc=null,pdfThumbs=[];
+
+function showPage(name){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');}
+function activePage(){const p=document.querySelector('.page.active');return p?p.id:'';}
+
+function updateTopbar(){
+  const hasPrj=!!currentProjectId,hasVer=!!currentVersionId;
+  document.getElementById('project-crumb').style.display=hasPrj?'flex':'none';
+  document.getElementById('nav-tabs').style.display=hasVer?'flex':'none';
+  const workPages=['page-floorplan','page-site','page-elevations','page-setup'];
+  const inWork=hasVer&&workPages.includes(activePage());
+  document.getElementById('btn-gen-scope').style.display=(hasVer&&activePage()==='page-floorplan')?'':'none';
+  document.getElementById('btn-save-ver').style.display=inWork?'':'none';
+  document.getElementById('btn-open-ver').style.display=(hasVer&&!inWork)?'':'none';
+}
+
+function switchPage(name){showPage(name);document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));if(name==='assemblies')buildAbSidebar();updateTopbar();}
+
+function goToDashboard(){currentProjectId=null;currentVersionId=null;showPage('dashboard');document.getElementById('crumb-proj-name').textContent='';document.getElementById('crumb-ver-name').textContent='';buildDashboard();updateTopbar();}
+
+function openProject(id){
+  currentProjectId=id;
+  showPage('project');
+  const p=getProject(id);
+  document.getElementById('crumb-proj-name').textContent=p.client;
+  document.getElementById('crumb-ver-sep').style.display='none';
+  document.getElementById('crumb-ver-name').textContent='';
+  buildProjectView();updateTopbar();
+}
+
+function openVersion(projId,verId){
+  currentProjectId=projId;currentVersionId=verId;selectedRoom=null;
+  const p=getProject(projId);const v=getVersion(p,verId);
+  document.getElementById('crumb-proj-name').textContent=p.client;
+  document.getElementById('crumb-ver-sep').style.display='';
+  document.getElementById('crumb-ver-name').textContent=v.name;
+  switchWorkTab('setup');buildProjectView();
+}
+
+function reopenVersion(){if(currentProjectId&&currentVersionId)switchWorkTab('floorplan');}
+
+function switchWorkTab(tab){
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  const map={setup:'nav-setup',floorplan:'nav-fp',site:'nav-site',elevations:'nav-elev'};
+  document.getElementById(map[tab])?.classList.add('active');
+  const pageMap={setup:'setup',floorplan:'floorplan',site:'site',elevations:'elevations'};
+  showPage(pageMap[tab]);
+  if(tab==='setup')renderSetupSection(currentSetupSection||'planset');
+  if(tab==='floorplan'){buildFpLibrary();buildFpFloorSelector();buildFloorPlanCanvas();}
+  if(tab==='site')buildSiteCanvas();
+  if(tab==='elevations')buildElevCanvas();
+  updateTopbar();
+}
+
+function saveVersion(){
+  if(!currentProjectId||!currentVersionId)return;
+  persist();
+  const btn=document.getElementById('btn-save-ver');const orig=btn.innerHTML;
+  btn.innerHTML='<i class="ti ti-check"></i> Saved';btn.classList.add('success-btn');
+  setTimeout(()=>{btn.innerHTML=orig;btn.classList.remove('success-btn');},2000);
+}
+
+/* ════ DASHBOARD ════ */
+function buildDashboard(){
+  const active=state.projects.filter(p=>!['Completed','Archived'].includes(p.status));
+  const archived=state.projects.filter(p=>['Completed','Archived'].includes(p.status));
+  const sc=s=>s==='Active'?'active':s==='Bidding'?'bid':'';
+  const card=p=>{const vc=(p.versions||[]).length;const lt=(p.versions||[]).slice(-1)[0];
+    return `<div class="project-card" onclick="openProject('${p.id}')">
+      <div class="pc-client">${p.client}</div><div class="pc-address">${p.address||'No address'}</div>
+      <div class="pc-meta"><span class="pc-badge ${sc(p.status)}">${p.status}</span><span class="pc-date">${fmtDate(p.created)}</span></div>
+      <div class="pc-versions">${vc} version${vc!==1?'s':''} · Last: ${lt?fmtDate(lt.created):'—'}</div>
+    </div>`;};
+  document.getElementById('dash-active-grid').innerHTML=active.map(card).join('')+`<div class="project-card new-card" onclick="showNewProjectModal()"><i class="ti ti-plus" style="font-size:22px"></i><span style="font-size:13px">New project</span></div>`;
+  document.getElementById('dash-subtitle').textContent=`${state.projects.length} project${state.projects.length!==1?'s':''}`;
+  const al=document.getElementById('dash-arch-label'),ag=document.getElementById('dash-arch-grid');
+  if(archived.length){al.style.display='';ag.innerHTML=archived.map(card).join('');}else{al.style.display='none';ag.innerHTML='';}
+}
+
+/* ════ PROJECT VIEW ════ */
+function buildProjectView(){
+  const p=getProject(currentProjectId);if(!p)return;
+  document.getElementById('pv-proj-name').textContent=p.client;
+  document.getElementById('pv-proj-addr').textContent=p.address||'';
+  let html='';
+  (p.versions||[]).forEach(v=>{
+    const ac=v.id===currentVersionId?'active':'';
+    const rc=Object.values(v.roomAssemblies||{}).filter(a=>a&&a.length>0).length;
+    html+=`<div class="ver-row ${ac}" onclick="openVersion('${p.id}','${v.id}')">
+      <div class="ver-dot"></div>
+      <div style="flex:1;min-width:0"><div class="ver-name">${v.name}</div><div class="ver-date">${fmtDate(v.created)} · ${rc} room${rc!==1?'s':''}</div></div>
+      <div class="ver-actions">
+        <button class="icon-btn" onclick="event.stopPropagation();duplicateVersion('${p.id}','${v.id}')" title="Duplicate"><i class="ti ti-copy"></i></button>
+        <button class="icon-btn" onclick="event.stopPropagation();deleteVersion('${p.id}','${v.id}')" title="Delete"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  });
+  if(!html)html=`<div style="padding:16px;font-size:12px;color:var(--text3)">No versions yet.</div>`;
+  document.getElementById('pv-ver-list').innerHTML=html;
+  const mh=document.getElementById('pv-main-head'),mb=document.getElementById('pv-main-body');
+  if(!currentVersionId){mh.innerHTML=`<span style="font-size:13px;color:var(--text3)">Select a version to open</span>`;mb.innerHTML=`<div class="empty-state"><i class="ti ti-versions empty-icon"></i><span style="font-size:13px">Select a version or create a new one</span></div>`;}
+  else{
+    const v=getVersion(p,currentVersionId);
+    const rc=Object.values(v.roomAssemblies||{}).filter(a=>a&&a.length>0).length;
+    const ac=Object.values(v.roomAssemblies||{}).reduce((s,a)=>s+(a||[]).length,0);
+    mh.innerHTML=`<i class="ti ti-versions" style="color:var(--text3)"></i><span style="font-size:13px;font-weight:500">${v.name}</span><span style="font-size:11px;color:var(--text3);margin-left:4px">· ${rc} rooms, ${ac} assemblies</span>`;
+    mb.innerHTML=`<div style="padding:24px;display:flex;flex-direction:column;gap:10px;align-items:flex-start">
+      <div style="font-size:12px;color:var(--text3)">Created ${fmtDate(v.created)}</div>
+      <button class="btn primary" onclick="openVersion('${p.id}','${v.id}')"><i class="ti ti-settings"></i> Open project setup</button>
+      <button class="btn" onclick="openVersion('${p.id}','${v.id}');setTimeout(()=>switchWorkTab('floorplan'),100)"><i class="ti ti-layout-2"></i> Go to floor plan</button>
+      <button class="btn" onclick="duplicateVersion('${p.id}','${v.id}')"><i class="ti ti-copy"></i> Duplicate this version</button>
+      <div style="margin-top:6px;padding-top:12px;border-top:0.5px solid var(--border);width:100%">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Rename version</div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px"><input type="text" id="rename-input" value="${v.name.replace(/"/g,'&quot;')}"><button class="btn" onclick="renameVersion('${p.id}','${v.id}')">Rename</button></div>
+      </div>
+    </div>`;
+  }
+}
+
+function renameVersion(pId,vId){const p=getProject(pId);const v=getVersion(p,vId);const n=document.getElementById('rename-input')?.value.trim();if(!n)return;v.name=n;persist();document.getElementById('crumb-ver-name').textContent=n;buildProjectView();}
+function duplicateVersion(pId,vId){const p=getProject(pId);const v=getVersion(p,vId);const c=JSON.parse(JSON.stringify(v));c.id=uid();c.name=v.name+' (copy)';c.created=today();p.versions.push(c);persist();buildProjectView();}
+function deleteVersion(pId,vId){
+  if(!confirm('Delete this version?'))return;
+  const p=getProject(pId);p.versions=p.versions.filter(v=>v.id!==vId);
+  if(currentVersionId===vId){currentVersionId=null;document.getElementById('crumb-ver-sep').style.display='none';document.getElementById('crumb-ver-name').textContent='';}
+  persist();buildProjectView();updateTopbar();
+}
+
+/* ════ MODALS ════ */
+function showModal(html){document.getElementById('modal-container').innerHTML=`<div class="modal-backdrop" id="modal-backdrop" onclick="closeMBg(event)">${html}</div>`;}
+function closeModal(){document.getElementById('modal-container').innerHTML='';}
+function closeMBg(e){if(e.target.id==='modal-backdrop')closeModal();}
+
+function showNewProjectModal(){
+  showModal(`<div class="modal"><div class="modal-title">New project</div>
+    <div class="field"><label>Client name</label><input type="text" id="m-client" placeholder="e.g. Smith Residence" autofocus></div>
+    <div class="field"><label>Address</label><input type="text" id="m-addr" placeholder="142 Oak Street, Fairfield CT"></div>
+    <div class="two-col"><div class="field"><label>Status</label><select id="m-status">${STATUSES.map(s=>`<option>${s}</option>`).join('')}</select></div><div class="field"><label>Start date</label><input type="date" id="m-date" value="${today()}"></div></div>
+    <div class="field"><label>Notes <span class="hint">(internal)</span></label><textarea id="m-notes" placeholder="Project overview…"></textarea></div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="createProject()">Create project</button></div>
+  </div>`);
+}
+function createProject(){
+  const client=document.getElementById('m-client').value.trim();if(!client){alert('Enter a client name.');return;}
+  const p={id:uid(),client,address:document.getElementById('m-addr').value.trim(),status:document.getElementById('m-status').value,created:document.getElementById('m-date').value||today(),notes:document.getElementById('m-notes').value.trim(),
+    setup:{planSetName:null,planSetPageCount:0,floors:[{id:uid(),name:'First Floor',pageIndex:null,rooms:[]}],site:{pageIndex:null,zones:[]},elevations:[]},
+    versions:[{id:uid(),name:'Version 1',created:today(),roomAssemblies:{}}]};
+  state.projects.unshift(p);persist();closeModal();buildDashboard();openProject(p.id);
+}
+function showEditProjectModal(){
+  const p=getProject(currentProjectId);if(!p)return;
+  showModal(`<div class="modal"><div class="modal-title">Edit project</div>
+    <div class="field"><label>Client name</label><input type="text" id="m-client" value="${p.client.replace(/"/g,'&quot;')}" autofocus></div>
+    <div class="field"><label>Address</label><input type="text" id="m-addr" value="${(p.address||'').replace(/"/g,'&quot;')}"></div>
+    <div class="two-col"><div class="field"><label>Status</label><select id="m-status">${STATUSES.map(s=>`<option ${s===p.status?'selected':''}>${s}</option>`).join('')}</select></div><div class="field"><label>Start date</label><input type="date" id="m-date" value="${p.created||today()}"></div></div>
+    <div class="field"><label>Notes</label><textarea id="m-notes">${p.notes||''}</textarea></div>
+    <div class="modal-footer"><button class="btn danger" onclick="deleteProject()"><i class="ti ti-trash"></i> Delete</button><div style="flex:1"></div><button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="updateProject()">Save</button></div>
+  </div>`);
+}
+function updateProject(){const p=getProject(currentProjectId);p.client=document.getElementById('m-client').value.trim()||p.client;p.address=document.getElementById('m-addr').value.trim();p.status=document.getElementById('m-status').value;p.created=document.getElementById('m-date').value;p.notes=document.getElementById('m-notes').value.trim();persist();closeModal();document.getElementById('crumb-proj-name').textContent=p.client;buildProjectView();buildDashboard();}
+function deleteProject(){if(!confirm('Delete this project and all versions?'))return;state.projects=state.projects.filter(p=>p.id!==currentProjectId);persist();closeModal();goToDashboard();}
+function showNewVersionModal(){
+  const p=getProject(currentProjectId);
+  showModal(`<div class="modal"><div class="modal-title">New version</div>
+    <div class="field"><label>Version name</label><input type="text" id="m-vname" placeholder="e.g. Revised scope, Value-engineered option" autofocus></div>
+    <div class="field"><label>Start from</label><select id="m-vcopy"><option value="">Blank — start fresh</option>${(p.versions||[]).map(v=>`<option value="${v.id}">${v.name}</option>`).join('')}</select></div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="createVersion()">Create version</button></div>
+  </div>`);
+}
+function createVersion(){
+  const name=document.getElementById('m-vname').value.trim();if(!name){alert('Enter a version name.');return;}
+  const copyId=document.getElementById('m-vcopy').value;const p=getProject(currentProjectId);
+  let roomAssemblies={};if(copyId){const src=getVersion(p,copyId);roomAssemblies=JSON.parse(JSON.stringify(src.roomAssemblies||{}));}
+  const v={id:uid(),name,created:today(),roomAssemblies};p.versions.push(v);persist();closeModal();openVersion(currentProjectId,v.id);
+}
+
+/* ════ PROJECT SETUP ════ */
+let currentSetupSection='planset';
+
+function switchSetupSection(sec){
+  currentSetupSection=sec;
+  document.querySelectorAll('.setup-nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('snav-'+sec)?.classList.add('active');
+  renderSetupSection(sec);
+}
+
+function renderSetupSection(sec){
+  const titles={planset:'Plan Set Upload',floors:'Floor Plans',site:'Site Plan',elevations:'Elevations'};
+  document.getElementById('setup-section-title').textContent=titles[sec]||sec;
+  const acts=document.getElementById('setup-section-actions');
+  acts.innerHTML='';
+  const body=document.getElementById('setup-main-body');
+  const setup=getSetup(currentProjectId);
+
+  if(sec==='planset') renderPlanSetSection(body,setup,acts);
+  else if(sec==='floors') renderFloorsSection(body,setup,acts);
+  else if(sec==='site') renderSiteSection(body,setup,acts);
+  else if(sec==='elevations') renderElevationsSection(body,setup,acts);
+}
+
+/* ── Plan Set Upload ── */
+function renderPlanSetSection(body,setup,acts){
+  const hasPdf=!!(setup.planSetName);
+  body.innerHTML=`<div style="max-width:700px">
+    <p style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6">Upload your complete plan set PDF — all floors, site plan, and elevations in one file. You'll assign individual pages to each floor plan and elevation in the sections below.</p>
+    <div class="${hasPdf?'pdf-upload-zone has-pdf':'pdf-upload-zone'}" id="upload-zone" ${!hasPdf?'onclick="triggerPdfUpload()"':''}>
+      ${hasPdf?`
+        <div class="pdf-info-row">
+          <i class="ti ti-file-type-pdf" style="font-size:28px;color:#a32d2d;flex-shrink:0"></i>
+          <div style="flex:1;min-width:0">
+            <div class="pdf-info-name">${setup.planSetName}</div>
+            <div class="pdf-info-pages">${setup.planSetPageCount} page${setup.planSetPageCount!==1?'s':''}</div>
+          </div>
+          <button class="btn sm" onclick="triggerPdfUpload()"><i class="ti ti-refresh"></i> Replace</button>
+          <button class="btn sm danger" onclick="removePlanSet()"><i class="ti ti-trash"></i></button>
+        </div>
+        <div style="margin-top:16px">
+          <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">All pages</div>
+          <div class="thumb-strip" id="thumb-strip"></div>
+        </div>
+      `:`
+        <div class="pdf-upload-icon"><i class="ti ti-file-upload"></i></div>
+        <div class="pdf-upload-label">Click to upload plan set PDF</div>
+        <div class="pdf-upload-hint">One combined PDF — all floors, site plan, and elevations</div>
+      `}
+    </div>
+  </div>`;
+  if(hasPdf) loadPdfThumbs(setup);
+}
+
+function triggerPdfUpload(){document.getElementById('pdf-file-input').click();}
+
+document.getElementById('pdf-file-input').addEventListener('change',async function(e){
+  const file=e.target.files[0];if(!file)return;
+  const setup=getSetup(currentProjectId);
+  const arrayBuffer=await file.arrayBuffer();
+  await savePDF(currentProjectId,arrayBuffer);
+  const pdf=await pdfjsLib.getDocument({data:arrayBuffer.slice(0)}).promise;
+  setup.planSetName=file.name;setup.planSetPageCount=pdf.numPages;
+  pdfDoc=pdf;persist();
+  renderSetupSection('planset');
+  this.value='';
+});
+
+async function loadPdfThumbs(setup){
+  const strip=document.getElementById('thumb-strip');if(!strip)return;
+  if(!pdfDoc){
+    const buf=await loadPDF(currentProjectId);if(!buf){strip.innerHTML=`<div style="font-size:12px;color:var(--text3)">Re-upload the PDF to see thumbnails — file is stored locally per browser.</div>`;return;}
+    pdfDoc=await pdfjsLib.getDocument({data:buf}).promise;
+  }
+  strip.innerHTML='';pdfThumbs=[];
+  for(let i=1;i<=pdfDoc.numPages;i++){
+    const page=await pdfDoc.getPage(i);
+    const vp=page.getViewport({scale:0.25});
+    const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;
+    await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+    pdfThumbs.push(c);
+    const assignedTo=getPdfPageAssignment(setup,i-1);
+    const item=document.createElement('div');item.className='thumb-item';item.dataset.page=i-1;
+    item.innerHTML=`${assignedTo?`<div class="thumb-assigned">${assignedTo}</div>`:''}`;
+    item.appendChild(c.cloneNode(true));
+    item.innerHTML+=`<div class="thumb-label">Page ${i}</div>`;
+    strip.appendChild(item);
+  }
+}
+
+function getPdfPageAssignment(setup,pageIdx){
+  const labels=[];
+  (setup.floors||[]).forEach(f=>{if(f.pageIndex===pageIdx)labels.push(f.name);});
+  if(setup.site?.pageIndex===pageIdx)labels.push('Site');
+  (setup.elevations||[]).forEach(e=>{if(e.pageIndex===pageIdx)labels.push(e.name);});
+  return labels.join(', ');
+}
+
+function removePlanSet(){
+  if(!confirm('Remove the uploaded plan set? Page assignments will be cleared.'))return;
+  const setup=getSetup(currentProjectId);
+  setup.planSetName=null;setup.planSetPageCount=0;
+  (setup.floors||[]).forEach(f=>f.pageIndex=null);
+  if(setup.site)setup.site.pageIndex=null;
+  (setup.elevations||[]).forEach(e=>e.pageIndex=null);
+  pdfDoc=null;persist();renderSetupSection('planset');
+}
+
+/* ── Floor Plans section ── */
+function renderFloorsSection(body,setup,acts){
+  acts.innerHTML=`<button class="btn sm" onclick="addFloor()"><i class="ti ti-plus"></i> Add floor</button>`;
+  let html='';
+  (setup.floors||[]).forEach((f,fi)=>{
+    const pgLabel=f.pageIndex!==null?`Page ${f.pageIndex+1}`:'No page assigned';
+    const hasPdf=!!(setup.planSetName);
+    html+=`<div class="plan-section">
+      <div class="plan-section-head">
+        <input type="text" value="${f.name.replace(/"/g,'&quot;')}" onchange="renameFloor('${f.id}',this.value)" style="font-size:13px;font-weight:600;border:none;background:transparent;outline:none;padding:0;width:180px;color:var(--text)">
+        <span class="plan-page-badge" onclick="${hasPdf?`showPagePicker('floor','${f.id}')`:'alert(\"Upload a plan set PDF first.\")'}">${pgLabel} <i class="ti ti-selector" style="font-size:10px"></i></span>
+        <button class="icon-btn" onclick="removeFloor('${f.id}')" style="margin-left:auto" title="Remove floor"><i class="ti ti-trash"></i></button>
+      </div>
+      <div class="plan-section-body">
+        <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:8px">Rooms on this floor</div>
+        <div class="room-list" id="room-list-${f.id}">
+          ${(f.rooms||[]).map(r=>`<div class="room-item">
+            <div class="room-color-dot"></div>
+            <input type="text" value="${r.name.replace(/"/g,'&quot;')}" onchange="renameRoom('${f.id}','${r.id}',this.value)" placeholder="Room name">
+            <button class="icon-btn" onclick="removeRoom('${f.id}','${r.id}')"><i class="ti ti-x"></i></button>
+          </div>`).join('')}
+        </div>
+        <button class="btn sm" style="margin-top:10px" onclick="addRoom('${f.id}')"><i class="ti ti-plus"></i> Add room</button>
+        ${f.pageIndex!==null&&hasPdf?`<button class="btn sm" style="margin-top:10px;margin-left:8px" onclick="openDrawingTool('floor','${f.id}')"><i class="ti ti-pencil"></i> Draw rooms on plan</button>`:''}
+      </div>
+    </div>`;
+  });
+  if(!html)html=`<div style="padding:20px;font-size:13px;color:var(--text3)">No floors yet. Click Add floor to start.</div>`;
+  body.innerHTML=`<div style="max-width:700px">${html}</div>`;
+}
+
+function addFloor(){const setup=getSetup(currentProjectId);if(!setup.floors)setup.floors=[];setup.floors.push({id:uid(),name:'New Floor',pageIndex:null,rooms:[]});persist();renderSetupSection('floors');}
+function removeFloor(fId){const setup=getSetup(currentProjectId);setup.floors=setup.floors.filter(f=>f.id!==fId);persist();renderSetupSection('floors');}
+function renameFloor(fId,name){const setup=getSetup(currentProjectId);const f=setup.floors.find(x=>x.id===fId);if(f)f.name=name;persist();}
+function addRoom(fId){const setup=getSetup(currentProjectId);const f=setup.floors.find(x=>x.id===fId);if(!f)return;if(!f.rooms)f.rooms=[];f.rooms.push({id:uid(),name:'New Room',x:20,y:20,w:120,h:90});persist();renderSetupSection('floors');}
+function removeRoom(fId,rId){const setup=getSetup(currentProjectId);const f=setup.floors.find(x=>x.id===fId);if(!f)return;f.rooms=f.rooms.filter(r=>r.id!==rId);persist();renderSetupSection('floors');}
+function renameRoom(fId,rId,name){const setup=getSetup(currentProjectId);const f=setup.floors.find(x=>x.id===fId);if(!f)return;const r=f.rooms.find(x=>x.id===rId);if(r)r.name=name;persist();}
+
+/* ── Site section ── */
+function renderSiteSection(body,setup,acts){
+  const site=setup.site||{pageIndex:null,zones:[]};
+  const pgLabel=site.pageIndex!==null?`Page ${site.pageIndex+1}`:'No page assigned';
+  const hasPdf=!!(setup.planSetName);
+  body.innerHTML=`<div style="max-width:700px">
+    <div class="plan-section">
+      <div class="plan-section-head">
+        <span class="plan-section-title">Site Plan</span>
+        <span class="plan-page-badge" onclick="${hasPdf?`showPagePicker('site',null)`:'alert(\"Upload a plan set PDF first.\")'}">${pgLabel} <i class="ti ti-selector" style="font-size:10px"></i></span>
+      </div>
+      <div class="plan-section-body">
+        <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:8px">Site zones</div>
+        <div class="room-list" id="zone-list">
+          ${(site.zones||[]).map(z=>`<div class="room-item">
+            <div class="room-color-dot" style="background:#3B6D11"></div>
+            <input type="text" value="${z.name.replace(/"/g,'&quot;')}" onchange="renameZone('${z.id}',this.value)" placeholder="Zone name">
+            <button class="icon-btn" onclick="removeZone('${z.id}')"><i class="ti ti-x"></i></button>
+          </div>`).join('')}
+        </div>
+        <button class="btn sm" style="margin-top:10px" onclick="addZone()"><i class="ti ti-plus"></i> Add zone</button>
+        ${site.pageIndex!==null&&hasPdf?`<button class="btn sm" style="margin-top:10px;margin-left:8px" onclick="openDrawingTool('site',null)"><i class="ti ti-pencil"></i> Draw zones on plan</button>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function addZone(){const setup=getSetup(currentProjectId);if(!setup.site)setup.site={pageIndex:null,zones:[]};setup.site.zones.push({id:uid(),name:'New Zone',x:20,y:20,w:120,h:90});persist();renderSetupSection('site');}
+function removeZone(zId){const setup=getSetup(currentProjectId);setup.site.zones=setup.site.zones.filter(z=>z.id!==zId);persist();renderSetupSection('site');}
+function renameZone(zId,name){const setup=getSetup(currentProjectId);const z=setup.site.zones.find(x=>x.id===zId);if(z)z.name=name;persist();}
+
+/* ── Elevations section ── */
+function renderElevationsSection(body,setup,acts){
+  acts.innerHTML=`<button class="btn sm" onclick="addElevation()"><i class="ti ti-plus"></i> Add elevation</button>`;
+  let html='';
+  (setup.elevations||[]).forEach(e=>{
+    const pgLabel=e.pageIndex!==null?`Page ${e.pageIndex+1}`:'No page assigned';
+    const hasPdf=!!(setup.planSetName);
+    html+=`<div class="plan-section">
+      <div class="plan-section-head">
+        <input type="text" value="${e.name.replace(/"/g,'&quot;')}" onchange="renameElevation('${e.id}',this.value)" style="font-size:13px;font-weight:600;border:none;background:transparent;outline:none;padding:0;width:200px;color:var(--text)">
+        <span class="plan-page-badge" onclick="${hasPdf?`showPagePicker('elevation','${e.id}')`:'alert(\"Upload a plan set PDF first.\")'}">${pgLabel} <i class="ti ti-selector" style="font-size:10px"></i></span>
+        <button class="icon-btn" onclick="removeElevation('${e.id}')" style="margin-left:auto"><i class="ti ti-trash"></i></button>
+      </div>
+      <div class="plan-section-body">
+        <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:8px">Areas on this elevation</div>
+        <div class="room-list">
+          ${(e.areas||[]).map(a=>`<div class="room-item">
+            <div class="room-color-dot" style="background:#534AB7"></div>
+            <input type="text" value="${a.name.replace(/"/g,'&quot;')}" onchange="renameArea('${e.id}','${a.id}',this.value)" placeholder="Area name">
+            <button class="icon-btn" onclick="removeArea('${e.id}','${a.id}')"><i class="ti ti-x"></i></button>
+          </div>`).join('')}
+        </div>
+        <button class="btn sm" style="margin-top:10px" onclick="addArea('${e.id}')"><i class="ti ti-plus"></i> Add area</button>
+        ${e.pageIndex!==null&&hasPdf?`<button class="btn sm" style="margin-top:10px;margin-left:8px" onclick="openDrawingTool('elevation','${e.id}')"><i class="ti ti-pencil"></i> Draw areas on elevation</button>`:''}
+      </div>
+    </div>`;
+  });
+  if(!html)html=`<div style="padding:20px;font-size:13px;color:var(--text3)">No elevations yet. Click Add elevation to start.</div>`;
+  body.innerHTML=`<div style="max-width:700px">${html}</div>`;
+}
+
+function addElevation(){const setup=getSetup(currentProjectId);if(!setup.elevations)setup.elevations=[];setup.elevations.push({id:uid(),name:'New Elevation',pageIndex:null,areas:[]});persist();renderSetupSection('elevations');}
+function removeElevation(eId){const setup=getSetup(currentProjectId);setup.elevations=setup.elevations.filter(e=>e.id!==eId);persist();renderSetupSection('elevations');}
+function renameElevation(eId,name){const setup=getSetup(currentProjectId);const e=setup.elevations.find(x=>x.id===eId);if(e)e.name=name;persist();}
+function addArea(eId){const setup=getSetup(currentProjectId);const e=setup.elevations.find(x=>x.id===eId);if(!e)return;if(!e.areas)e.areas=[];e.areas.push({id:uid(),name:'New Area',x:20,y:20,w:150,h:80});persist();renderSetupSection('elevations');}
+function removeArea(eId,aId){const setup=getSetup(currentProjectId);const e=setup.elevations.find(x=>x.id===eId);if(!e)return;e.areas=e.areas.filter(a=>a.id!==aId);persist();renderSetupSection('elevations');}
+function renameArea(eId,aId,name){const setup=getSetup(currentProjectId);const e=setup.elevations.find(x=>x.id===eId);if(!e)return;const a=e.areas.find(x=>x.id===aId);if(a)a.name=name;persist();}
+
+/* ── Page Picker ── */
+let pickerTarget={type:null,id:null};
+async function showPagePicker(type,id){
+  pickerTarget={type,id};
+  const setup=getSetup(currentProjectId);
+  if(!pdfDoc){
+    const buf=await loadPDF(currentProjectId);
+    if(!buf){alert('PDF not found in this browser. Please re-upload the plan set.');return;}
+    pdfDoc=await pdfjsLib.getDocument({data:buf}).promise;
+  }
+  const currentPage=getPickerCurrentPage(setup,type,id);
+  showModal(`<div class="modal" style="width:640px">
+    <div class="modal-title">Select page for ${getPickerLabel(setup,type,id)}</div>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:4px">Click a page to assign it as the underlay for this plan.</p>
+    <div class="page-picker-grid" id="page-picker-grid"></div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal()">Cancel</button></div>
+  </div>`);
+  const grid=document.getElementById('page-picker-grid');
+  for(let i=1;i<=pdfDoc.numPages;i++){
+    const page=await pdfDoc.getPage(i);
+    const vp=page.getViewport({scale:0.22});
+    const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;
+    await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+    const item=document.createElement('div');
+    item.className='page-pick-item'+(currentPage===i-1?' selected':'');
+    item.dataset.page=i-1;
+    item.appendChild(c);
+    item.innerHTML+=`<div class="page-pick-label">Page ${i}</div>`;
+    item.addEventListener('click',()=>{assignPage(i-1);closeModal();renderSetupSection(currentSetupSection);});
+    grid.appendChild(item);
+  }
+}
+
+function getPickerLabel(setup,type,id){
+  if(type==='floor')return(setup.floors||[]).find(f=>f.id===id)?.name||'Floor';
+  if(type==='site')return'Site Plan';
+  if(type==='elevation')return(setup.elevations||[]).find(e=>e.id===id)?.name||'Elevation';
+  return'';
+}
+function getPickerCurrentPage(setup,type,id){
+  if(type==='floor')return(setup.floors||[]).find(f=>f.id===id)?.pageIndex??null;
+  if(type==='site')return setup.site?.pageIndex??null;
+  if(type==='elevation')return(setup.elevations||[]).find(e=>e.id===id)?.pageIndex??null;
+  return null;
+}
+function assignPage(pageIdx){
+  const setup=getSetup(currentProjectId);const{type,id}=pickerTarget;
+  if(type==='floor'){const f=(setup.floors||[]).find(x=>x.id===id);if(f)f.pageIndex=pageIdx;}
+  else if(type==='site'){if(!setup.site)setup.site={pageIndex:null,zones:[]};setup.site.pageIndex=pageIdx;}
+  else if(type==='elevation'){const e=(setup.elevations||[]).find(x=>x.id===id);if(e)e.pageIndex=pageIdx;}
+  persist();
+}
+
+/* ── Drawing Tool ── */
+let drawingTarget={type:null,id:null};
+let drawState={active:false,startX:0,startY:0,currentRect:null,scale:1};
+
+async function openDrawingTool(type,id){
+  drawingTarget={type,id};
+  const setup=getSetup(currentProjectId);
+  let pageIdx=null,zones=[];
+  if(type==='floor'){const f=(setup.floors||[]).find(x=>x.id===id);pageIdx=f?.pageIndex??null;zones=f?.rooms||[];}
+  else if(type==='site'){pageIdx=setup.site?.pageIndex??null;zones=setup.site?.zones||[];}
+  else if(type==='elevation'){const e=(setup.elevations||[]).find(x=>x.id===id);pageIdx=e?.pageIndex??null;zones=e?.areas||[];}
+  if(pageIdx===null){alert('Assign a page first.');return;}
+  if(!pdfDoc){const buf=await loadPDF(currentProjectId);if(!buf){alert('PDF not found. Please re-upload.');return;}pdfDoc=await pdfjsLib.getDocument({data:buf}).promise;}
+
+  const page=await pdfDoc.getPage(pageIdx+1);
+  const scale=1.5;const vp=page.getViewport({scale});
+  const zoneLabel=type==='floor'?'rooms':type==='site'?'zones':'areas';
+
+  showModal(`<div class="modal" style="width:min(900px,95vw)">
+    <div class="modal-title" style="display:flex;align-items:center;justify-content:space-between">
+      <span>Draw ${zoneLabel} on plan</span>
+      <span style="font-size:12px;font-weight:400;color:var(--text3)">Click and drag to draw · Click a zone to delete it</span>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Drag rectangles over each ${zoneLabel.slice(0,-1)} on the plan. Name it when prompted.</div>
+    <div class="draw-area-wrap" style="max-height:65vh">
+      <div class="draw-canvas-container" id="draw-container" style="width:${vp.width}px;height:${vp.height}px">
+        <canvas id="draw-pdf-canvas" width="${vp.width}" height="${vp.height}"></canvas>
+        <canvas id="draw-overlay" width="${vp.width}" height="${vp.height}" style="position:absolute;top:0;left:0;cursor:crosshair"></canvas>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn primary" onclick="saveDrawnZones()"><i class="ti ti-check"></i> Save ${zoneLabel}</button><button class="btn" onclick="closeModal()">Cancel</button></div>
+  </div>`);
+
+  // render PDF page
+  await page.render({canvasContext:document.getElementById('draw-pdf-canvas').getContext('2d'),viewport:vp}).promise;
+  drawState.scale=scale;drawState.zones=JSON.parse(JSON.stringify(zones));
+  initDrawOverlay(vp.width,vp.height);
+  redrawOverlay();
+}
+
+function initDrawOverlay(w,h){
+  const ov=document.getElementById('draw-overlay');if(!ov)return;
+  let dragging=false,sx=0,sy=0;
+  ov.onmousedown=e=>{const r=ov.getBoundingClientRect();sx=e.clientX-r.left;sy=e.clientY-r.top;dragging=true;drawState.currentRect={x:sx,y:sy,w:0,h:0};};
+  ov.onmousemove=e=>{if(!dragging)return;const r=ov.getBoundingClientRect();const cx=e.clientX-r.left,cy=e.clientY-r.top;drawState.currentRect={x:Math.min(sx,cx),y:Math.min(sy,cy),w:Math.abs(cx-sx),h:Math.abs(cy-sy)};redrawOverlay();};
+  ov.onmouseup=e=>{
+    if(!dragging)return;dragging=false;
+    const rect=drawState.currentRect;
+    if(rect&&rect.w>15&&rect.h>15){
+      const name=prompt('Name this area:','Room');
+      if(name&&name.trim()){
+        const s=drawState.scale;
+        drawState.zones.push({id:uid(),name:name.trim(),x:Math.round(rect.x/s),y:Math.round(rect.y/s),w:Math.round(rect.w/s),h:Math.round(rect.h/s)});
+      }
+    }
+    drawState.currentRect=null;redrawOverlay();
+  };
+  ov.onclick=e=>{
+    const r=ov.getBoundingClientRect();const cx=e.clientX-r.left,cy=e.clientY-r.top;const s=drawState.scale;
+    const hit=drawState.zones.findIndex(z=>cx>=z.x*s&&cx<=(z.x+z.w)*s&&cy>=z.y*s&&cy<=(z.y+z.h)*s);
+    if(hit>=0&&confirm(`Delete "${drawState.zones[hit].name}"?`)){drawState.zones.splice(hit,1);redrawOverlay();}
+  };
+}
+
+function redrawOverlay(){
+  const ov=document.getElementById('draw-overlay');if(!ov)return;
+  const ctx=ov.getContext('2d');ctx.clearRect(0,0,ov.width,ov.height);
+  const s=drawState.scale;
+  const colors={floor:'rgba(24,95,165,',site:'rgba(59,109,17,',elevation:'rgba(83,74,183,'};
+  const col=colors[drawingTarget.type]||'rgba(24,95,165,';
+  drawState.zones.forEach(z=>{
+    ctx.fillStyle=col+'0.18)';ctx.strokeStyle=col+'0.8)';ctx.lineWidth=2;
+    ctx.fillRect(z.x*s,z.y*s,z.w*s,z.h*s);ctx.strokeRect(z.x*s,z.y*s,z.w*s,z.h*s);
+    ctx.fillStyle=col+'0.9)';ctx.font=`bold ${Math.max(11,12*s)}px -apple-system,sans-serif`;
+    ctx.fillText(z.name,z.x*s+6,z.y*s+18*s);
+  });
+  if(drawState.currentRect){const r=drawState.currentRect;ctx.fillStyle=col+'0.12)';ctx.strokeStyle=col+'0.7)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.fillRect(r.x,r.y,r.w,r.h);ctx.strokeRect(r.x,r.y,r.w,r.h);ctx.setLineDash([]);}
+}
+
+function saveDrawnZones(){
+  const setup=getSetup(currentProjectId);const{type,id}=drawingTarget;
+  if(type==='floor'){const f=(setup.floors||[]).find(x=>x.id===id);if(f)f.rooms=drawState.zones;}
+  else if(type==='site'){setup.site.zones=drawState.zones;}
+  else if(type==='elevation'){const e=(setup.elevations||[]).find(x=>x.id===id);if(e)e.areas=drawState.zones;}
+  persist();closeModal();renderSetupSection(currentSetupSection);
+}
+
+/* ════ FLOOR PLAN WORK AREA ════ */
+function buildFpFloorSelector(){
+  const setup=getSetup(currentProjectId);const floors=setup.floors||[];
+  const sel=document.getElementById('fp-floor-selector');
+  if(!floors.length){sel.innerHTML=`<span style="font-size:12px;color:var(--text3)">No floors defined — go to Project Setup</span>`;return;}
+  if(!activeFloorId||!floors.find(f=>f.id===activeFloorId))activeFloorId=floors[0].id;
+  sel.innerHTML=floors.map(f=>`<div class="fp-floor-tab ${f.id===activeFloorId?'active':''}" onclick="selectFloor('${f.id}')">${f.name}</div>`).join('');
+}
+
+function selectFloor(id){activeFloorId=id;buildFpFloorSelector();buildFloorPlanCanvas();}
+
+async function buildFloorPlanCanvas(){
+  const container=document.getElementById('fp-plan-container');
+  const setup=getSetup(currentProjectId);
+  const floor=setup.floors?.find(f=>f.id===activeFloorId);
+  if(!floor){container.innerHTML=`<div style="padding:24px;font-size:13px;color:var(--text3)">No floors defined. Go to Project Setup → Floor Plans.</div>`;return;}
+
+  container.innerHTML='';
+  let bgCanvas=null;
+  if(floor.pageIndex!==null&&setup.planSetName){
+    if(!pdfDoc){const buf=await loadPDF(currentProjectId);if(buf)pdfDoc=await pdfjsLib.getDocument({data:buf}).promise;}
+    if(pdfDoc){
+      const page=await pdfDoc.getPage(floor.pageIndex+1);
+      const scale=1.2;const vp=page.getViewport({scale});
+      bgCanvas=document.createElement('canvas');bgCanvas.width=vp.width;bgCanvas.height=vp.height;
+      await page.render({canvasContext:bgCanvas.getContext('2d'),viewport:vp}).promise;
+    }
+  }
+
+  const W=bgCanvas?bgCanvas.width:700,H=bgCanvas?bgCanvas.height:500;
+  const wrap=document.createElement('div');wrap.style.cssText=`position:relative;width:${W}px;height:${H}px;background:#fff;border:1.5px solid #888;border-radius:3px;flex-shrink:0`;
+  if(bgCanvas){const img=document.createElement('img');img.src=bgCanvas.toDataURL();img.style.cssText=`position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.55;pointer-events:none`;wrap.appendChild(img);}
+
+  const ra=getRoomAsm();const scale=bgCanvas?1.2:1;
+  (floor.rooms||[]).forEach(r=>{
+    const el=document.createElement('div');el.className='room'+(selectedRoom===r.id?' selected':'');
+    el.style.cssText=`left:${r.x*scale}px;top:${r.y*scale}px;width:${r.w*scale}px;height:${r.h*scale}px`;
+    const ids=ra[r.id]||[];
+    const chips=ids.map(id=>{const a=state.assemblies.find(x=>x.id===id);return a?`<span class="room-chip">${a.name}</span>`:''}).join('');
+    el.innerHTML=`<div class="room-label">${r.name}</div><div class="room-chips">${chips}</div>`;
+    el.addEventListener('click',()=>selectRoomFp(r.id));
+    el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('drop-hover');});
+    el.addEventListener('dragleave',()=>el.classList.remove('drop-hover'));
+    el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('drop-hover');if(draggingAsm){addAsmToRoom(r.id,draggingAsm);selectRoomFp(r.id);}});
+    wrap.appendChild(el);
+  });
+
+  if(!(floor.rooms||[]).length){
+    const hint=document.createElement('div');hint.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:rgba(0,0,0,.4);text-align:center;pointer-events:none';
+    hint.innerHTML=`<i class="ti ti-pencil" style="font-size:24px;display:block;margin-bottom:8px"></i>No rooms drawn yet.<br>Go to Project Setup → Floor Plans to draw rooms.`;
+    wrap.appendChild(hint);
+  }
+  container.appendChild(wrap);
+}
+
+function buildFpLibrary(){
+  const body=document.getElementById('fp-library');
+  const byCat={};CATEGORIES.forEach(c=>byCat[c]=[]);
+  state.assemblies.forEach(a=>{if(a.canvases&&a.canvases.length&&!a.canvases.includes('Interior'))return;const c=a.category||'Other';if(!byCat[c])byCat[c]=[];byCat[c].push(a);});
+  let html='';
+  CATEGORIES.forEach(cat=>{const items=byCat[cat]||[];if(!items.length)return;
+    html+=`<div class="lib-cat"><div class="lib-cat-head">${cat}</div>`;
+    items.forEach(a=>html+=`<div class="lib-item" draggable="true" ondragstart="onDragStart(event,'${a.id}')" ondragend="onDragEnd(event)"><div class="lib-item-name">${a.name}</div><div class="lib-item-trades">${(a.trades||[]).length} trades</div></div>`);
+    html+='</div>';});
+  if(!html)html=`<div style="padding:16px;font-size:12px;color:var(--text3)">Build assemblies in Assembly Library first.</div>`;
+  body.innerHTML=html;
+}
+
+function onDragStart(e,asmId){draggingAsm=asmId;e.target.classList.add('dragging');e.dataTransfer.effectAllowed='copy';}
+function onDragEnd(e){e.target.classList.remove('dragging');draggingAsm=null;}
+
+function getRoomAsm(){
+  if(!currentProjectId||!currentVersionId)return{};
+  const p=getProject(currentProjectId);const v=getVersion(p,currentVersionId);
+  if(!v.roomAssemblies)v.roomAssemblies={};return v.roomAssemblies;
+}
+function addAsmToRoom(roomId,asmId){const ra=getRoomAsm();if(!ra[roomId])ra[roomId]=[];if(!ra[roomId].includes(asmId))ra[roomId].push(asmId);buildFloorPlanCanvas();}
+function selectRoomFp(id){selectedRoom=id;buildFloorPlanCanvas();document.getElementById('fp-right-footer').style.display='block';if(fpTab==='room')renderRoomDetail();}
+function switchFpTab(tab){fpTab=tab;document.getElementById('fp-tab-room').classList.toggle('active',tab==='room');document.getElementById('fp-tab-scope').classList.toggle('active',tab==='scope');if(tab==='room')renderRoomDetail();}
+
+function renderRoomDetail(){
+  const body=document.getElementById('fp-right-body');
+  if(!selectedRoom){body.innerHTML=`<div class="empty-state" style="height:200px"><i class="ti ti-click empty-icon"></i><span style="font-size:12px">Click a room</span></div>`;return;}
+  const setup=getSetup(currentProjectId);
+  let roomName=selectedRoom;
+  setup.floors?.forEach(f=>{const r=f.rooms?.find(x=>x.id===selectedRoom);if(r)roomName=r.name;});
+  const ra=getRoomAsm();const ids=ra[selectedRoom]||[];
+  let html=`<div style="margin-bottom:10px;font-size:14px;font-weight:600">${roomName}</div>`;
+  if(!ids.length)html+=`<div style="font-size:12px;color:var(--text3)">No assemblies. Drag from the library.</div>`;
+  else ids.forEach(id=>{const a=state.assemblies.find(x=>x.id===id);if(!a)return;
+    html+=`<div class="asm-tag"><div><div class="asm-tag-name">${a.name}</div><div class="asm-tag-trades">${(a.trades||[]).map(t=>tradeById(t.tradeId).name).join(', ')}</div></div><button class="icon-btn" onclick="removeAsmFromRoom('${selectedRoom}','${id}')"><i class="ti ti-x"></i></button></div>`;});
+  body.innerHTML=html;
+}
+function removeAsmFromRoom(roomId,asmId){const ra=getRoomAsm();if(ra[roomId])ra[roomId]=ra[roomId].filter(id=>id!==asmId);buildFloorPlanCanvas();renderRoomDetail();}
+
+/* ════ SITE & ELEVATION CANVASES ════ */
+async function buildSiteCanvas(){
+  const container=document.getElementById('site-plan-container');
+  const setup=getSetup(currentProjectId);const site=setup.site||{};
+  container.innerHTML='';
+  let bgCanvas=null;
+  if(site.pageIndex!==null&&setup.planSetName){
+    if(!pdfDoc){const buf=await loadPDF(currentProjectId);if(buf)pdfDoc=await pdfjsLib.getDocument({data:buf}).promise;}
+    if(pdfDoc){const page=await pdfDoc.getPage(site.pageIndex+1);const scale=1.2;const vp=page.getViewport({scale});bgCanvas=document.createElement('canvas');bgCanvas.width=vp.width;bgCanvas.height=vp.height;await page.render({canvasContext:bgCanvas.getContext('2d'),viewport:vp}).promise;}
+  }
+  const W=bgCanvas?bgCanvas.width:700,H=bgCanvas?bgCanvas.height:500;
+  const wrap=document.createElement('div');wrap.style.cssText=`position:relative;width:${W}px;height:${H}px;background:#fff;border:1.5px solid #888;border-radius:3px`;
+  if(bgCanvas){const img=document.createElement('img');img.src=bgCanvas.toDataURL();img.style.cssText=`position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.55;pointer-events:none`;wrap.appendChild(img);}
+  const scale=bgCanvas?1.2:1;
+  (site.zones||[]).forEach(z=>{
+    const el=document.createElement('div');
+    el.style.cssText=`position:absolute;left:${z.x*scale}px;top:${z.y*scale}px;width:${z.w*scale}px;height:${z.h*scale}px;border:2px solid rgba(59,109,17,.7);background:rgba(59,109,17,.1);border-radius:2px;display:flex;align-items:flex-start;justify-content:center;padding:5px;cursor:pointer`;
+    el.innerHTML=`<span style="font-size:10px;font-weight:600;color:#27500A;text-shadow:0 0 3px rgba(255,255,255,.8)">${z.name}</span>`;
+    el.addEventListener('dragover',e=>{e.preventDefault();el.style.background='rgba(59,109,17,.25)';});
+    el.addEventListener('dragleave',()=>el.style.background='rgba(59,109,17,.1)');
+    el.addEventListener('drop',e=>{e.preventDefault();el.style.background='rgba(59,109,17,.1)';if(draggingAsm)addAsmToRoom(z.id,draggingAsm);});
+    wrap.appendChild(el);
+  });
+  if(!(site.zones||[]).length){const hint=document.createElement('div');hint.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:rgba(0,0,0,.4);text-align:center;pointer-events:none';hint.innerHTML=`<i class="ti ti-trees" style="font-size:24px;display:block;margin-bottom:8px"></i>No site zones yet.<br>Go to Project Setup → Site Plan.`;wrap.appendChild(hint);}
+  container.appendChild(wrap);
+}
+
+async function buildElevCanvas(){
+  const setup=getSetup(currentProjectId);const elevs=setup.elevations||[];
+  const sel=document.getElementById('elev-selector');
+  if(!elevs.length){sel.innerHTML=`<span style="font-size:12px;color:var(--text3)">No elevations — go to Project Setup</span>`;document.getElementById('elev-plan-container').innerHTML='';return;}
+  if(!activeElevId||!elevs.find(e=>e.id===activeElevId))activeElevId=elevs[0].id;
+  sel.innerHTML=elevs.map(e=>`<div class="fp-floor-tab ${e.id===activeElevId?'active':''}" onclick="selectElev('${e.id}')">${e.name}</div>`).join('');
+  const elev=elevs.find(e=>e.id===activeElevId);
+  const container=document.getElementById('elev-plan-container');container.innerHTML='';
+  let bgCanvas=null;
+  if(elev.pageIndex!==null&&setup.planSetName){
+    if(!pdfDoc){const buf=await loadPDF(currentProjectId);if(buf)pdfDoc=await pdfjsLib.getDocument({data:buf}).promise;}
+    if(pdfDoc){const page=await pdfDoc.getPage(elev.pageIndex+1);const scale=1.2;const vp=page.getViewport({scale});bgCanvas=document.createElement('canvas');bgCanvas.width=vp.width;bgCanvas.height=vp.height;await page.render({canvasContext:bgCanvas.getContext('2d'),viewport:vp}).promise;}
+  }
+  const W=bgCanvas?bgCanvas.width:700,H=bgCanvas?bgCanvas.height:400;
+  const wrap=document.createElement('div');wrap.style.cssText=`position:relative;width:${W}px;height:${H}px;background:#fff;border:1.5px solid #888;border-radius:3px`;
+  if(bgCanvas){const img=document.createElement('img');img.src=bgCanvas.toDataURL();img.style.cssText=`position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.55;pointer-events:none`;wrap.appendChild(img);}
+  const scale=bgCanvas?1.2:1;
+  (elev.areas||[]).forEach(a=>{
+    const el=document.createElement('div');
+    el.style.cssText=`position:absolute;left:${a.x*scale}px;top:${a.y*scale}px;width:${a.w*scale}px;height:${a.h*scale}px;border:2px solid rgba(83,74,183,.7);background:rgba(83,74,183,.1);border-radius:2px;display:flex;align-items:flex-start;justify-content:center;padding:5px;cursor:pointer`;
+    el.innerHTML=`<span style="font-size:10px;font-weight:600;color:#3C3489;text-shadow:0 0 3px rgba(255,255,255,.8)">${a.name}</span>`;
+    el.addEventListener('dragover',e=>{e.preventDefault();el.style.background='rgba(83,74,183,.25)';});
+    el.addEventListener('dragleave',()=>el.style.background='rgba(83,74,183,.1)');
+    el.addEventListener('drop',e=>{e.preventDefault();el.style.background='rgba(83,74,183,.1)';if(draggingAsm)addAsmToRoom(a.id,draggingAsm);});
+    wrap.appendChild(el);
+  });
+  if(!(elev.areas||[]).length){const hint=document.createElement('div');hint.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:rgba(0,0,0,.4);text-align:center;pointer-events:none';hint.innerHTML=`<i class="ti ti-building" style="font-size:24px;display:block;margin-bottom:8px"></i>No areas drawn yet.<br>Go to Project Setup → Elevations.`;wrap.appendChild(hint);}
+  container.appendChild(wrap);
+}
+
+function selectElev(id){activeElevId=id;buildElevCanvas();}
+
+/* ════ ASSEMBLY BUILDER ════ */
+function buildAbSidebar(){
+  const body=document.getElementById('ab-sidebar-body');
+  const byCat={};CATEGORIES.forEach(c=>byCat[c]=[]);
+  state.assemblies.forEach(a=>{const c=a.category||'Other';if(!byCat[c])byCat[c]=[];byCat[c].push(a);});
+  let html='';
+  CATEGORIES.forEach(cat=>{const items=byCat[cat]||[];if(!items.length)return;
+    html+=`<div class="cat-group"><div class="cat-head">${cat}</div>`;
+    items.forEach(a=>{const cnt=(a.trades||[]).reduce((s,t)=>s+(t.lines||[]).length,0);
+      html+=`<div class="asm-row ${a.id===currentAsmId?'active':''}" onclick="selectAssembly('${a.id}')"><span class="asm-row-name">${a.name}</span><span class="asm-count">${cnt}</span></div>`;});
+    html+='</div>';});
+  if(!html)html=`<div style="padding:16px;font-size:12px;color:var(--text3)">No assemblies yet.</div>`;
+  body.innerHTML=html;
+}
+function selectAssembly(id){currentAsmId=id;asmDraft=JSON.parse(JSON.stringify(state.assemblies.find(x=>x.id===id)));buildAbSidebar();renderEditor();}
+function newAssembly(){const a={id:uid(),name:'New assembly',category:'Other',canvases:[],notes:'',trades:[]};state.assemblies.push(a);persist();selectAssembly(a.id);}
+function deleteAssembly(){if(!currentAsmId||!confirm('Delete this assembly?'))return;state.assemblies=state.assemblies.filter(a=>a.id!==currentAsmId);currentAsmId=null;asmDraft=null;persist();buildAbSidebar();document.getElementById('ab-main-head').innerHTML=`<i class="ti ti-stack-2" style="color:var(--text3)"></i><span style="font-size:13px;color:var(--text3)">Select or create an assembly</span>`;document.getElementById('ab-main-body').innerHTML=`<div class="empty-state"><i class="ti ti-stack-2 empty-icon"></i><span>Select an assembly or click New</span></div>`;document.getElementById('ab-footer').style.display='none';}
+function saveAssembly(){if(!asmDraft||!currentAsmId)return;syncAsmDraft();const idx=state.assemblies.findIndex(a=>a.id===currentAsmId);if(idx>=0)state.assemblies[idx]=JSON.parse(JSON.stringify(asmDraft));persist();buildAbSidebar();const b=document.getElementById('saved-badge');b.style.display='flex';setTimeout(()=>b.style.display='none',2000);}
+function syncAsmDraft(){asmDraft.name=document.getElementById('asm-name')?.value||asmDraft.name;asmDraft.category=document.getElementById('asm-cat')?.value||asmDraft.category;asmDraft.notes=document.getElementById('asm-notes')?.value||'';asmDraft.canvases=[];CANVASES.forEach(c=>{if(document.getElementById('cv-'+c)?.classList.contains('on'))asmDraft.canvases.push(c);});asmDraft.trades.forEach((t,ti)=>{t.lines=[];document.querySelectorAll(`.lt[data-ti="${ti}"]`).forEach(r=>{if(r.value.trim())t.lines.push(r.value.trim());});});}
+function toggleCanvas(c){document.getElementById('cv-'+c)?.classList.toggle('on');}
+function addTrade(){syncAsmDraft();const sel=document.getElementById('trade-selector');const tid=sel.value;if(asmDraft.trades.find(t=>t.tradeId===tid)){sel.style.outline='2px solid #f09595';setTimeout(()=>sel.style.outline='',1200);return;}asmDraft.trades.push({tradeId:tid,lines:['']});renderEditor();}
+function removeTrade(ti){syncAsmDraft();asmDraft.trades.splice(ti,1);renderEditor();}
+function addLine(ti){syncAsmDraft();asmDraft.trades[ti].lines.push('');renderEditor();}
+function removeLine(ti,li){syncAsmDraft();asmDraft.trades[ti].lines.splice(li,1);if(!asmDraft.trades[ti].lines.length)asmDraft.trades[ti].lines=[''];renderEditor();}
+function renderEditor(){
+  if(!asmDraft)return;
+  document.getElementById('ab-footer').style.display='flex';
+  document.getElementById('ab-main-head').innerHTML=`<i class="ti ti-stack-2" style="color:var(--text3)"></i><span style="font-size:13px;font-weight:500">${asmDraft.name}</span>`;
+  const cvChips=CANVASES.map(c=>`<div class="canvas-chip ${(asmDraft.canvases||[]).includes(c)?'on':''}" id="cv-${c}" onclick="toggleCanvas('${c}')">${c}</div>`).join('');
+  let tHTML='';
+  (asmDraft.trades||[]).forEach((t,ti)=>{const td=tradeById(t.tradeId);const lH=(t.lines||['']).map((l,li)=>`<div class="line-row"><textarea class="lt" data-ti="${ti}" data-li="${li}" placeholder="Describe this trade's scope…">${l}</textarea><button class="icon-btn" onclick="removeLine(${ti},${li})"><i class="ti ti-x"></i></button></div>`).join('');tHTML+=`<div class="trade-card"><div class="trade-card-head"><div class="trade-dot" style="background:${td.color}"></div><span class="trade-name-lbl">${td.name}</span><button class="icon-btn" onclick="removeTrade(${ti})" style="margin-left:auto"><i class="ti ti-trash"></i></button></div><div class="trade-card-body">${lH}</div><div class="trade-card-footer"><button class="btn" onclick="addLine(${ti})"><i class="ti ti-plus"></i> Add line item</button></div></div>`;});
+  document.getElementById('ab-main-body').innerHTML=`<div style="max-width:860px">
+    <div class="field"><label>Assembly name</label><input id="asm-name" type="text" value="${asmDraft.name.replace(/"/g,'&quot;')}" oninput="asmDraft.name=this.value;document.getElementById('ab-main-head').querySelector('span').textContent=this.value"></div>
+    <div class="two-col"><div class="field"><label>Category</label><select id="asm-cat">${CATEGORIES.map(c=>`<option ${c===asmDraft.category?'selected':''}>${c}</option>`).join('')}</select></div><div class="field"><label>Applies to canvas</label><div class="canvas-chips">${cvChips}</div></div></div>
+    <div class="field"><label>Coordinator notes <span class="hint">(internal)</span></label><textarea id="asm-notes" placeholder="Spec notes, lead times, coordination flags…">${asmDraft.notes||''}</textarea></div>
+    <div class="section-divider"><span class="section-title">Trade line items <span class="section-sub">${(asmDraft.trades||[]).reduce((s,t)=>s+(t.lines||[]).length,0)} items · ${(asmDraft.trades||[]).length} trades</span></span></div>
+    ${tHTML}
+    <div class="add-trade-card"><div style="font-size:12px;font-weight:500;color:var(--text3);margin-bottom:8px">Add a trade</div><div style="display:grid;grid-template-columns:1fr auto;gap:10px"><select id="trade-selector">${TRADES.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</select><button class="btn" onclick="addTrade()"><i class="ti ti-plus"></i> Add trade</button></div></div>
+  </div>`;
+}
+
+/* ════ SCOPE GENERATOR ════ */
+async function generateScope(){
+  const ra=getRoomAsm();
+  const setup=getSetup(currentProjectId);
+  const allRooms=[];
+  (setup.floors||[]).forEach(f=>(f.rooms||[]).forEach(r=>allRooms.push({...r,floorName:f.name})));
+  const activeRooms=allRooms.filter(r=>(ra[r.id]||[]).length>0);
+  if(!activeRooms.length){alert('Assign at least one assembly to a room first.');return;}
+  switchFpTab('scope');document.getElementById('fp-right-footer').style.display='block';
+  document.getElementById('fp-right-body').innerHTML=`<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px"><span class="spinner"></span>Generating scope…</div>`;
+  const summary=activeRooms.map(r=>{
+    const asms=(ra[r.id]||[]).map(id=>{const a=state.assemblies.find(x=>x.id===id);if(!a)return id;return `${a.name} [${(a.trades||[]).map(t=>`${tradeById(t.tradeId).name}: ${(t.lines||[]).join(' ')}`).join(' | ')}]`;}).join('; ');
+    return `${r.name} (${r.floorName}): ${asms}`;
+  }).join('\n');
+  const prompt=`You are a professional residential remodeling contractor writing a Scope of Work document. Write a concise, professional scope for each room listed. Use clear contractor language, organized by trade. Format exactly as:\n\nROOM NAME\nTrade Name: scope text.\n\nOnly include work explicitly listed. Start directly with the first room, no preamble.\n\nProject:\n${summary}`;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:prompt}]})});
+    const data=await res.json();renderScopeOutput((data.content||[]).map(b=>b.text||'').join(''));
+  }catch(e){document.getElementById('fp-right-body').innerHTML=`<div style="padding:20px;color:var(--text-danger);font-size:12px">Error generating scope.</div>`;}
+}
+function renderScopeOutput(text){
+  const blocks=text.trim().split(/\n{2,}/);let html='';let curRoom=null;let curLines=[];
+  function flush(){if(!curRoom)return;let th='';curLines.forEach(line=>{const m=line.match(/^([^:]{3,40}):\s*(.+)$/);if(m)th+=`<div class="scope-trade-block"><div class="scope-trade-name">${m[1]}</div><div class="scope-trade-text">${m[2]}</div></div>`;else if(line.trim())th+=`<div class="scope-trade-text" style="margin-bottom:4px">${line}</div>`;});html+=`<div class="scope-section"><div class="scope-room-title">${curRoom}</div>${th}</div>`;curRoom=null;curLines=[];}
+  blocks.forEach(block=>{const lines=block.trim().split('\n');if(lines.length&&lines[0]===lines[0].toUpperCase()&&lines[0].length<50){flush();curRoom=lines[0];curLines=lines.slice(1);}else if(curRoom)curLines=curLines.concat(lines);else{curRoom='Project Scope';curLines=lines;}});flush();
+  document.getElementById('fp-right-body').innerHTML=html||`<div style="padding:16px;font-size:12px;color:var(--text3)">${text}</div>`;
+}
+
+/* ════ INIT ════ */
+loadState();buildDashboard();buildAbSidebar();
+</script>
+</body>
+</html>
