@@ -756,7 +756,7 @@ document.getElementById('pdf-file-input').addEventListener('change',async functi
   const setup=getSetup(currentProjectId);
   const arrayBuffer=await file.arrayBuffer();
   await savePDF(currentProjectId,arrayBuffer);
-  const pdf=await pdfjsLib.getDocument({data:arrayBuffer.slice(0)}).promise;
+  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(arrayBuffer)}).promise;
   setup.planSetName=file.name;setup.planSetPageCount=pdf.numPages;
   pdfDoc=pdf;persist();
   renderSetupSection('planset');
@@ -766,24 +766,35 @@ document.getElementById('pdf-file-input').addEventListener('change',async functi
 
 async function loadPdfThumbs(setup){
   const strip=document.getElementById('thumb-strip');if(!strip)return;
+  if(strip.dataset.loading){return;} // prevent double render
+  strip.dataset.loading='1';
   if(!pdfDoc){
-    const buf=await loadPDF(currentProjectId);if(!buf){strip.innerHTML=`<div style="font-size:12px;color:var(--text3)">Re-upload the PDF to see thumbnails — file is stored locally per browser.</div>`;return;}
-    pdfDoc=await pdfjsLib.getDocument({data:buf}).promise;
+    const buf=await loadPDF(currentProjectId);
+    if(!buf){strip.innerHTML='<div style="font-size:12px;color:var(--text3)">Re-upload the PDF to see thumbnails.</div>';delete strip.dataset.loading;return;}
+    pdfDoc=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
   }
   strip.innerHTML='';pdfThumbs=[];
   for(let i=1;i<=pdfDoc.numPages;i++){
     const page=await pdfDoc.getPage(i);
     const vp=page.getViewport({scale:0.25});
-    const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;
-    await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+    const c=document.createElement('canvas');
+    c.width=Math.floor(vp.width);
+    c.height=Math.floor(vp.height);
+    c.style.width=c.width+'px';
+    c.style.height=c.height+'px';
+    const ctx=c.getContext('2d');
+    await page.render({canvasContext:ctx,viewport:vp}).promise;
     pdfThumbs.push(c);
     const assignedTo=getPdfPageAssignment(setup,i-1);
-    const item=document.createElement('div');item.className='thumb-item';item.dataset.page=i-1;
+    const item=document.createElement('div');
+    item.className='thumb-item';
+    item.dataset.page=i-1;
     if(assignedTo){const badge=document.createElement('div');badge.className='thumb-assigned';badge.textContent=assignedTo;item.appendChild(badge);}
-    item.appendChild(c.cloneNode(true));
+    item.appendChild(c);
     const lbl=document.createElement('div');lbl.className='thumb-label';lbl.textContent='Page '+i;item.appendChild(lbl);
     strip.appendChild(item);
   }
+  delete strip.dataset.loading;
 }
 
 function getPdfPageAssignment(setup,pageIdx){
