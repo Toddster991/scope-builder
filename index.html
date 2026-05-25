@@ -867,7 +867,7 @@ function renderPlanSetSection(body,setup,acts){
             <button class="btn sm danger" onclick="removePlanSet()"><i class="ti ti-trash"></i></button>
           </div>
         </div>
-        <div id="thumb-strip" style="overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;padding:4px 2px"></div>
+        <div id="thumb-strip" style="overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:4px 2px"></div>
       </div>
       <!-- RIGHT: categories -->
       <div style="overflow-y:auto;padding-right:4px">
@@ -1064,7 +1064,7 @@ async function loadPdfThumbs(setup){
     });
     for(let i=1;i<=pdfDoc.numPages;i++){
       const page=await pdfDoc.getPage(i);
-      const vp=page.getViewport({scale:0.7});
+      const vp=page.getViewport({scale:1.2});
       const c=document.createElement('canvas');
       c.width=Math.floor(vp.width);c.height=Math.floor(vp.height);
       c.style.cssText='display:block;width:100%;height:auto;border-radius:3px';
