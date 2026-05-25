@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>PDF Test</title>
+</head>
+<body>
+<h2>PDF.js Thumbnail Test</h2>
+<input type="file" id="pdf-input" accept=".pdf">
+<div id="status" style="margin:10px 0;font-family:sans-serif;color:#333"></div>
+<div id="thumbs" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js';
+
+const status = document.getElementById('status');
+const thumbs = document.getElementById('thumbs');
+
+document.getElementById('pdf-input').addEventListener('change', async function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  status.textContent = 'Reading file...';
+  thumbs.innerHTML = '';
+  
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    status.textContent = 'File read. Loading PDF (' + arrayBuffer.byteLength + ' bytes)...';
+    
+    const uint8 = new Uint8Array(arrayBuffer);
+    const pdf = await pdfjsLib.getDocument({ data: uint8 }).promise;
+    
+    status.textContent = 'PDF loaded. Pages: ' + pdf.numPages + '. Rendering thumbnails...';
+    
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 0.3 });
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.floor(viewport.width);
+      canvas.height = Math.floor(viewport.height);
+      canvas.style.border = '1px solid #ccc';
+      
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+      
+      const label = document.createElement('div');
+      label.style.textAlign = 'center';
+      label.style.fontSize = '12px';
+      label.textContent = 'Page ' + i;
+      
+      const wrap = document.createElement('div');
+      wrap.appendChild(canvas);
+      wrap.appendChild(label);
+      thumbs.appendChild(wrap);
+      
+      status.textContent = 'Rendered page ' + i + ' of ' + pdf.numPages;
+    }
+    
+    status.textContent = 'Done! All ' + pdf.numPages + ' pages rendered.';
+    status.style.color = 'green';
+    
+  } catch (err) {
+    status.textContent = 'ERROR: ' + err.message;
+    status.style.color = 'red';
+    console.error(err);
+  }
+});
+</script>
+</body>
+</html>
