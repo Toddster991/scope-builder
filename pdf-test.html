@@ -2,70 +2,155 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>PDF Test</title>
+<title>PDF Thumbnail Test</title>
+<style>
+body { font-family: sans-serif; padding: 20px; background: #f0efe9; }
+h2 { margin-bottom: 16px; }
+#status { margin: 10px 0; font-size: 13px; color: #333; }
+.thumb-grid { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; }
+
+/* APPROACH A — iframe native rendering */
+.thumb-iframe {
+  position: relative;
+  width: 400px;
+  height: 520px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+  cursor: grab;
+}
+.thumb-iframe iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  pointer-events: none; /* allows drag on parent */
+}
+.thumb-iframe .drag-handle {
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+  z-index: 2;
+}
+.thumb-iframe .page-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255,255,255,.92);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  padding: 4px;
+  border-top: 1px solid #eee;
+  z-index: 3;
+}
+
+/* APPROACH B — PDF.js canvas high-res */
+.thumb-canvas {
+  width: 400px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+}
+.thumb-canvas canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.thumb-canvas .page-label {
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  padding: 4px;
+  background: #fff;
+  border-top: 1px solid #eee;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 24px 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #ccc;
+}
+</style>
 </head>
 <body>
-<h2>PDF.js Thumbnail Test</h2>
+
+<h2>PDF Thumbnail Quality Test</h2>
 <input type="file" id="pdf-input" accept=".pdf">
-<div id="status" style="margin:10px 0;font-family:sans-serif;color:#333"></div>
-<div id="thumbs" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px"></div>
+<div id="status"></div>
+
+<div class="section-title">Approach A — Native browser iframe (no canvas)</div>
+<div class="thumb-grid" id="grid-iframe"></div>
+
+<div class="section-title">Approach B — PDF.js canvas at scale 3.0</div>
+<div class="thumb-grid" id="grid-canvas"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js';
 
 const status = document.getElementById('status');
-const thumbs = document.getElementById('thumbs');
 
 document.getElementById('pdf-input').addEventListener('change', async function(e) {
   const file = e.target.files[0];
   if (!file) return;
-  
-  status.textContent = 'Reading file...';
-  thumbs.innerHTML = '';
-  
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    status.textContent = 'File read. Loading PDF (' + arrayBuffer.byteLength + ' bytes)...';
-    
-    const uint8 = new Uint8Array(arrayBuffer);
-    const pdf = await pdfjsLib.getDocument({ data: uint8 }).promise;
-    
-    status.textContent = 'PDF loaded. Pages: ' + pdf.numPages + '. Rendering thumbnails...';
-    
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const viewport = page.getViewport({ scale: 0.3 });
-      
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.floor(viewport.width);
-      canvas.height = Math.floor(viewport.height);
-      canvas.style.border = '1px solid #ccc';
-      
-      const ctx = canvas.getContext('2d');
-      await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-      
-      const label = document.createElement('div');
-      label.style.textAlign = 'center';
-      label.style.fontSize = '12px';
-      label.textContent = 'Page ' + i;
-      
-      const wrap = document.createElement('div');
-      wrap.appendChild(canvas);
-      wrap.appendChild(label);
-      thumbs.appendChild(wrap);
-      
-      status.textContent = 'Rendered page ' + i + ' of ' + pdf.numPages;
-    }
-    
-    status.textContent = 'Done! All ' + pdf.numPages + ' pages rendered.';
-    status.style.color = 'green';
-    
-  } catch (err) {
-    status.textContent = 'ERROR: ' + err.message;
-    status.style.color = 'red';
-    console.error(err);
+
+  status.textContent = 'Loading...';
+  document.getElementById('grid-iframe').innerHTML = '';
+  document.getElementById('grid-canvas').innerHTML = '';
+
+  const arrayBuffer = await file.arrayBuffer();
+
+  // ── APPROACH A: iframe native rendering ──
+  const blob = new Blob([arrayBuffer.slice(0)], { type: 'application/pdf' });
+  const blobUrl = URL.createObjectURL(blob);
+
+  // We need page count — use PDF.js just for that
+  const pdfForCount = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer.slice(0)) }).promise;
+  const numPages = pdfForCount.numPages;
+
+  status.textContent = `${numPages} pages — rendering both approaches...`;
+
+  for (let i = 1; i <= Math.min(numPages, 6); i++) {
+    const wrap = document.createElement('div');
+    wrap.className = 'thumb-iframe';
+    wrap.innerHTML = `
+      <iframe src="${blobUrl}#page=${i}&toolbar=0&navpanes=0&scrollbar=0&view=FitH"></iframe>
+      <div class="drag-handle"></div>
+      <div class="page-label">Page ${i} — iframe</div>
+    `;
+    document.getElementById('grid-iframe').appendChild(wrap);
   }
+
+  // ── APPROACH B: PDF.js canvas ──
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+
+  for (let i = 1; i <= Math.min(numPages, 6); i++) {
+    const page = await pdf.getPage(i);
+    const vp = page.getViewport({ scale: 3.0 });
+    const c = document.createElement('canvas');
+    c.width = Math.floor(vp.width);
+    c.height = Math.floor(vp.height);
+    await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'thumb-canvas';
+    const lbl = document.createElement('div');
+    lbl.className = 'page-label';
+    lbl.textContent = `Page ${i} — PDF.js`;
+    wrap.appendChild(c);
+    wrap.appendChild(lbl);
+    document.getElementById('grid-canvas').appendChild(wrap);
+  }
+
+  status.textContent = `Done — ${Math.min(numPages, 6)} pages rendered. Compare quality above.`;
+  status.style.color = 'green';
 });
 </script>
 </body>
