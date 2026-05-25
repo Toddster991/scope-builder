@@ -123,10 +123,36 @@ document.getElementById('pdf-input').addEventListener('change', async function(e
     wrap.innerHTML = `
       <iframe src="${blobUrl}#page=${i}&toolbar=0&navpanes=0&scrollbar=0&view=FitH"></iframe>
       <div class="drag-handle"></div>
+      <button onclick="openFullPage('${blobUrl}',${i})" style="position:absolute;top:6px;right:6px;z-index:4;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+        Full view
+      </button>
       <div class="page-label">Page ${i} — iframe</div>
     `;
     document.getElementById('grid-iframe').appendChild(wrap);
   }
+
+  // Full page viewer modal
+  window.openFullPage = function(url, pageNum) {
+    // Remove any existing viewer
+    document.getElementById('full-viewer')?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'full-viewer';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:flex;flex-direction:column';
+    overlay.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#1a1a18;color:#fff;flex-shrink:0">
+        <span style="font-size:14px;font-weight:600">Page ${pageNum}</span>
+        <div style="display:flex;gap:8px">
+          <a href="${url}#page=${pageNum}" target="_blank" style="color:#93c5fd;font-size:12px;text-decoration:none;padding:4px 10px;border:1px solid #3b82f6;border-radius:6px">Open in new tab</a>
+          <button onclick="document.getElementById('full-viewer').remove()" style="background:#444;color:#fff;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:13px">✕ Close</button>
+        </div>
+      </div>
+      <iframe src="${url}#page=${pageNum}&toolbar=1&navpanes=0" style="flex:1;border:none;background:#fff"></iframe>
+    `;
+    // Click backdrop to close
+    overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+  };
 
   // ── APPROACH B: PDF.js canvas ──
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
