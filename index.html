@@ -746,7 +746,10 @@ function renderPlanSetSection(body,setup,acts){
       `}
     </div>
   </div>`;
-  if(hasPdf) setTimeout(()=>loadPdfThumbs(setup),100);
+  if(hasPdf){
+    // small delay so DOM paints first, use global flag to prevent double render
+    if(!window._thumbsLoading){window._thumbsLoading=true;setTimeout(()=>{window._thumbsLoading=false;loadPdfThumbs(setup);},200);}
+  }
 }
 
 function triggerPdfUpload(){document.getElementById('pdf-file-input').click();}
@@ -755,46 +758,57 @@ document.getElementById('pdf-file-input').addEventListener('change',async functi
   const file=e.target.files[0];if(!file)return;
   const setup=getSetup(currentProjectId);
   const arrayBuffer=await file.arrayBuffer();
-  await savePDF(currentProjectId,arrayBuffer);
-  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(arrayBuffer)}).promise;
+  // save a copy for IndexedDB before PDF.js consumes it
+  await savePDF(currentProjectId,arrayBuffer.slice(0));
+  const uint8=new Uint8Array(arrayBuffer);
+  const pdf=await pdfjsLib.getDocument({data:uint8}).promise;
   setup.planSetName=file.name;setup.planSetPageCount=pdf.numPages;
-  pdfDoc=pdf;persist();
+  pdfDoc=pdf;
+  persist();
   renderSetupSection('planset');
-  setTimeout(()=>loadPdfThumbs(setup),100);
+  // wait for DOM then render thumbs once
+  if(!window._thumbsLoading){window._thumbsLoading=true;setTimeout(()=>{window._thumbsLoading=false;loadPdfThumbs(setup);},200);}
   this.value='';
 });
 
 async function loadPdfThumbs(setup){
-  const strip=document.getElementById('thumb-strip');if(!strip)return;
-  if(strip.dataset.loading){return;} // prevent double render
+  const strip=document.getElementById('thumb-strip');
+  if(!strip){console.log('thumb-strip not found');return;}
+  if(strip.dataset.loading==='1'){console.log('already loading');return;}
   strip.dataset.loading='1';
-  if(!pdfDoc){
-    const buf=await loadPDF(currentProjectId);
-    if(!buf){strip.innerHTML='<div style="font-size:12px;color:var(--text3)">Re-upload the PDF to see thumbnails.</div>';delete strip.dataset.loading;return;}
-    pdfDoc=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
+  strip.innerHTML='<div style="font-size:12px;color:#888">Rendering pages...</div>';
+  try{
+    if(!pdfDoc){
+      const buf=await loadPDF(currentProjectId);
+      if(!buf){strip.innerHTML='<div style="font-size:12px;color:#888">Re-upload the PDF to see thumbnails.</div>';strip.dataset.loading='0';return;}
+      pdfDoc=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
+    }
+    strip.innerHTML='';
+    pdfThumbs=[];
+    for(let i=1;i<=pdfDoc.numPages;i++){
+      const page=await pdfDoc.getPage(i);
+      const vp=page.getViewport({scale:0.3});
+      const c=document.createElement('canvas');
+      c.width=Math.floor(vp.width);
+      c.height=Math.floor(vp.height);
+      c.style.display='block';
+      const ctx=c.getContext('2d');
+      await page.render({canvasContext:ctx,viewport:vp}).promise;
+      pdfThumbs.push(c);
+      const assignedTo=getPdfPageAssignment(setup,i-1);
+      const item=document.createElement('div');
+      item.className='thumb-item';
+      item.dataset.page=String(i-1);
+      if(assignedTo){const badge=document.createElement('div');badge.className='thumb-assigned';badge.textContent=assignedTo;item.appendChild(badge);}
+      item.appendChild(c);
+      const lbl=document.createElement('div');lbl.className='thumb-label';lbl.textContent='Page '+i;item.appendChild(lbl);
+      strip.appendChild(item);
+    }
+  }catch(err){
+    strip.innerHTML='<div style="color:red;font-size:12px">Error: '+err.message+'</div>';
+    console.error('loadPdfThumbs error:',err);
   }
-  strip.innerHTML='';pdfThumbs=[];
-  for(let i=1;i<=pdfDoc.numPages;i++){
-    const page=await pdfDoc.getPage(i);
-    const vp=page.getViewport({scale:0.25});
-    const c=document.createElement('canvas');
-    c.width=Math.floor(vp.width);
-    c.height=Math.floor(vp.height);
-    c.style.width=c.width+'px';
-    c.style.height=c.height+'px';
-    const ctx=c.getContext('2d');
-    await page.render({canvasContext:ctx,viewport:vp}).promise;
-    pdfThumbs.push(c);
-    const assignedTo=getPdfPageAssignment(setup,i-1);
-    const item=document.createElement('div');
-    item.className='thumb-item';
-    item.dataset.page=i-1;
-    if(assignedTo){const badge=document.createElement('div');badge.className='thumb-assigned';badge.textContent=assignedTo;item.appendChild(badge);}
-    item.appendChild(c);
-    const lbl=document.createElement('div');lbl.className='thumb-label';lbl.textContent='Page '+i;item.appendChild(lbl);
-    strip.appendChild(item);
-  }
-  delete strip.dataset.loading;
+  strip.dataset.loading='0';
 }
 
 function getPdfPageAssignment(setup,pageIdx){
