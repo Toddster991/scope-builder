@@ -122,7 +122,7 @@ textarea{resize:vertical;min-height:52px;line-height:1.5}
 .thumb-item{flex-shrink:0;cursor:pointer;border-radius:var(--radius);overflow:hidden;border:2px solid transparent;transition:border-color .15s;position:relative}
 .thumb-item:hover{border-color:var(--border2)}
 .thumb-item.selected{border-color:var(--blue)}
-.thumb-item canvas{display:block;width:100px;height:130px;object-fit:contain;background:var(--bg2)}
+.thumb-item canvas{display:block;max-width:160px;background:var(--bg2)}
 .thumb-label{font-size:10px;color:var(--text3);text-align:center;padding:3px 2px}
 .thumb-assigned{position:absolute;top:3px;right:3px;background:var(--blue);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px}
 
@@ -345,9 +345,23 @@ textarea{resize:vertical;min-height:52px;line-height:1.5}
         <div class="setup-nav-head">Project Setup</div>
         <div class="setup-nav-body">
           <div class="setup-nav-item active" id="snav-planset" onclick="switchSetupSection('planset')"><i class="ti ti-file-upload"></i> Plan Set</div>
+          <div style="padding:6px 8px 2px;font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em">Existing</div>
+          <div class="setup-nav-item" id="snav-existing-plans" onclick="switchSetupSection('existing-plans')"><i class="ti ti-layout-2"></i> Existing Plans</div>
+          <div class="setup-nav-item" id="snav-existing-elevations" onclick="switchSetupSection('existing-elevations')"><i class="ti ti-building"></i> Existing Elevations</div>
+          <div style="padding:6px 8px 2px;font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em">Proposed</div>
           <div class="setup-nav-item" id="snav-floors" onclick="switchSetupSection('floors')"><i class="ti ti-layout-2"></i> Floor Plans</div>
-          <div class="setup-nav-item" id="snav-site" onclick="switchSetupSection('site')"><i class="ti ti-trees"></i> Site Plan</div>
           <div class="setup-nav-item" id="snav-elevations" onclick="switchSetupSection('elevations')"><i class="ti ti-building"></i> Elevations</div>
+          <div class="setup-nav-item" id="snav-site" onclick="switchSetupSection('site')"><i class="ti ti-trees"></i> Site Plan</div>
+          <div class="setup-nav-item" id="snav-interior-elevations" onclick="switchSetupSection('interior-elevations')"><i class="ti ti-artboard"></i> Interior Elevations</div>
+          <div style="padding:6px 8px 2px;font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em">Engineering</div>
+          <div class="setup-nav-item" id="snav-electrical" onclick="switchSetupSection('electrical')"><i class="ti ti-bolt"></i> Electrical Plans</div>
+          <div class="setup-nav-item" id="snav-mechanical" onclick="switchSetupSection('mechanical')"><i class="ti ti-tool"></i> Mechanical / Plumbing</div>
+          <div class="setup-nav-item" id="snav-structural" onclick="switchSetupSection('structural')"><i class="ti ti-building-bridge"></i> Structural</div>
+          <div style="padding:6px 8px 2px;font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em">Other</div>
+          <div class="setup-nav-item" id="snav-landscape" onclick="switchSetupSection('landscape')"><i class="ti ti-plant"></i> Landscape</div>
+          <div class="setup-nav-item" id="snav-details" onclick="switchSetupSection('details')"><i class="ti ti-zoom-in"></i> Details</div>
+          <div class="setup-nav-item" id="snav-sections" onclick="switchSetupSection('sections')"><i class="ti ti-cut"></i> Sections</div>
+          <div class="setup-nav-item" id="snav-schedules" onclick="switchSetupSection('schedules')"><i class="ti ti-table"></i> Door / Window Schedules</div>
         </div>
       </div>
       <div class="setup-main">
@@ -698,6 +712,23 @@ function createVersion(){
 /* ════ PROJECT SETUP ════ */
 let currentSetupSection='planset';
 
+// All drawing categories config
+const DRAWING_CATS = [
+  {id:'existing-plans',      label:'Existing Plans',          icon:'ti-layout-2',        hasRooms:true,  color:'#5F5E5A'},
+  {id:'existing-elevations', label:'Existing Elevations',     icon:'ti-building',        hasRooms:false, color:'#5F5E5A'},
+  {id:'floors',              label:'Proposed Floor Plans',    icon:'ti-layout-2',        hasRooms:true,  color:'#185FA5'},
+  {id:'elevations',          label:'Proposed Elevations',     icon:'ti-building',        hasRooms:false, color:'#534AB7'},
+  {id:'site',                label:'Site Plan',               icon:'ti-trees',           hasRooms:true,  color:'#3B6D11'},
+  {id:'interior-elevations', label:'Interior Elevations',     icon:'ti-artboard',        hasRooms:false, color:'#D4537E'},
+  {id:'electrical',          label:'Electrical Plans',        icon:'ti-bolt',            hasRooms:false, color:'#EF9F27'},
+  {id:'mechanical',          label:'Mechanical / Plumbing',   icon:'ti-tool',            hasRooms:false, color:'#1D9E75'},
+  {id:'structural',          label:'Structural',              icon:'ti-building-bridge', hasRooms:false, color:'#712B13'},
+  {id:'landscape',           label:'Landscape',               icon:'ti-plant',           hasRooms:false, color:'#3B6D11'},
+  {id:'details',             label:'Details',                 icon:'ti-zoom-in',         hasRooms:false, color:'#888780'},
+  {id:'sections',            label:'Sections',                icon:'ti-cut',             hasRooms:false, color:'#888780'},
+  {id:'schedules',           label:'Door / Window Schedules', icon:'ti-table',           hasRooms:false, color:'#083344'},
+];
+
 function switchSetupSection(sec){
   currentSetupSection=sec;
   document.querySelectorAll('.setup-nav-item').forEach(el=>el.classList.remove('active'));
@@ -706,17 +737,105 @@ function switchSetupSection(sec){
 }
 
 function renderSetupSection(sec){
-  const titles={planset:'Plan Set Upload',floors:'Floor Plans',site:'Site Plan',elevations:'Elevations'};
-  document.getElementById('setup-section-title').textContent=titles[sec]||sec;
+  const cat=DRAWING_CATS.find(c=>c.id===sec);
+  const titles={planset:'Plan Set Upload'};
+  document.getElementById('setup-section-title').textContent=cat?cat.label:(titles[sec]||sec);
   const acts=document.getElementById('setup-section-actions');
   acts.innerHTML='';
   const body=document.getElementById('setup-main-body');
   const setup=getSetup(currentProjectId);
-
   if(sec==='planset') renderPlanSetSection(body,setup,acts);
-  else if(sec==='floors') renderFloorsSection(body,setup,acts);
-  else if(sec==='site') renderSiteSection(body,setup,acts);
-  else if(sec==='elevations') renderElevationsSection(body,setup,acts);
+  else if(cat) renderGenericCatSection(body,setup,acts,cat);
+}
+
+/* ── Generic drawing category section ── */
+function getCatSheets(setup,catId){
+  if(!setup.sheets)setup.sheets={};
+  if(!setup.sheets[catId])setup.sheets[catId]=[];
+  return setup.sheets[catId];
+}
+
+function renderGenericCatSection(body,setup,acts,cat){
+  const sheets=getCatSheets(setup,cat.id);
+  const hasPdf=!!(setup.planSetName);
+  acts.innerHTML=`<button class="btn sm" onclick="addSheet('${cat.id}')"><i class="ti ti-plus"></i> Add sheet</button>`;
+  let html='';
+  if(!sheets.length){
+    html=`<div style="padding:20px;font-size:13px;color:var(--text3);background:var(--bg);border-radius:var(--radius-lg);border:0.5px dashed var(--border2);text-align:center">
+      <i class="ti ${cat.icon}" style="font-size:24px;display:block;margin-bottom:8px;color:var(--text3)"></i>
+      No sheets yet — click Add sheet to start
+    </div>`;
+  } else {
+    sheets.forEach(sheet=>{
+      const pgLabel=sheet.pageIndex!==null?'Page '+(sheet.pageIndex+1):'Assign page';
+      const hasPage=sheet.pageIndex!==null;
+      const zonesLabel=cat.hasRooms?(sheet.zones&&sheet.zones.length?sheet.zones.length+' zone'+(sheet.zones.length!==1?'s':''):'No zones drawn'):'';
+      html+=`<div class="plan-section">
+        <div class="plan-section-head">
+          <input type="text" value="${sheet.name.replace(/"/g,'&quot;')}" onchange="renameSheet('${cat.id}','${sheet.id}',this.value)"
+            style="font-size:13px;font-weight:600;border:none;background:transparent;outline:none;padding:0;flex:1;color:var(--text)">
+          <span class="plan-page-badge" onclick="${hasPdf?`showPagePicker('sheet','${cat.id}','${sheet.id}')`:'alert("Upload a plan set PDF first.")'}"
+            style="border-left:3px solid ${cat.color};padding-left:8px">
+            ${pgLabel} <i class="ti ti-selector" style="font-size:10px"></i>
+          </span>
+          <button class="icon-btn" onclick="removeSheet('${cat.id}','${sheet.id}')" style="margin-left:8px"><i class="ti ti-trash"></i></button>
+        </div>
+        ${cat.hasRooms?`<div class="plan-section-body">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:12px;color:var(--text3)">${zonesLabel}</span>
+            ${hasPage&&hasPdf?`<button class="btn sm" onclick="openDrawingTool('sheet','${cat.id}','${sheet.id}')"><i class="ti ti-pencil"></i> Draw zones on plan</button>`:''}
+          </div>
+          <div class="room-list" style="margin-top:8px" id="zonelist-${sheet.id}">
+            ${(sheet.zones||[]).map(z=>`<div class="room-item">
+              <div class="room-color-dot" style="background:${cat.color}"></div>
+              <input type="text" value="${z.name.replace(/"/g,'&quot;')}" onchange="renameSheetZone('${cat.id}','${sheet.id}','${z.id}',this.value)">
+              <button class="icon-btn" onclick="removeSheetZone('${cat.id}','${sheet.id}','${z.id}')"><i class="ti ti-x"></i></button>
+            </div>`).join('')}
+          </div>
+          <button class="btn sm" style="margin-top:8px" onclick="addSheetZone('${cat.id}','${sheet.id}')"><i class="ti ti-plus"></i> Add zone manually</button>
+        </div>`:''}
+      </div>`;
+    });
+  }
+  body.innerHTML=`<div style="max-width:720px">${html}</div>`;
+}
+
+function addSheet(catId){
+  const setup=getSetup(currentProjectId);
+  const sheets=getCatSheets(setup,catId);
+  const cat=DRAWING_CATS.find(c=>c.id===catId);
+  const num=sheets.length+1;
+  sheets.push({id:uid(),name:cat.label+' '+num,pageIndex:null,zones:[]});
+  persist();renderSetupSection(catId);
+}
+function removeSheet(catId,sheetId){
+  const setup=getSetup(currentProjectId);
+  const sheets=getCatSheets(setup,catId);
+  setup.sheets[catId]=sheets.filter(s=>s.id!==sheetId);
+  persist();renderSetupSection(catId);
+}
+function renameSheet(catId,sheetId,name){
+  const setup=getSetup(currentProjectId);
+  const s=getCatSheets(setup,catId).find(x=>x.id===sheetId);
+  if(s){s.name=name;persist();}
+}
+function addSheetZone(catId,sheetId){
+  const setup=getSetup(currentProjectId);
+  const s=getCatSheets(setup,catId).find(x=>x.id===sheetId);
+  if(!s)return;if(!s.zones)s.zones=[];
+  s.zones.push({id:uid(),name:'Zone '+(s.zones.length+1),x:20,y:20,w:120,h:90});
+  persist();renderSetupSection(catId);
+}
+function removeSheetZone(catId,sheetId,zoneId){
+  const setup=getSetup(currentProjectId);
+  const s=getCatSheets(setup,catId).find(x=>x.id===sheetId);
+  if(!s)return;s.zones=s.zones.filter(z=>z.id!==zoneId);
+  persist();renderSetupSection(catId);
+}
+function renameSheetZone(catId,sheetId,zoneId,name){
+  const setup=getSetup(currentProjectId);
+  const s=getCatSheets(setup,catId).find(x=>x.id===sheetId);
+  if(!s)return;const z=s.zones.find(x=>x.id===zoneId);if(z){z.name=name;persist();}
 }
 
 /* ── Plan Set Upload ── */
@@ -787,7 +906,7 @@ async function loadPdfThumbs(setup){
     pdfThumbs=[];
     for(let i=1;i<=pdfDoc.numPages;i++){
       const page=await pdfDoc.getPage(i);
-      const vp=page.getViewport({scale:0.3});
+      const vp=page.getViewport({scale:0.65});
       const c=document.createElement('canvas');
       c.width=Math.floor(vp.width);
       c.height=Math.floor(vp.height);
@@ -860,12 +979,7 @@ function renderFloorsSection(body,setup,acts){
   body.innerHTML=`<div style="max-width:700px">${html}</div>`;
 }
 
-function addFloor(){const setup=getSetup(currentProjectId);if(!setup.floors)setup.floors=[];setup.floors.push({id:uid(),name:'New Floor',pageIndex:null,rooms:[]});persist();renderSetupSection('floors');}
-function removeFloor(fId){const setup=getSetup(currentProjectId);setup.floors=setup.floors.filter(f=>f.id!==fId);persist();renderSetupSection('floors');}
-function renameFloor(fId,name){const setup=getSetup(currentProjectId);const f=setup.floors.find(x=>x.id===fId);if(f)f.name=name;persist();}
-function addRoom(fId){const setup=getSetup(currentProjectId);const f=setup.floors.find(x=>x.id===fId);if(!f)return;if(!f.rooms)f.rooms=[];f.rooms.push({id:uid(),name:'New Room',x:20,y:20,w:120,h:90});persist();renderSetupSection('floors');}
-function removeRoom(fId,rId){const setup=getSetup(currentProjectId);const f=setup.floors.find(x=>x.id===fId);if(!f)return;f.rooms=f.rooms.filter(r=>r.id!==rId);persist();renderSetupSection('floors');}
-function renameRoom(fId,rId,name){const setup=getSetup(currentProjectId);const f=setup.floors.find(x=>x.id===fId);if(!f)return;const r=f.rooms.find(x=>x.id===rId);if(r)r.name=name;persist();}
+/* old floor/room functions removed — replaced by generic sheet system */
 
 /* ── Site section ── */
 function renderSiteSection(body,setup,acts){
@@ -894,9 +1008,7 @@ function renderSiteSection(body,setup,acts){
   </div>`;
 }
 
-function addZone(){const setup=getSetup(currentProjectId);if(!setup.site)setup.site={pageIndex:null,zones:[]};setup.site.zones.push({id:uid(),name:'New Zone',x:20,y:20,w:120,h:90});persist();renderSetupSection('site');}
-function removeZone(zId){const setup=getSetup(currentProjectId);setup.site.zones=setup.site.zones.filter(z=>z.id!==zId);persist();renderSetupSection('site');}
-function renameZone(zId,name){const setup=getSetup(currentProjectId);const z=setup.site.zones.find(x=>x.id===zId);if(z)z.name=name;persist();}
+/* old site zone functions removed */
 
 /* ── Elevations section ── */
 function renderElevationsSection(body,setup,acts){
@@ -929,102 +1041,87 @@ function renderElevationsSection(body,setup,acts){
   body.innerHTML=`<div style="max-width:700px">${html}</div>`;
 }
 
-function addElevation(){const setup=getSetup(currentProjectId);if(!setup.elevations)setup.elevations=[];setup.elevations.push({id:uid(),name:'New Elevation',pageIndex:null,areas:[]});persist();renderSetupSection('elevations');}
-function removeElevation(eId){const setup=getSetup(currentProjectId);setup.elevations=setup.elevations.filter(e=>e.id!==eId);persist();renderSetupSection('elevations');}
-function renameElevation(eId,name){const setup=getSetup(currentProjectId);const e=setup.elevations.find(x=>x.id===eId);if(e)e.name=name;persist();}
-function addArea(eId){const setup=getSetup(currentProjectId);const e=setup.elevations.find(x=>x.id===eId);if(!e)return;if(!e.areas)e.areas=[];e.areas.push({id:uid(),name:'New Area',x:20,y:20,w:150,h:80});persist();renderSetupSection('elevations');}
-function removeArea(eId,aId){const setup=getSetup(currentProjectId);const e=setup.elevations.find(x=>x.id===eId);if(!e)return;e.areas=e.areas.filter(a=>a.id!==aId);persist();renderSetupSection('elevations');}
-function renameArea(eId,aId,name){const setup=getSetup(currentProjectId);const e=setup.elevations.find(x=>x.id===eId);if(!e)return;const a=e.areas.find(x=>x.id===aId);if(a)a.name=name;persist();}
+/* old elevation area functions removed */
 
 /* ── Page Picker ── */
-let pickerTarget={type:null,id:null};
-async function showPagePicker(type,id){
-  pickerTarget={type,id};
+let pickerTarget={catId:null,sheetId:null};
+async function showPagePicker(type,catId,sheetId){
+  pickerTarget={catId,sheetId};
   const setup=getSetup(currentProjectId);
   if(!pdfDoc){
     const buf=await loadPDF(currentProjectId);
-    if(!buf){alert('PDF not found in this browser. Please re-upload the plan set.');return;}
-    pdfDoc=await pdfjsLib.getDocument({data:buf}).promise;
+    if(!buf){alert('PDF not found. Please re-upload the plan set.');return;}
+    pdfDoc=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
   }
-  const currentPage=getPickerCurrentPage(setup,type,id);
-  showModal(`<div class="modal" style="width:640px">
-    <div class="modal-title">Select page for ${getPickerLabel(setup,type,id)}</div>
-    <p style="font-size:12px;color:var(--text3);margin-bottom:4px">Click a page to assign it as the underlay for this plan.</p>
+  const sheets=getCatSheets(setup,catId);
+  const sheet=sheets.find(s=>s.id===sheetId);
+  const currentPage=sheet?sheet.pageIndex:null;
+  const cat=DRAWING_CATS.find(c=>c.id===catId);
+  showModal(`<div class="modal" style="width:680px">
+    <div class="modal-title">Select page — ${sheet?sheet.name:(cat?cat.label:'')}</div>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:8px">Click a page to assign it as the underlay for this sheet.</p>
     <div class="page-picker-grid" id="page-picker-grid"></div>
     <div class="modal-footer"><button class="btn" onclick="closeModal()">Cancel</button></div>
   </div>`);
   const grid=document.getElementById('page-picker-grid');
   for(let i=1;i<=pdfDoc.numPages;i++){
     const page=await pdfDoc.getPage(i);
-    const vp=page.getViewport({scale:0.22});
-    const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;
-    await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+    const vp=page.getViewport({scale:0.28});
+    const c=document.createElement('canvas');
+    c.width=Math.floor(vp.width);c.height=Math.floor(vp.height);
+    c.style.display='block';c.style.width='100%';
+    const ctx=c.getContext('2d');
+    await page.render({canvasContext:ctx,viewport:vp}).promise;
     const item=document.createElement('div');
     item.className='page-pick-item'+(currentPage===i-1?' selected':'');
-    item.dataset.page=i-1;
     item.appendChild(c);
-    item.innerHTML+=`<div class="page-pick-label">Page ${i}</div>`;
-    item.addEventListener('click',()=>{assignPage(i-1);closeModal();renderSetupSection(currentSetupSection);});
+    const lbl=document.createElement('div');lbl.className='page-pick-label';lbl.textContent='Page '+i;item.appendChild(lbl);
+    item.addEventListener('click',()=>{assignSheetPage(catId,sheetId,i-1);closeModal();renderSetupSection(currentSetupSection);});
     grid.appendChild(item);
   }
 }
 
-function getPickerLabel(setup,type,id){
-  if(type==='floor')return(setup.floors||[]).find(f=>f.id===id)?.name||'Floor';
-  if(type==='site')return'Site Plan';
-  if(type==='elevation')return(setup.elevations||[]).find(e=>e.id===id)?.name||'Elevation';
-  return'';
-}
-function getPickerCurrentPage(setup,type,id){
-  if(type==='floor')return(setup.floors||[]).find(f=>f.id===id)?.pageIndex??null;
-  if(type==='site')return setup.site?.pageIndex??null;
-  if(type==='elevation')return(setup.elevations||[]).find(e=>e.id===id)?.pageIndex??null;
-  return null;
-}
-function assignPage(pageIdx){
-  const setup=getSetup(currentProjectId);const{type,id}=pickerTarget;
-  if(type==='floor'){const f=(setup.floors||[]).find(x=>x.id===id);if(f)f.pageIndex=pageIdx;}
-  else if(type==='site'){if(!setup.site)setup.site={pageIndex:null,zones:[]};setup.site.pageIndex=pageIdx;}
-  else if(type==='elevation'){const e=(setup.elevations||[]).find(x=>x.id===id);if(e)e.pageIndex=pageIdx;}
-  persist();
+function assignSheetPage(catId,sheetId,pageIdx){
+  const setup=getSetup(currentProjectId);
+  const s=getCatSheets(setup,catId).find(x=>x.id===sheetId);
+  if(s){s.pageIndex=pageIdx;persist();}
 }
 
 /* ── Drawing Tool ── */
-let drawingTarget={type:null,id:null};
-let drawState={active:false,startX:0,startY:0,currentRect:null,scale:1};
+let drawingTarget={catId:null,sheetId:null};
+let drawState={currentRect:null,scale:1,zones:[]};
 
-async function openDrawingTool(type,id){
-  drawingTarget={type,id};
+async function openDrawingTool(type,catId,sheetId){
+  drawingTarget={catId,sheetId};
   const setup=getSetup(currentProjectId);
-  let pageIdx=null,zones=[];
-  if(type==='floor'){const f=(setup.floors||[]).find(x=>x.id===id);pageIdx=f?.pageIndex??null;zones=f?.rooms||[];}
-  else if(type==='site'){pageIdx=setup.site?.pageIndex??null;zones=setup.site?.zones||[];}
-  else if(type==='elevation'){const e=(setup.elevations||[]).find(x=>x.id===id);pageIdx=e?.pageIndex??null;zones=e?.areas||[];}
-  if(pageIdx===null){alert('Assign a page first.');return;}
-  if(!pdfDoc){const buf=await loadPDF(currentProjectId);if(!buf){alert('PDF not found. Please re-upload.');return;}pdfDoc=await pdfjsLib.getDocument({data:buf}).promise;}
-
-  const page=await pdfDoc.getPage(pageIdx+1);
-  const scale=1.5;const vp=page.getViewport({scale});
-  const zoneLabel=type==='floor'?'rooms':type==='site'?'zones':'areas';
-
-  showModal(`<div class="modal" style="width:min(900px,95vw)">
+  const sheets=getCatSheets(setup,catId);
+  const sheet=sheets.find(s=>s.id===sheetId);
+  if(!sheet||sheet.pageIndex===null){alert('Assign a page first.');return;}
+  if(!pdfDoc){const buf=await loadPDF(currentProjectId);if(!buf){alert('PDF not found. Please re-upload.');return;}pdfDoc=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;}
+  const page=await pdfDoc.getPage(sheet.pageIndex+1);
+  const scale=1.4;const vp=page.getViewport({scale});
+  const cat=DRAWING_CATS.find(c=>c.id===catId);
+  const zoneWord=catId==='floors'||catId==='existing-plans'?'rooms':'zones';
+  showModal(`<div class="modal" style="width:min(960px,96vw)">
     <div class="modal-title" style="display:flex;align-items:center;justify-content:space-between">
-      <span>Draw ${zoneLabel} on plan</span>
-      <span style="font-size:12px;font-weight:400;color:var(--text3)">Click and drag to draw · Click a zone to delete it</span>
+      <span>Draw ${zoneWord} — ${sheet.name}</span>
+      <span style="font-size:11px;font-weight:400;color:var(--text3)">Drag to draw · Click zone to delete</span>
     </div>
-    <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Drag rectangles over each ${zoneLabel.slice(0,-1)} on the plan. Name it when prompted.</div>
-    <div class="draw-area-wrap" style="max-height:65vh">
+    <div class="draw-area-wrap" style="max-height:68vh">
       <div class="draw-canvas-container" id="draw-container" style="width:${vp.width}px;height:${vp.height}px">
         <canvas id="draw-pdf-canvas" width="${vp.width}" height="${vp.height}"></canvas>
         <canvas id="draw-overlay" width="${vp.width}" height="${vp.height}" style="position:absolute;top:0;left:0;cursor:crosshair"></canvas>
       </div>
     </div>
-    <div class="modal-footer"><button class="btn primary" onclick="saveDrawnZones()"><i class="ti ti-check"></i> Save ${zoneLabel}</button><button class="btn" onclick="closeModal()">Cancel</button></div>
+    <div class="modal-footer">
+      <button class="btn primary" onclick="saveDrawnZones()"><i class="ti ti-check"></i> Save ${zoneWord}</button>
+      <button class="btn" onclick="closeModal()">Cancel</button>
+    </div>
   </div>`);
-
-  // render PDF page
   await page.render({canvasContext:document.getElementById('draw-pdf-canvas').getContext('2d'),viewport:vp}).promise;
-  drawState.scale=scale;drawState.zones=JSON.parse(JSON.stringify(zones));
+  drawState.scale=scale;
+  drawState.zones=JSON.parse(JSON.stringify(sheet.zones||[]));
+  drawState.color=cat?cat.color:'#185FA5';
   initDrawOverlay(vp.width,vp.height);
   redrawOverlay();
 }
@@ -1057,8 +1154,8 @@ function redrawOverlay(){
   const ov=document.getElementById('draw-overlay');if(!ov)return;
   const ctx=ov.getContext('2d');ctx.clearRect(0,0,ov.width,ov.height);
   const s=drawState.scale;
-  const colors={floor:'rgba(24,95,165,',site:'rgba(59,109,17,',elevation:'rgba(83,74,183,'};
-  const col=colors[drawingTarget.type]||'rgba(24,95,165,';
+  const hex=drawState.color||'#185FA5';
+  const col='rgba('+parseInt(hex.slice(1,3),16)+','+parseInt(hex.slice(3,5),16)+','+parseInt(hex.slice(5,7),16)+',';
   drawState.zones.forEach(z=>{
     ctx.fillStyle=col+'0.18)';ctx.strokeStyle=col+'0.8)';ctx.lineWidth=2;
     ctx.fillRect(z.x*s,z.y*s,z.w*s,z.h*s);ctx.strokeRect(z.x*s,z.y*s,z.w*s,z.h*s);
@@ -1069,50 +1166,57 @@ function redrawOverlay(){
 }
 
 function saveDrawnZones(){
-  const setup=getSetup(currentProjectId);const{type,id}=drawingTarget;
-  if(type==='floor'){const f=(setup.floors||[]).find(x=>x.id===id);if(f)f.rooms=drawState.zones;}
-  else if(type==='site'){setup.site.zones=drawState.zones;}
-  else if(type==='elevation'){const e=(setup.elevations||[]).find(x=>x.id===id);if(e)e.areas=drawState.zones;}
-  persist();closeModal();renderSetupSection(currentSetupSection);
+  const setup=getSetup(currentProjectId);
+  const{catId,sheetId}=drawingTarget;
+  const s=getCatSheets(setup,catId).find(x=>x.id===sheetId);
+  if(s){s.zones=drawState.zones;persist();}
+  closeModal();renderSetupSection(currentSetupSection);
 }
 
 /* ════ FLOOR PLAN WORK AREA ════ */
 function buildFpFloorSelector(){
-  const setup=getSetup(currentProjectId);const floors=setup.floors||[];
+  const setup=getSetup(currentProjectId);
+  // Combine proposed floors and existing plans into selector
+  const proposedSheets=getCatSheets(setup,'floors');
+  const existingSheets=getCatSheets(setup,'existing-plans');
+  const allSheets=[
+    ...proposedSheets.map(s=>({...s,catId:'floors',label:s.name})),
+    ...existingSheets.map(s=>({...s,catId:'existing-plans',label:'[Existing] '+s.name})),
+  ];
   const sel=document.getElementById('fp-floor-selector');
-  if(!floors.length){sel.innerHTML=`<span style="font-size:12px;color:var(--text3)">No floors defined — go to Project Setup</span>`;return;}
-  if(!activeFloorId||!floors.find(f=>f.id===activeFloorId))activeFloorId=floors[0].id;
-  sel.innerHTML=floors.map(f=>`<div class="fp-floor-tab ${f.id===activeFloorId?'active':''}" onclick="selectFloor('${f.id}')">${f.name}</div>`).join('');
+  if(!allSheets.length){sel.innerHTML=`<span style="font-size:12px;color:var(--text3)">No floor plans — go to Project Setup</span>`;return;}
+  if(!activeFloorId||!allSheets.find(s=>s.id===activeFloorId)){activeFloorId=allSheets[0].id;activeCatId=allSheets[0].catId;}
+  sel.innerHTML=allSheets.map(s=>`<div class="fp-floor-tab ${s.id===activeFloorId?'active':''}" onclick="selectFloor('${s.id}','${s.catId}')">${s.label}</div>`).join('');
 }
 
-function selectFloor(id){activeFloorId=id;buildFpFloorSelector();buildFloorPlanCanvas();}
+let activeCatId='floors';
+function selectFloor(id,catId){activeFloorId=id;activeCatId=catId||'floors';buildFpFloorSelector();buildFloorPlanCanvas();}
 
 async function buildFloorPlanCanvas(){
   const container=document.getElementById('fp-plan-container');
   const setup=getSetup(currentProjectId);
-  const floor=setup.floors?.find(f=>f.id===activeFloorId);
-  if(!floor){container.innerHTML=`<div style="padding:24px;font-size:13px;color:var(--text3)">No floors defined. Go to Project Setup → Floor Plans.</div>`;return;}
-
+  const catId=activeCatId||'floors';
+  const sheets=getCatSheets(setup,catId);
+  const sheet=sheets.find(s=>s.id===activeFloorId);
+  if(!sheet){container.innerHTML=`<div style="padding:24px;font-size:13px;color:var(--text3)">No floor plans defined. Go to Project Setup → Proposed Floor Plans.</div>`;return;}
   container.innerHTML='';
   let bgCanvas=null;
-  if(floor.pageIndex!==null&&setup.planSetName){
-    if(!pdfDoc){const buf=await loadPDF(currentProjectId);if(buf)pdfDoc=await pdfjsLib.getDocument({data:buf}).promise;}
+  if(sheet.pageIndex!==null&&setup.planSetName){
+    if(!pdfDoc){const buf=await loadPDF(currentProjectId);if(buf)pdfDoc=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;}
     if(pdfDoc){
-      const page=await pdfDoc.getPage(floor.pageIndex+1);
+      const page=await pdfDoc.getPage(sheet.pageIndex+1);
       const scale=1.2;const vp=page.getViewport({scale});
-      bgCanvas=document.createElement('canvas');bgCanvas.width=vp.width;bgCanvas.height=vp.height;
+      bgCanvas=document.createElement('canvas');bgCanvas.width=Math.floor(vp.width);bgCanvas.height=Math.floor(vp.height);
       await page.render({canvasContext:bgCanvas.getContext('2d'),viewport:vp}).promise;
     }
   }
-
   const W=bgCanvas?bgCanvas.width:700,H=bgCanvas?bgCanvas.height:500;
   const wrap=document.createElement('div');wrap.style.cssText=`position:relative;width:${W}px;height:${H}px;background:#fff;border:1.5px solid #888;border-radius:3px;flex-shrink:0`;
   if(bgCanvas){const img=document.createElement('img');img.src=bgCanvas.toDataURL();img.style.cssText=`position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.55;pointer-events:none`;wrap.appendChild(img);}
-
-  const ra=getRoomAsm();const scale=bgCanvas?1.2:1;
-  (floor.rooms||[]).forEach(r=>{
+  const ra=getRoomAsm();const sc=bgCanvas?1.2:1;
+  (sheet.zones||[]).forEach(r=>{
     const el=document.createElement('div');el.className='room'+(selectedRoom===r.id?' selected':'');
-    el.style.cssText=`left:${r.x*scale}px;top:${r.y*scale}px;width:${r.w*scale}px;height:${r.h*scale}px`;
+    el.style.cssText=`left:${r.x*sc}px;top:${r.y*sc}px;width:${r.w*sc}px;height:${r.h*sc}px`;
     const ids=ra[r.id]||[];
     const chips=ids.map(id=>{const a=state.assemblies.find(x=>x.id===id);return a?`<span class="room-chip">${a.name}</span>`:''}).join('');
     el.innerHTML=`<div class="room-label">${r.name}</div><div class="room-chips">${chips}</div>`;
@@ -1122,10 +1226,9 @@ async function buildFloorPlanCanvas(){
     el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('drop-hover');if(draggingAsm){addAsmToRoom(r.id,draggingAsm);selectRoomFp(r.id);}});
     wrap.appendChild(el);
   });
-
-  if(!(floor.rooms||[]).length){
+  if(!(sheet.zones||[]).length){
     const hint=document.createElement('div');hint.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:rgba(0,0,0,.4);text-align:center;pointer-events:none';
-    hint.innerHTML=`<i class="ti ti-pencil" style="font-size:24px;display:block;margin-bottom:8px"></i>No rooms drawn yet.<br>Go to Project Setup → Floor Plans to draw rooms.`;
+    hint.innerHTML=`<i class="ti ti-pencil" style="font-size:24px;display:block;margin-bottom:8px"></i>No rooms drawn yet.<br>Go to Project Setup → Proposed Floor Plans.`;
     wrap.appendChild(hint);
   }
   container.appendChild(wrap);
@@ -1172,63 +1275,74 @@ function renderRoomDetail(){
 function removeAsmFromRoom(roomId,asmId){const ra=getRoomAsm();if(ra[roomId])ra[roomId]=ra[roomId].filter(id=>id!==asmId);buildFloorPlanCanvas();renderRoomDetail();}
 
 /* ════ SITE & ELEVATION CANVASES ════ */
-async function buildSiteCanvas(){
-  const container=document.getElementById('site-plan-container');
-  const setup=getSetup(currentProjectId);const site=setup.site||{};
+async function buildZoneCanvas(container, setup, catId, sheetId, color, emptyMsg){
   container.innerHTML='';
+  const sheets=getCatSheets(setup,catId);
+  const sheet=sheets.find(s=>s.id===sheetId);
+  if(!sheet){container.innerHTML=`<div style="padding:24px;font-size:13px;color:var(--text3)">${emptyMsg}</div>`;return;}
   let bgCanvas=null;
-  if(site.pageIndex!==null&&setup.planSetName){
-    if(!pdfDoc){const buf=await loadPDF(currentProjectId);if(buf)pdfDoc=await pdfjsLib.getDocument({data:buf}).promise;}
-    if(pdfDoc){const page=await pdfDoc.getPage(site.pageIndex+1);const scale=1.2;const vp=page.getViewport({scale});bgCanvas=document.createElement('canvas');bgCanvas.width=vp.width;bgCanvas.height=vp.height;await page.render({canvasContext:bgCanvas.getContext('2d'),viewport:vp}).promise;}
+  if(sheet.pageIndex!==null&&setup.planSetName){
+    if(!pdfDoc){const buf=await loadPDF(currentProjectId);if(buf)pdfDoc=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;}
+    if(pdfDoc){
+      const page=await pdfDoc.getPage(sheet.pageIndex+1);
+      const scale=1.2;const vp=page.getViewport({scale});
+      bgCanvas=document.createElement('canvas');bgCanvas.width=Math.floor(vp.width);bgCanvas.height=Math.floor(vp.height);
+      await page.render({canvasContext:bgCanvas.getContext('2d'),viewport:vp}).promise;
+    }
   }
   const W=bgCanvas?bgCanvas.width:700,H=bgCanvas?bgCanvas.height:500;
   const wrap=document.createElement('div');wrap.style.cssText=`position:relative;width:${W}px;height:${H}px;background:#fff;border:1.5px solid #888;border-radius:3px`;
   if(bgCanvas){const img=document.createElement('img');img.src=bgCanvas.toDataURL();img.style.cssText=`position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.55;pointer-events:none`;wrap.appendChild(img);}
-  const scale=bgCanvas?1.2:1;
-  (site.zones||[]).forEach(z=>{
+  const sc=bgCanvas?1.2:1;
+  const rgb=hexToRgb(color);
+  (sheet.zones||[]).forEach(z=>{
     const el=document.createElement('div');
-    el.style.cssText=`position:absolute;left:${z.x*scale}px;top:${z.y*scale}px;width:${z.w*scale}px;height:${z.h*scale}px;border:2px solid rgba(59,109,17,.7);background:rgba(59,109,17,.1);border-radius:2px;display:flex;align-items:flex-start;justify-content:center;padding:5px;cursor:pointer`;
-    el.innerHTML=`<span style="font-size:10px;font-weight:600;color:#27500A;text-shadow:0 0 3px rgba(255,255,255,.8)">${z.name}</span>`;
-    el.addEventListener('dragover',e=>{e.preventDefault();el.style.background='rgba(59,109,17,.25)';});
-    el.addEventListener('dragleave',()=>el.style.background='rgba(59,109,17,.1)');
-    el.addEventListener('drop',e=>{e.preventDefault();el.style.background='rgba(59,109,17,.1)';if(draggingAsm)addAsmToRoom(z.id,draggingAsm);});
+    el.style.cssText=`position:absolute;left:${z.x*sc}px;top:${z.y*sc}px;width:${z.w*sc}px;height:${z.h*sc}px;border:2px solid rgba(${rgb},.75);background:rgba(${rgb},.1);border-radius:2px;display:flex;align-items:flex-start;justify-content:center;padding:5px;cursor:pointer;transition:background .15s`;
+    el.innerHTML=`<span style="font-size:10px;font-weight:600;color:${color};text-shadow:0 0 3px rgba(255,255,255,.9)">${z.name}</span>`;
+    el.addEventListener('dragover',e=>{e.preventDefault();el.style.background=`rgba(${rgb},.25)`;});
+    el.addEventListener('dragleave',()=>el.style.background=`rgba(${rgb},.1)`);
+    el.addEventListener('drop',e=>{e.preventDefault();el.style.background=`rgba(${rgb},.1)`;if(draggingAsm)addAsmToRoom(z.id,draggingAsm);});
     wrap.appendChild(el);
   });
-  if(!(site.zones||[]).length){const hint=document.createElement('div');hint.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:rgba(0,0,0,.4);text-align:center;pointer-events:none';hint.innerHTML=`<i class="ti ti-trees" style="font-size:24px;display:block;margin-bottom:8px"></i>No site zones yet.<br>Go to Project Setup → Site Plan.`;wrap.appendChild(hint);}
+  if(!(sheet.zones||[]).length){
+    const hint=document.createElement('div');hint.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:rgba(0,0,0,.4);text-align:center;pointer-events:none';
+    hint.textContent='No zones drawn. Go to Project Setup to draw zones.';
+    wrap.appendChild(hint);
+  }
   container.appendChild(wrap);
+}
+
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `${r},${g},${b}`;
+}
+
+async function buildSiteCanvas(){
+  const setup=getSetup(currentProjectId);
+  const sheets=getCatSheets(setup,'site');
+  const container=document.getElementById('site-plan-container');
+  if(!sheets.length){container.innerHTML=`<div style="padding:24px;font-size:13px;color:var(--text3)">No site plan defined. Go to Project Setup → Site Plan.</div>`;return;}
+  await buildZoneCanvas(container,setup,'site',sheets[0].id,'#3B6D11','No site plan defined.');
 }
 
 async function buildElevCanvas(){
-  const setup=getSetup(currentProjectId);const elevs=setup.elevations||[];
+  const setup=getSetup(currentProjectId);
+  const elevSheets=getCatSheets(setup,'elevations');
+  const existElevSheets=getCatSheets(setup,'existing-elevations');
+  const allElevs=[
+    ...elevSheets.map(s=>({...s,catId:'elevations',label:s.name,color:'#534AB7'})),
+    ...existElevSheets.map(s=>({...s,catId:'existing-elevations',label:'[Existing] '+s.name,color:'#5F5E5A'})),
+  ];
   const sel=document.getElementById('elev-selector');
-  if(!elevs.length){sel.innerHTML=`<span style="font-size:12px;color:var(--text3)">No elevations — go to Project Setup</span>`;document.getElementById('elev-plan-container').innerHTML='';return;}
-  if(!activeElevId||!elevs.find(e=>e.id===activeElevId))activeElevId=elevs[0].id;
-  sel.innerHTML=elevs.map(e=>`<div class="fp-floor-tab ${e.id===activeElevId?'active':''}" onclick="selectElev('${e.id}')">${e.name}</div>`).join('');
-  const elev=elevs.find(e=>e.id===activeElevId);
-  const container=document.getElementById('elev-plan-container');container.innerHTML='';
-  let bgCanvas=null;
-  if(elev.pageIndex!==null&&setup.planSetName){
-    if(!pdfDoc){const buf=await loadPDF(currentProjectId);if(buf)pdfDoc=await pdfjsLib.getDocument({data:buf}).promise;}
-    if(pdfDoc){const page=await pdfDoc.getPage(elev.pageIndex+1);const scale=1.2;const vp=page.getViewport({scale});bgCanvas=document.createElement('canvas');bgCanvas.width=vp.width;bgCanvas.height=vp.height;await page.render({canvasContext:bgCanvas.getContext('2d'),viewport:vp}).promise;}
-  }
-  const W=bgCanvas?bgCanvas.width:700,H=bgCanvas?bgCanvas.height:400;
-  const wrap=document.createElement('div');wrap.style.cssText=`position:relative;width:${W}px;height:${H}px;background:#fff;border:1.5px solid #888;border-radius:3px`;
-  if(bgCanvas){const img=document.createElement('img');img.src=bgCanvas.toDataURL();img.style.cssText=`position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.55;pointer-events:none`;wrap.appendChild(img);}
-  const scale=bgCanvas?1.2:1;
-  (elev.areas||[]).forEach(a=>{
-    const el=document.createElement('div');
-    el.style.cssText=`position:absolute;left:${a.x*scale}px;top:${a.y*scale}px;width:${a.w*scale}px;height:${a.h*scale}px;border:2px solid rgba(83,74,183,.7);background:rgba(83,74,183,.1);border-radius:2px;display:flex;align-items:flex-start;justify-content:center;padding:5px;cursor:pointer`;
-    el.innerHTML=`<span style="font-size:10px;font-weight:600;color:#3C3489;text-shadow:0 0 3px rgba(255,255,255,.8)">${a.name}</span>`;
-    el.addEventListener('dragover',e=>{e.preventDefault();el.style.background='rgba(83,74,183,.25)';});
-    el.addEventListener('dragleave',()=>el.style.background='rgba(83,74,183,.1)');
-    el.addEventListener('drop',e=>{e.preventDefault();el.style.background='rgba(83,74,183,.1)';if(draggingAsm)addAsmToRoom(a.id,draggingAsm);});
-    wrap.appendChild(el);
-  });
-  if(!(elev.areas||[]).length){const hint=document.createElement('div');hint.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:rgba(0,0,0,.4);text-align:center;pointer-events:none';hint.innerHTML=`<i class="ti ti-building" style="font-size:24px;display:block;margin-bottom:8px"></i>No areas drawn yet.<br>Go to Project Setup → Elevations.`;wrap.appendChild(hint);}
-  container.appendChild(wrap);
+  if(!allElevs.length){sel.innerHTML=`<span style="font-size:12px;color:var(--text3)">No elevations — go to Project Setup</span>`;document.getElementById('elev-plan-container').innerHTML='';return;}
+  if(!activeElevId||!allElevs.find(e=>e.id===activeElevId)){activeElevId=allElevs[0].id;activeElevCatId=allElevs[0].catId;}
+  sel.innerHTML=allElevs.map(e=>`<div class="fp-floor-tab ${e.id===activeElevId?'active':''}" onclick="selectElev('${e.id}','${e.catId}')">${e.label}</div>`).join('');
+  const active=allElevs.find(e=>e.id===activeElevId);
+  await buildZoneCanvas(document.getElementById('elev-plan-container'),setup,active.catId,active.id,active.color,'No elevation defined.');
 }
 
-function selectElev(id){activeElevId=id;buildElevCanvas();}
+let activeElevCatId='elevations';
+function selectElev(id,catId){activeElevId=id;activeElevCatId=catId||'elevations';buildElevCanvas();}
 
 /* ════ ASSEMBLY BUILDER ════ */
 function buildAbSidebar(){
@@ -1276,7 +1390,12 @@ async function generateScope(){
   const ra=getRoomAsm();
   const setup=getSetup(currentProjectId);
   const allRooms=[];
-  (setup.floors||[]).forEach(f=>(f.rooms||[]).forEach(r=>allRooms.push({...r,floorName:f.name})));
+  // Collect rooms from all floor plan sheets (proposed + existing)
+  ['floors','existing-plans'].forEach(catId=>{
+    getCatSheets(setup,catId).forEach(sheet=>{
+      (sheet.zones||[]).forEach(r=>allRooms.push({...r,floorName:sheet.name}));
+    });
+  });
   const activeRooms=allRooms.filter(r=>(ra[r.id]||[]).length>0);
   if(!activeRooms.length){alert('Assign at least one assembly to a room first.');return;}
   switchFpTab('scope');document.getElementById('fp-right-footer').style.display='block';
