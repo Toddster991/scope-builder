@@ -118,13 +118,13 @@ textarea{resize:vertical;min-height:52px;line-height:1.5}
 .pdf-info-pages{font-size:11px;color:var(--text3)}
 
 /* PAGE THUMBNAILS */
-.thumb-strip{display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px;flex-wrap:wrap}
-.thumb-item{flex-shrink:0;cursor:pointer;border-radius:var(--radius);overflow:hidden;border:2px solid transparent;transition:border-color .15s;position:relative}
+.thumb-strip{display:flex;gap:12px;overflow-x:auto;padding:14px 0 6px;flex-wrap:wrap}
+.thumb-item{flex-shrink:0;cursor:pointer;border-radius:var(--radius);overflow:hidden;border:3px solid transparent;transition:border-color .15s;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.1)}
 .thumb-item:hover{border-color:var(--border2)}
 .thumb-item.selected{border-color:var(--blue)}
-.thumb-item canvas{display:block;max-width:160px;background:var(--bg2)}
-.thumb-label{font-size:10px;color:var(--text3);text-align:center;padding:3px 2px}
-.thumb-assigned{position:absolute;top:3px;right:3px;background:var(--blue);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px}
+.thumb-item canvas{display:block;width:220px !important;height:auto !important;background:var(--bg2)}
+.thumb-label{font-size:11px;color:var(--text3);text-align:center;padding:5px 4px;background:var(--bg)}
+.thumb-assigned{position:absolute;top:4px;right:4px;background:var(--blue);color:#fff;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500}
 
 /* PLAN SECTIONS */
 .plan-section{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);margin-bottom:14px;overflow:hidden}
@@ -236,12 +236,12 @@ textarea{resize:vertical;min-height:52px;line-height:1.5}
 .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:16px;border-top:0.5px solid var(--border)}
 
 /* PAGE PICKER MODAL */
-.page-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:12px;max-height:60vh;overflow-y:auto}
-.page-pick-item{cursor:pointer;border-radius:var(--radius);border:2px solid transparent;overflow:hidden;transition:border-color .15s;text-align:center}
+.page-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-top:12px;max-height:65vh;overflow-y:auto}
+.page-pick-item{cursor:pointer;border-radius:var(--radius);border:2px solid transparent;overflow:hidden;transition:border-color .15s;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .page-pick-item:hover{border-color:var(--border2)}
 .page-pick-item.selected{border-color:var(--blue)}
-.page-pick-item canvas{display:block;width:100%;height:130px;object-fit:contain;background:var(--bg2)}
-.page-pick-label{font-size:11px;color:var(--text3);padding:4px 2px}
+.page-pick-item canvas{display:block;width:100%;height:auto;background:var(--bg2)}
+.page-pick-label{font-size:11px;color:var(--text3);padding:4px 2px;background:var(--bg)}
 
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -841,34 +841,173 @@ function renameSheetZone(catId,sheetId,zoneId,name){
 /* ── Plan Set Upload ── */
 function renderPlanSetSection(body,setup,acts){
   const hasPdf=!!(setup.planSetName);
-  body.innerHTML=`<div style="max-width:700px">
-    <p style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6">Upload your complete plan set PDF — all floors, site plan, and elevations in one file. You'll assign individual pages to each floor plan and elevation in the sections below.</p>
-    <div class="${hasPdf?'pdf-upload-zone has-pdf':'pdf-upload-zone'}" id="upload-zone" ${!hasPdf?'onclick="triggerPdfUpload()"':''}>
-      ${hasPdf?`
-        <div class="pdf-info-row">
-          <i class="ti ti-file-type-pdf" style="font-size:28px;color:#a32d2d;flex-shrink:0"></i>
-          <div style="flex:1;min-width:0">
-            <div class="pdf-info-name">${setup.planSetName}</div>
-            <div class="pdf-info-pages">${setup.planSetPageCount} page${setup.planSetPageCount!==1?'s':''}</div>
-          </div>
-          <button class="btn sm" onclick="triggerPdfUpload()"><i class="ti ti-refresh"></i> Replace</button>
-          <button class="btn sm danger" onclick="removePlanSet()"><i class="ti ti-trash"></i></button>
-        </div>
-        <div style="margin-top:16px">
-          <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">All pages</div>
-          <div class="thumb-strip" id="thumb-strip"></div>
-        </div>
-      `:`
+  if(!hasPdf){
+    body.innerHTML=`<div style="max-width:600px">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6">Upload your complete plan set PDF — all floors, site plan, and elevations in one file. Then drag page thumbnails onto drawing categories to assign them.</p>
+      <div class="pdf-upload-zone" onclick="triggerPdfUpload()" style="cursor:pointer">
         <div class="pdf-upload-icon"><i class="ti ti-file-upload"></i></div>
         <div class="pdf-upload-label">Click to upload plan set PDF</div>
-        <div class="pdf-upload-hint">One combined PDF — all floors, site plan, and elevations</div>
-      `}
-    </div>
-  </div>`;
-  if(hasPdf){
-    // small delay so DOM paints first, use global flag to prevent double render
-    if(!window._thumbsLoading){window._thumbsLoading=true;setTimeout(()=>{window._thumbsLoading=false;loadPdfThumbs(setup);},200);}
+        <div class="pdf-upload-hint">One combined PDF — all drawings in one file</div>
+      </div>
+    </div>`;
+    return;
   }
+  // Two-panel drag-to-assign layout
+  body.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;height:100%;min-height:0">
+      <!-- LEFT: all pages -->
+      <div style="display:flex;flex-direction:column;min-height:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-shrink:0">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">${setup.planSetName}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">${setup.planSetPageCount} page${setup.planSetPageCount!==1?'s':''} · Drag pages onto categories →</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn sm" onclick="triggerPdfUpload()"><i class="ti ti-refresh"></i> Replace</button>
+            <button class="btn sm danger" onclick="removePlanSet()"><i class="ti ti-trash"></i></button>
+          </div>
+        </div>
+        <div id="thumb-strip" style="overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;padding:4px 2px"></div>
+      </div>
+      <!-- RIGHT: categories -->
+      <div style="overflow-y:auto;padding-right:4px">
+        <div id="assign-panel"></div>
+      </div>
+    </div>`;
+  if(!window._thumbsLoading){
+    window._thumbsLoading=true;
+    setTimeout(()=>{window._thumbsLoading=false;loadPdfThumbs(setup);},200);
+  }
+  buildAssignPanel(setup);
+}
+
+function buildAssignPanel(setup){
+  const panel=document.getElementById('assign-panel');
+  if(!panel)return;
+  const groups=[
+    {label:'Existing',cats:['existing-plans','existing-elevations']},
+    {label:'Proposed',cats:['floors','elevations','site','interior-elevations']},
+    {label:'Engineering',cats:['electrical','mechanical','structural']},
+    {label:'Other',cats:['landscape','details','sections','schedules']},
+  ];
+  let html='';
+  groups.forEach(g=>{
+    html+=`<div style="margin-bottom:16px">
+      <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;padding-bottom:4px;border-bottom:0.5px solid var(--border)">${g.label}</div>`;
+    g.cats.forEach(catId=>{
+      const cat=DRAWING_CATS.find(c=>c.id===catId);if(!cat)return;
+      const sheets=getCatSheets(setup,catId);
+      html+=`<div style="margin-bottom:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:12px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:6px">
+            <span style="width:8px;height:8px;border-radius:50%;background:${cat.color};display:inline-block;flex-shrink:0"></span>
+            ${cat.label}
+          </span>
+          <button class="btn sm" onclick="addSheet('${catId}');buildAssignPanel(getSetup(currentProjectId))"><i class="ti ti-plus"></i></button>
+        </div>`;
+      if(!sheets.length){
+        html+=`<div class="assign-drop-zone" data-cat="${catId}" data-sheet="__new__"
+          style="border:1.5px dashed var(--border2);border-radius:var(--radius);padding:8px;font-size:11px;color:var(--text3);text-align:center;transition:all .15s"
+          ondragover="assignDragOver(event,this)" ondragleave="assignDragLeave(this)" ondrop="assignDrop(event,'${catId}',null)">
+          Drop page here or click + to add sheet
+        </div>`;
+      } else {
+        sheets.forEach(sheet=>{
+          const pgLabel=sheet.pageIndex!==null?'Page '+(sheet.pageIndex+1):null;
+          html+=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            <div class="assign-drop-zone" data-cat="${catId}" data-sheet="${sheet.id}"
+              style="flex:1;border:1.5px solid ${pgLabel?cat.color:'var(--border2)'};border-radius:var(--radius);padding:5px 8px;font-size:12px;display:flex;align-items:center;justify-content:space-between;transition:all .15s;background:${pgLabel?'rgba('+hexToRgb(cat.color)+',.06)':'var(--bg)'}"
+              ondragover="assignDragOver(event,this)" ondragleave="assignDragLeave(this)" ondrop="assignDrop(event,'${catId}','${sheet.id}')">
+              <span style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px">${sheet.name}</span>
+              ${pgLabel
+                ?`<span style="font-size:11px;font-weight:600;color:${cat.color};white-space:nowrap;display:flex;align-items:center;gap:4px">
+                    <i class="ti ti-check" style="font-size:11px"></i>${pgLabel}
+                    <button onclick="unassignSheet('${catId}','${sheet.id}')" style="background:none;border:none;cursor:pointer;color:var(--text3);padding:0;margin-left:2px;font-size:12px;line-height:1" title="Unassign">×</button>
+                  </span>`
+                :`<span style="font-size:10px;color:var(--text3)">drop page here</span>`
+              }
+            </div>
+            <button class="icon-btn" onclick="removeSheet('${catId}','${sheet.id}');buildAssignPanel(getSetup(currentProjectId))" title="Remove sheet"><i class="ti ti-trash"></i></button>
+          </div>`;
+        });
+        // extra drop zone to add a new sheet in this category
+        html+=`<div class="assign-drop-zone"
+          style="border:1px dashed var(--border);border-radius:var(--radius);padding:4px 8px;font-size:10px;color:var(--text3);text-align:center;transition:all .15s;cursor:default"
+          ondragover="assignDragOver(event,this)" ondragleave="assignDragLeave(this)" ondrop="assignDrop(event,'${catId}',null)">
+          + drop to add new sheet
+        </div>`;
+      }
+      html+='</div>';
+    });
+    html+='</div>';
+  });
+  panel.innerHTML=html;
+}
+
+function assignDragOver(e,el){
+  e.preventDefault();
+  el.style.background='var(--bg-info)';
+  el.style.borderColor='var(--blue)';
+}
+function assignDragLeave(el){
+  el.style.background='';
+  el.style.borderColor='';
+  // re-apply from buildAssignPanel will happen on drop
+}
+function assignDrop(e,catId,sheetId){
+  e.preventDefault();
+  const pageIdx=parseInt(e.dataTransfer.getData('text/plain'));
+  if(isNaN(pageIdx))return;
+  const setup=getSetup(currentProjectId);
+  if(sheetId===null||sheetId==='__new__'){
+    // create a new sheet and assign
+    const cat=DRAWING_CATS.find(c=>c.id===catId);
+    const sheets=getCatSheets(setup,catId);
+    const newSheet={id:uid(),name:cat.label+' '+(sheets.length+1),pageIndex:pageIdx,zones:[]};
+    sheets.push(newSheet);
+  } else {
+    const s=getCatSheets(setup,catId).find(x=>x.id===sheetId);
+    if(s)s.pageIndex=pageIdx;
+  }
+  persist();
+  // refresh both panels
+  updateThumbAssignments(setup);
+  buildAssignPanel(setup);
+}
+function unassignSheet(catId,sheetId){
+  const setup=getSetup(currentProjectId);
+  const s=getCatSheets(setup,catId).find(x=>x.id===sheetId);
+  if(s){s.pageIndex=null;persist();}
+  updateThumbAssignments(setup);
+  buildAssignPanel(setup);
+}
+
+// Update thumb visual state without re-rendering
+function updateThumbAssignments(setup){
+  const assignedPages=new Set();
+  const labels={};
+  DRAWING_CATS.forEach(cat=>{
+    getCatSheets(setup,cat.id).forEach(s=>{
+      if(s.pageIndex!==null){
+        assignedPages.add(s.pageIndex);
+        if(!labels[s.pageIndex])labels[s.pageIndex]=[];
+        labels[s.pageIndex].push(s.name);
+      }
+    });
+  });
+  document.querySelectorAll('.thumb-page-item').forEach(item=>{
+    const pg=parseInt(item.dataset.page);
+    const badge=item.querySelector('.thumb-badge');
+    if(assignedPages.has(pg)){
+      item.style.opacity='0.55';
+      item.style.outline='2.5px solid var(--blue)';
+      if(badge){badge.textContent=labels[pg].join(', ');badge.style.display='block';}
+    } else {
+      item.style.opacity='1';
+      item.style.outline='none';
+      if(badge){badge.style.display='none';}
+    }
+  });
 }
 
 function triggerPdfUpload(){document.getElementById('pdf-file-input').click();}
@@ -886,57 +1025,89 @@ document.getElementById('pdf-file-input').addEventListener('change',async functi
   persist();
   renderSetupSection('planset');
   // wait for DOM then render thumbs once
-  if(!window._thumbsLoading){window._thumbsLoading=true;setTimeout(()=>{window._thumbsLoading=false;loadPdfThumbs(setup);},200);}
+  if(!window._thumbsLoading){
+    window._thumbsLoading=true;
+    setTimeout(()=>{
+      window._thumbsLoading=false;
+      loadPdfThumbs(setup).then(()=>buildAssignPanel(getSetup(currentProjectId)));
+    },200);
+  }
   this.value='';
 });
 
 async function loadPdfThumbs(setup){
   const strip=document.getElementById('thumb-strip');
-  if(!strip){console.log('thumb-strip not found');return;}
-  if(strip.dataset.loading==='1'){console.log('already loading');return;}
+  if(!strip)return;
+  if(strip.dataset.loading==='1')return;
   strip.dataset.loading='1';
-  strip.innerHTML='<div style="font-size:12px;color:#888">Rendering pages...</div>';
+  strip.innerHTML='<div style="font-size:12px;color:#888;grid-column:1/-1;padding:8px">Rendering pages...</div>';
   try{
     if(!pdfDoc){
       const buf=await loadPDF(currentProjectId);
-      if(!buf){strip.innerHTML='<div style="font-size:12px;color:#888">Re-upload the PDF to see thumbnails.</div>';strip.dataset.loading='0';return;}
+      if(!buf){
+        strip.innerHTML='<div style="font-size:12px;color:#888;grid-column:1/-1">Re-upload the PDF to see thumbnails.</div>';
+        strip.dataset.loading='0';return;
+      }
       pdfDoc=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
     }
-    strip.innerHTML='';
-    pdfThumbs=[];
+    strip.innerHTML='';pdfThumbs=[];
+    // Build set of assigned pages for initial state
+    const assignedPages=new Set();const assignLabels={};
+    DRAWING_CATS.forEach(cat=>{
+      getCatSheets(setup,cat.id).forEach(s=>{
+        if(s.pageIndex!==null){
+          assignedPages.add(s.pageIndex);
+          if(!assignLabels[s.pageIndex])assignLabels[s.pageIndex]=[];
+          assignLabels[s.pageIndex].push(s.name);
+        }
+      });
+    });
     for(let i=1;i<=pdfDoc.numPages;i++){
       const page=await pdfDoc.getPage(i);
-      const vp=page.getViewport({scale:0.65});
+      const vp=page.getViewport({scale:0.7});
       const c=document.createElement('canvas');
-      c.width=Math.floor(vp.width);
-      c.height=Math.floor(vp.height);
-      c.style.display='block';
-      const ctx=c.getContext('2d');
-      await page.render({canvasContext:ctx,viewport:vp}).promise;
+      c.width=Math.floor(vp.width);c.height=Math.floor(vp.height);
+      c.style.cssText='display:block;width:100%;height:auto;border-radius:3px';
+      await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
       pdfThumbs.push(c);
-      const assignedTo=getPdfPageAssignment(setup,i-1);
+      const pg=i-1;
+      const isAssigned=assignedPages.has(pg);
+      // wrapper item
       const item=document.createElement('div');
-      item.className='thumb-item';
-      item.dataset.page=String(i-1);
-      if(assignedTo){const badge=document.createElement('div');badge.className='thumb-assigned';badge.textContent=assignedTo;item.appendChild(badge);}
+      item.className='thumb-page-item';
+      item.dataset.page=String(pg);
+      item.draggable=true;
+      item.style.cssText=`position:relative;border-radius:var(--radius);overflow:hidden;cursor:grab;border:2px solid var(--border);background:var(--bg);box-shadow:0 1px 4px rgba(0,0,0,.1);transition:opacity .2s,outline .15s;opacity:${isAssigned?'0.5':'1'};outline:${isAssigned?'2.5px solid var(--blue)':'none'}`;
+      item.addEventListener('dragstart',e=>{
+        e.dataTransfer.setData('text/plain',String(pg));
+        e.dataTransfer.effectAllowed='copy';
+        item.style.opacity='0.35';
+      });
+      item.addEventListener('dragend',()=>{
+        updateThumbAssignments(getSetup(currentProjectId));
+      });
+      // badge
+      const badge=document.createElement('div');
+      badge.className='thumb-badge';
+      badge.style.cssText='display:'+(isAssigned?'block':'none')+';position:absolute;top:4px;left:4px;right:4px;background:rgba(24,95,165,.85);color:#fff;font-size:10px;font-weight:500;padding:2px 6px;border-radius:6px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+      badge.textContent=isAssigned?(assignLabels[pg]||[]).join(', '):'';
+      item.appendChild(badge);
       item.appendChild(c);
-      const lbl=document.createElement('div');lbl.className='thumb-label';lbl.textContent='Page '+i;item.appendChild(lbl);
+      // page label
+      const lbl=document.createElement('div');
+      lbl.style.cssText='font-size:11px;color:var(--text3);text-align:center;padding:4px 2px;background:var(--bg);font-weight:500';
+      lbl.textContent='Page '+i;
+      item.appendChild(lbl);
       strip.appendChild(item);
     }
   }catch(err){
-    strip.innerHTML='<div style="color:red;font-size:12px">Error: '+err.message+'</div>';
-    console.error('loadPdfThumbs error:',err);
+    strip.innerHTML='<div style="color:red;font-size:12px;grid-column:1/-1">Error rendering PDF: '+err.message+'</div>';
+    console.error('loadPdfThumbs:',err);
   }
   strip.dataset.loading='0';
 }
 
-function getPdfPageAssignment(setup,pageIdx){
-  const labels=[];
-  (setup.floors||[]).forEach(f=>{if(f.pageIndex===pageIdx)labels.push(f.name);});
-  if(setup.site?.pageIndex===pageIdx)labels.push('Site');
-  (setup.elevations||[]).forEach(e=>{if(e.pageIndex===pageIdx)labels.push(e.name);});
-  return labels.join(', ');
-}
+/* getPdfPageAssignment replaced by updateThumbAssignments */
 
 function removePlanSet(){
   if(!confirm('Remove the uploaded plan set? Page assignments will be cleared.'))return;
