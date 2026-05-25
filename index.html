@@ -747,7 +747,7 @@ function renderPlanSetSection(body,setup,acts){
       `}
     </div>
   </div>`;
-  if(hasPdf) loadPdfThumbs(setup);
+  if(hasPdf) setTimeout(()=>loadPdfThumbs(setup),100);
 }
 
 function triggerPdfUpload(){document.getElementById('pdf-file-input').click();}
@@ -761,6 +761,7 @@ document.getElementById('pdf-file-input').addEventListener('change',async functi
   setup.planSetName=file.name;setup.planSetPageCount=pdf.numPages;
   pdfDoc=pdf;persist();
   renderSetupSection('planset');
+  setTimeout(()=>loadPdfThumbs(setup),100);
   this.value='';
 });
 
@@ -779,9 +780,9 @@ async function loadPdfThumbs(setup){
     pdfThumbs.push(c);
     const assignedTo=getPdfPageAssignment(setup,i-1);
     const item=document.createElement('div');item.className='thumb-item';item.dataset.page=i-1;
-    item.innerHTML=`${assignedTo?`<div class="thumb-assigned">${assignedTo}</div>`:''}`;
+    if(assignedTo){const badge=document.createElement('div');badge.className='thumb-assigned';badge.textContent=assignedTo;item.appendChild(badge);}
     item.appendChild(c.cloneNode(true));
-    item.innerHTML+=`<div class="thumb-label">Page ${i}</div>`;
+    const lbl=document.createElement('div');lbl.className='thumb-label';lbl.textContent='Page '+i;item.appendChild(lbl);
     strip.appendChild(item);
   }
 }
