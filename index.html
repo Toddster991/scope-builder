@@ -1064,10 +1064,10 @@ async function loadPdfThumbs(setup){
     });
     for(let i=1;i<=pdfDoc.numPages;i++){
       const page=await pdfDoc.getPage(i);
-      const vp=page.getViewport({scale:2.4});
+      const vp=page.getViewport({scale:3.0});
       const c=document.createElement('canvas');
       c.width=Math.floor(vp.width);c.height=Math.floor(vp.height);
-      c.style.cssText='display:block;width:552px;height:auto;border-radius:3px';
+      c.style.cssText='display:block;width:100%;height:auto;border-radius:3px;image-rendering:crisp-edges';
       await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
       pdfThumbs.push(c);
       const pg=i-1;
@@ -1077,7 +1077,7 @@ async function loadPdfThumbs(setup){
       item.className='thumb-page-item';
       item.dataset.page=String(pg);
       item.draggable=true;
-      item.style.cssText=`position:relative;border-radius:var(--radius);overflow:hidden;cursor:grab;border:2px solid var(--border);background:var(--bg);box-shadow:0 1px 4px rgba(0,0,0,.1);transition:opacity .2s,outline .15s;opacity:${isAssigned?'0.5':'1'};outline:${isAssigned?'2.5px solid var(--blue)':'none'};width:560px;flex-shrink:0`;
+      item.style.cssText=`position:relative;border-radius:var(--radius);overflow:hidden;cursor:grab;border:2px solid var(--border);background:var(--bg);box-shadow:0 1px 4px rgba(0,0,0,.1);transition:opacity .2s,outline .15s;opacity:${isAssigned?'0.5':'1'};outline:${isAssigned?'2.5px solid var(--blue)':'none'};width:420px;flex-shrink:0`;
       item.addEventListener('dragstart',e=>{
         e.dataTransfer.setData('text/plain',String(pg));
         e.dataTransfer.effectAllowed='copy';
