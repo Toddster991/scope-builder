@@ -1884,8 +1884,8 @@ document.getElementById('pdf-file-input').addEventListener('change',async functi
 function buildFpFloorSelector(){
   const setup=getSetup(currentProjectId);
   // Combine proposed floors and existing plans into selector
-  const proposedSheets=getCatSheets(setup,'floors');
-  const existingSheets=getCatSheets(setup,'existing-plans');
+  const proposedSheets=getCatSheets('floors');
+  const existingSheets=getCatSheets('existing-plans');
   const allSheets=[
     ...proposedSheets.map(s=>({...s,catId:'floors',label:s.name})),
     ...existingSheets.map(s=>({...s,catId:'existing-plans',label:'[Existing] '+s.name})),
@@ -1960,7 +1960,9 @@ function onDragEnd(e){e.target.classList.remove('dragging');draggingAsm=null;}
 function getRoomAsm(){
   if(!currentProjectId||!currentVersionId)return{};
   const p=getProject(currentProjectId);const v=getVersion(p,currentVersionId);
-  if(!v.roomAssemblies)v.roomAssemblies={};return v.roomAssemblies;
+  if(!v.zoneAssemblies)v.zoneAssemblies={};
+  if(!v.roomAssemblies)v.roomAssemblies=v.zoneAssemblies; // alias
+  return v.zoneAssemblies;
 }
 function addAsmToRoom(roomId,asmId){const ra=getRoomAsm();if(!ra[roomId])ra[roomId]=[];if(!ra[roomId].includes(asmId))ra[roomId].push(asmId);buildFloorPlanCanvas();}
 function selectRoomFp(id){selectedRoom=id;buildFloorPlanCanvas();document.getElementById('fp-right-footer').style.display='block';if(fpTab==='room')renderRoomDetail();}
@@ -2026,7 +2028,7 @@ function hexToRgb(hex){
 
 async function buildSiteCanvas(){
   const setup=getSetup(currentProjectId);
-  const sheets=getCatSheets(setup,'site');
+  const sheets=getCatSheets('site');
   const container=document.getElementById('site-plan-container');
   if(!sheets.length){container.innerHTML=`<div style="padding:24px;font-size:13px;color:var(--text3)">No site plan defined. Go to Project Setup → Site Plan.</div>`;return;}
   await buildZoneCanvas(container,setup,'site',sheets[0].id,'#3B6D11','No site plan defined.');
@@ -2034,8 +2036,8 @@ async function buildSiteCanvas(){
 
 async function buildElevCanvas(){
   const setup=getSetup(currentProjectId);
-  const elevSheets=getCatSheets(setup,'elevations');
-  const existElevSheets=getCatSheets(setup,'existing-elevations');
+  const elevSheets=getCatSheets('elevations');
+  const existElevSheets=getCatSheets('existing-elevations');
   const allElevs=[
     ...elevSheets.map(s=>({...s,catId:'elevations',label:s.name,color:'#534AB7'})),
     ...existElevSheets.map(s=>({...s,catId:'existing-elevations',label:'[Existing] '+s.name,color:'#5F5E5A'})),
