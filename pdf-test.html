@@ -2,181 +2,174 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>PDF Thumbnail Test</title>
+<title>PDF Thumbnail Test v2</title>
 <style>
 body { font-family: sans-serif; padding: 20px; background: #f0efe9; }
 h2 { margin-bottom: 16px; }
 #status { margin: 10px 0; font-size: 13px; color: #333; }
 .thumb-grid { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; }
-
-/* APPROACH A — iframe native rendering */
-.thumb-iframe {
+.thumb-item {
   position: relative;
-  width: 400px;
-  height: 520px;
+  width: 380px;
   border: 2px solid #ccc;
   border-radius: 8px;
   overflow: hidden;
   background: #fff;
   box-shadow: 0 2px 8px rgba(0,0,0,.1);
   cursor: grab;
+  transition: border-color .15s, box-shadow .15s;
 }
-.thumb-iframe iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-  pointer-events: none; /* allows drag on parent */
+.thumb-item:hover { border-color: #185fa5; box-shadow: 0 4px 16px rgba(24,95,165,.2); }
+.thumb-item canvas { display: block; width: 100%; height: auto; }
+.thumb-item .page-label {
+  font-size: 12px; font-weight: 600; text-align: center;
+  padding: 6px 4px; background: #fff; border-top: 1px solid #eee;
+  color: #333;
 }
-.thumb-iframe .drag-handle {
-  position: absolute;
-  inset: 0;
-  cursor: grab;
-  z-index: 2;
+.thumb-item .full-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: rgba(24,95,165,.85); color: #fff;
+  border: none; border-radius: 6px;
+  padding: 5px 10px; font-size: 11px; font-weight: 500;
+  cursor: pointer; display: flex; align-items: center; gap: 4px;
+  opacity: 0; transition: opacity .15s;
 }
-.thumb-iframe .page-label {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(255,255,255,.92);
-  font-size: 12px;
-  font-weight: 500;
-  text-align: center;
-  padding: 4px;
-  border-top: 1px solid #eee;
-  z-index: 3;
-}
+.thumb-item:hover .full-btn { opacity: 1; }
 
-/* APPROACH B — PDF.js canvas high-res */
-.thumb-canvas {
-  width: 400px;
-  border: 2px solid #ccc;
-  border-radius: 8px;
-  overflow: hidden;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+/* Full screen viewer */
+#full-viewer {
+  position: fixed; inset: 0; background: rgba(0,0,0,.8);
+  z-index: 1000; display: none; flex-direction: column;
 }
-.thumb-canvas canvas {
-  display: block;
-  width: 100%;
-  height: auto;
+#full-viewer.open { display: flex; }
+#viewer-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; background: #1a1a18; color: #fff; flex-shrink: 0;
 }
-.thumb-canvas .page-label {
-  font-size: 12px;
-  font-weight: 500;
-  text-align: center;
-  padding: 4px;
-  background: #fff;
-  border-top: 1px solid #eee;
-}
-
-.section-title {
-  font-size: 14px;
-  font-weight: 600;
-  margin: 24px 0 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #ccc;
-}
+#viewer-iframe { flex: 1; border: none; background: #fff; }
 </style>
 </head>
 <body>
 
-<h2>PDF Thumbnail Quality Test</h2>
+<h2>PDF Thumbnail Test v2</h2>
+<p style="font-size:13px;color:#666;margin-bottom:12px">
+  Thumbnails render via PDF.js (sharp, single page). Click the blue button on hover to open full-screen native viewer.
+</p>
 <input type="file" id="pdf-input" accept=".pdf">
 <div id="status"></div>
+<div class="thumb-grid" id="thumb-grid"></div>
 
-<div class="section-title">Approach A — Native browser iframe (no canvas)</div>
-<div class="thumb-grid" id="grid-iframe"></div>
-
-<div class="section-title">Approach B — PDF.js canvas at scale 3.0</div>
-<div class="thumb-grid" id="grid-canvas"></div>
+<!-- Full screen viewer -->
+<div id="full-viewer">
+  <div id="viewer-bar">
+    <span id="viewer-title" style="font-size:14px;font-weight:600"></span>
+    <div style="display:flex;gap:8px;align-items:center">
+      <a id="viewer-newtab" href="#" target="_blank"
+        style="color:#93c5fd;font-size:12px;text-decoration:none;padding:5px 12px;border:1px solid #3b82f6;border-radius:6px">
+        ↗ Open in new tab
+      </a>
+      <button onclick="closeViewer()"
+        style="background:#555;color:#fff;border:none;border-radius:6px;padding:5px 14px;cursor:pointer;font-size:13px">
+        ✕ Close
+      </button>
+    </div>
+  </div>
+  <iframe id="viewer-iframe" src=""></iframe>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js';
 
 const status = document.getElementById('status');
+let blobUrl = null;
 
 document.getElementById('pdf-input').addEventListener('change', async function(e) {
   const file = e.target.files[0];
   if (!file) return;
 
-  status.textContent = 'Loading...';
-  document.getElementById('grid-iframe').innerHTML = '';
-  document.getElementById('grid-canvas').innerHTML = '';
+  status.textContent = 'Reading file...';
+  status.style.color = '#333';
+  document.getElementById('thumb-grid').innerHTML = '';
 
   const arrayBuffer = await file.arrayBuffer();
 
-  // ── APPROACH A: iframe native rendering ──
+  // Create blob URL for full-screen viewer
   const blob = new Blob([arrayBuffer.slice(0)], { type: 'application/pdf' });
-  const blobUrl = URL.createObjectURL(blob);
+  blobUrl = URL.createObjectURL(blob);
 
-  // We need page count — use PDF.js just for that
-  const pdfForCount = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer.slice(0)) }).promise;
-  const numPages = pdfForCount.numPages;
-
-  status.textContent = `${numPages} pages — rendering both approaches...`;
-
-  for (let i = 1; i <= Math.min(numPages, 6); i++) {
-    const wrap = document.createElement('div');
-    wrap.className = 'thumb-iframe';
-    wrap.innerHTML = `
-      <iframe src="${blobUrl}#page=${i}&toolbar=0&navpanes=0&scrollbar=0&view=FitH"></iframe>
-      <div class="drag-handle"></div>
-      <button onclick="openFullPage('${blobUrl}',${i})" style="position:absolute;top:6px;right:6px;z-index:4;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
-        Full view
-      </button>
-      <div class="page-label">Page ${i} — iframe</div>
-    `;
-    document.getElementById('grid-iframe').appendChild(wrap);
-  }
-
-  // Full page viewer modal
-  window.openFullPage = function(url, pageNum) {
-    // Remove any existing viewer
-    document.getElementById('full-viewer')?.remove();
-    const overlay = document.createElement('div');
-    overlay.id = 'full-viewer';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:flex;flex-direction:column';
-    overlay.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#1a1a18;color:#fff;flex-shrink:0">
-        <span style="font-size:14px;font-weight:600">Page ${pageNum}</span>
-        <div style="display:flex;gap:8px">
-          <a href="${url}#page=${pageNum}" target="_blank" style="color:#93c5fd;font-size:12px;text-decoration:none;padding:4px 10px;border:1px solid #3b82f6;border-radius:6px">Open in new tab</a>
-          <button onclick="document.getElementById('full-viewer').remove()" style="background:#444;color:#fff;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:13px">✕ Close</button>
-        </div>
-      </div>
-      <iframe src="${url}#page=${pageNum}&toolbar=1&navpanes=0" style="flex:1;border:none;background:#fff"></iframe>
-    `;
-    // Click backdrop to close
-    overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
-    document.body.appendChild(overlay);
-  };
-
-  // ── APPROACH B: PDF.js canvas ──
+  // Render thumbnails via PDF.js at high res
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+  status.textContent = `${pdf.numPages} pages — rendering thumbnails...`;
 
-  for (let i = 1; i <= Math.min(numPages, 6); i++) {
+  for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
-    const vp = page.getViewport({ scale: 3.0 });
+
+    // Render at 2x for sharpness, display at CSS width
+    const vp = page.getViewport({ scale: 2.5 });
     const c = document.createElement('canvas');
     c.width = Math.floor(vp.width);
     c.height = Math.floor(vp.height);
     await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
 
-    const wrap = document.createElement('div');
-    wrap.className = 'thumb-canvas';
+    const item = document.createElement('div');
+    item.className = 'thumb-item';
+    item.draggable = true;
+    item.dataset.page = i;
+
+    // Expand button
+    const btn = document.createElement('button');
+    btn.className = 'full-btn';
+    btn.innerHTML = '⤢ Full view';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openViewer(i);
+    });
+
     const lbl = document.createElement('div');
     lbl.className = 'page-label';
-    lbl.textContent = `Page ${i} — PDF.js`;
-    wrap.appendChild(c);
-    wrap.appendChild(lbl);
-    document.getElementById('grid-canvas').appendChild(wrap);
+    lbl.textContent = 'Page ' + i;
+
+    item.appendChild(c);
+    item.appendChild(btn);
+    item.appendChild(lbl);
+    document.getElementById('thumb-grid').appendChild(item);
+
+    status.textContent = `Rendered ${i} of ${pdf.numPages} pages...`;
   }
 
-  status.textContent = `Done — ${Math.min(numPages, 6)} pages rendered. Compare quality above.`;
+  status.textContent = `Done — ${pdf.numPages} pages. Hover a thumbnail and click Full view.`;
   status.style.color = 'green';
+});
+
+function openViewer(pageNum) {
+  if (!blobUrl) return;
+  const viewer = document.getElementById('full-viewer');
+  const iframe = document.getElementById('viewer-iframe');
+  const title = document.getElementById('viewer-title');
+  const newTab = document.getElementById('viewer-newtab');
+
+  // Use #page= param — works in the full iframe since it has more height to show one page
+  iframe.src = blobUrl + '#page=' + pageNum + '&toolbar=1&navpanes=0';
+  title.textContent = 'Page ' + pageNum;
+  newTab.href = blobUrl + '#page=' + pageNum;
+  viewer.classList.add('open');
+}
+
+function closeViewer() {
+  document.getElementById('full-viewer').classList.remove('open');
+  document.getElementById('viewer-iframe').src = '';
+}
+
+// Close on backdrop click
+document.getElementById('full-viewer').addEventListener('click', function(e) {
+  if (e.target === this) closeViewer();
+});
+
+// Escape key to close
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeViewer();
 });
 </script>
 </body>
