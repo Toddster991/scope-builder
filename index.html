@@ -122,7 +122,7 @@ textarea{resize:vertical;min-height:52px;line-height:1.5}
 .thumb-item{flex-shrink:0;cursor:pointer;border-radius:var(--radius);overflow:hidden;border:3px solid transparent;transition:border-color .15s;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.1)}
 .thumb-item:hover{border-color:var(--border2)}
 .thumb-item.selected{border-color:var(--blue)}
-.thumb-item canvas{display:block;width:220px !important;height:auto !important;background:var(--bg2)}
+.thumb-item canvas{display:block;width:100%;height:auto;background:var(--bg2)}
 .thumb-label{font-size:11px;color:var(--text3);text-align:center;padding:5px 4px;background:var(--bg)}
 .thumb-assigned{position:absolute;top:4px;right:4px;background:var(--blue);color:#fff;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500}
 
@@ -430,11 +430,11 @@ textarea{resize:vertical;min-height:52px;line-height:1.5}
         <button class="btn" id="dt-select" onclick="setDrawMode('select')">↖ Select</button>
         <button class="btn danger" onclick="deleteSelectedZone()"><i class="ti ti-trash"></i> Delete</button>
         <div class="divider-v" style="background:rgba(255,255,255,.2);margin:0 4px"></div>
-        <button class="btn" onclick="toggleZoneSidebar()">☰ Zones (<span id="dt-zone-count">0</span>)</button>
+        <button class="btn" onclick="toggleZoneSidebar()">☰ Rooms (<span id="dt-zone-count">0</span>)</button>
         <button class="btn" onclick="fitDrawScreen()">⊡ Fit</button>
         <span id="dt-zoom-label" style="font-size:11px;color:rgba(255,255,255,.45);white-space:nowrap">100%</span>
         <div class="divider-v" style="background:rgba(255,255,255,.2);margin:0 4px"></div>
-        <button class="btn success" onclick="saveZonesBack()">✓ Save zones</button>
+        <button class="btn success" onclick="saveZonesBack()">✓ Save rooms</button>
         <button class="btn" onclick="exitDrawTool()">← Back</button>
         <span id="dt-hint" style="font-size:11px;color:rgba(255,255,255,.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-left:8px">Scroll=zoom · Middle mouse or Space+drag=pan</span>
       </div>
@@ -883,7 +883,7 @@ function renderSetup(sec){
       const rgb=setupHexRgb(cat.color);
       sheets.forEach(sheet=>{
         const hasPg=sheet.pageIndex!=null;const zc=(sheet.zones||[]).length;
-        html+=`<div style="max-width:640px;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:12px;background:var(--bg)"><div style="padding:10px 14px;background:var(--bg2);border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:8px"><input type="text" value="${sheet.name.replace(/"/g,'&quot;')}" onchange="renameSetupSheet('${cat.id}','${sheet.id}',this.value)" style="font-size:13px;font-weight:600;border:none;background:transparent;outline:none;flex:1;padding:0;font-family:inherit;color:var(--text)">${hasPg?`<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:rgba(${rgb},.15);color:${cat.color}">Page ${sheet.pageIndex+1}</span>`:'<span style="font-size:11px;color:var(--text3)">No page assigned</span>'}<button class="icon-btn" onclick="removeSetupSheet('${cat.id}','${sheet.id}')"><i class="ti ti-trash"></i></button></div><div style="padding:12px 14px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:${zc?'8':'0'}px"><span style="font-size:12px;color:var(--text2)">${zc} zone${zc!==1?'s':''} drawn</span>${hasPdf&&hasPg?`<button style="font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid var(--blue);background:var(--bg-info);color:var(--blue);cursor:pointer;font-family:inherit" onclick="openDrawTool('${cat.id}','${sheet.id}')"><i class="ti ti-pencil"></i> Draw zones</button>`:''}</div>${zc?`<div style="display:flex;flex-wrap:wrap;gap:6px">${(sheet.zones||[]).map(z=>`<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(${rgb},.12);color:${cat.color}">${z.name}</span>`).join('')}</div>`:''}     </div></div>`;
+        html+=`<div style="max-width:640px;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:12px;background:var(--bg)"><div style="padding:10px 14px;background:var(--bg2);border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:8px"><input type="text" value="${sheet.name.replace(/"/g,'&quot;')}" onchange="renameSetupSheet('${cat.id}','${sheet.id}',this.value)" style="font-size:13px;font-weight:600;border:none;background:transparent;outline:none;flex:1;padding:0;font-family:inherit;color:var(--text)">${hasPg?`<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:rgba(${rgb},.15);color:${cat.color}">Page ${sheet.pageIndex+1}</span>`:'<span style="font-size:11px;color:var(--text3)">No page assigned</span>'}<button class="icon-btn" onclick="removeSetupSheet('${cat.id}','${sheet.id}')"><i class="ti ti-trash"></i></button></div><div style="padding:12px 14px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:${zc?'8':'0'}px"><span style="font-size:12px;color:var(--text2)">${zc} room${zc!==1?'s':''} drawn</span>${hasPdf&&hasPg?`<button style="font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid var(--blue);background:var(--bg-info);color:var(--blue);cursor:pointer;font-family:inherit" onclick="openDrawTool('${cat.id}','${sheet.id}')"><i class="ti ti-pencil"></i> Draw rooms</button>`:''}</div>${zc?`<div style="display:flex;flex-wrap:wrap;gap:6px">${(sheet.zones||[]).map(z=>`<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(${rgb},.12);color:${cat.color}">${z.name}</span>`).join('')}</div>`:''}     </div></div>`;
       });
     }
     body.innerHTML=`<div>${html}</div>`;
@@ -923,12 +923,12 @@ async function loadSetupThumbs(){
     const labels={};ALL_DRAW_CATS.forEach(cat=>getCatSheets(setup,cat.id).forEach(s=>{if(s.pageIndex!=null){if(!labels[s.pageIndex])labels[s.pageIndex]=[];labels[s.pageIndex].push(s.name);}}));
     for(let i=1;i<=pdfDoc.numPages;i++){
       const page=await pdfDoc.getPage(i);const base=page.getViewport({scale:1});
-      const scale=(192*2.5)/base.width;const vp=page.getViewport({scale});
+      const scale=(200*2)/base.width;const vp=page.getViewport({scale});
       const c=document.createElement('canvas');c.width=Math.floor(vp.width);c.height=Math.floor(vp.height);
       await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
       const pg=i-1;const isA=!!labels[pg];
       const item=document.createElement('div');
-      item.style.cssText=`position:relative;border:2px solid ${isA?'var(--blue)':'var(--border)'};border-radius:8px;overflow:hidden;background:var(--bg);box-shadow:0 1px 4px rgba(0,0,0,.1);cursor:grab;user-select:none;opacity:${isA?'.45':'1'};width:196px;flex-shrink:0;transition:opacity .2s,border-color .15s`;
+      item.style.cssText=`position:relative;border:2px solid ${isA?'var(--blue)':'var(--border)'};border-radius:8px;overflow:hidden;background:var(--bg);box-shadow:0 1px 4px rgba(0,0,0,.1);cursor:grab;user-select:none;opacity:${isA?'.45':'1'};width:200px;flex-shrink:0;transition:opacity .2s,border-color .15s`;
       item.draggable=true;item.dataset.page=String(pg);
       item.addEventListener('dragstart',ev=>{ev.dataTransfer.setData('text/plain',String(pg));ev.dataTransfer.effectAllowed='copy';item.style.opacity='.3';});
       item.addEventListener('dragend',()=>updateSetupThumbStates());
@@ -973,7 +973,7 @@ function buildAssignPanel(){
       if(!sheets.length){html+=`<div style="border:1.5px dashed var(--border);border-radius:5px;padding:5px 8px;margin-bottom:3px;font-size:10px;color:var(--text3);text-align:center;transition:all .15s" class="setup-drop-zone" ondragover="setupDragOver(event,this)" ondragleave="setupDragLeave(this)" ondrop="setupDropNew(event,'${cat.id}')">Drop page to add sheet</div>`;}
       else{
         sheets.forEach(s=>{const hasPg=s.pageIndex!=null;
-          html+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px"><div style="flex:1;display:flex;align-items:center;gap:5px;padding:4px 6px;border-radius:5px;border:1.5px solid ${hasPg?'transparent':'var(--border)'};background:${hasPg?'#f0f8f0':'var(--bg)'};min-height:32px;transition:all .15s" class="setup-drop-zone" ondragover="setupDragOver(event,this)" ondragleave="setupDragLeave(this)" ondrop="setupDropOn(event,'${cat.id}','${s.id}')"><input style="flex:1;font-size:12px;border:none;background:transparent;outline:none;color:var(--text);padding:0;font-family:inherit;min-width:0" value="${s.name.replace(/"/g,'&quot;')}" onchange="renameSetupSheet('${cat.id}','${s.id}',this.value)">${hasPg?`<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(${rgb},.15);color:${cat.color};white-space:nowrap;flex-shrink:0">Pg ${s.pageIndex+1}</span><button style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;line-height:1;padding:0 2px;flex-shrink:0" onclick="unassignSetupSheet('${cat.id}','${s.id}')">×</button>`:`<span style="font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0">drop page</span><button style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;line-height:1;padding:0 2px;flex-shrink:0" onclick="removeSetupSheetAP('${cat.id}','${s.id}')">×</button>`}</div></div>`;
+          html+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px"><div style="flex:1;display:flex;align-items:center;gap:5px;padding:4px 6px;border-radius:5px;border:1.5px solid ${hasPg?'transparent':'var(--border)'};background:${hasPg?'#f0f8f0':'var(--bg)'};min-height:32px;transition:all .15s" class="setup-drop-zone" ondragover="setupDragOver(event,this)" ondragleave="setupDragLeave(this)" ondrop="setupDropOn(event,'${cat.id}','${s.id}')"><input style="flex:1;font-size:12px;border:none;background:transparent;outline:none;color:var(--text);padding:0;font-family:inherit;min-width:0" value="${s.name.replace(/"/g,'&quot;')}" onchange="renameSetupSheet('${cat.id}','${s.id}',this.value)">${hasPg?`<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(${rgb},.15);color:${cat.color};white-space:nowrap;flex-shrink:0">Pg ${s.pageIndex+1}</span><button style="font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid var(--blue);background:var(--bg-info);color:var(--blue);cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0" onclick="openDrawTool('${cat.id}','${s.id}')">✏ Draw rooms</button><button style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;line-height:1;padding:0 2px;flex-shrink:0" onclick="unassignSetupSheet('${cat.id}','${s.id}')">×</button>`:`<span style="font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0">drop page</span><button style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;line-height:1;padding:0 2px;flex-shrink:0" onclick="removeSetupSheetAP('${cat.id}','${s.id}')">×</button>`}</div></div>`;
         });
         html+=`<div style="border:1.5px dashed var(--border);border-radius:5px;padding:4px 8px;margin-bottom:3px;font-size:10px;color:var(--text3);text-align:center;transition:all .15s" class="setup-drop-zone" ondragover="setupDragOver(event,this)" ondragleave="setupDragLeave(this)" ondrop="setupDropNew(event,'${cat.id}')">+ drop to add sheet</div>`;
       }
@@ -1020,7 +1020,7 @@ function openDrawTool(catId,sheetId){
   const setup=getSetup(currentProjectId);const sheet=getCatSheets(setup,catId).find(s=>s.id===sheetId);
   if(!sheet||sheet.pageIndex==null){alert('Assign a page to this sheet first.');return;}
   drawZones=JSON.parse(JSON.stringify(sheet.zones||[]));selZoneId=null;
-  document.getElementById('zone-sidebar-title').textContent=(cat?.name||'')+' zones';
+  document.getElementById('zone-sidebar-title').textContent=(cat?.name||'')+' rooms';
   showPage('draw');updateTopbar();setDrawMode('rect');
   loadDrawToolPage(sheet.pageIndex+1);
 }
@@ -1133,7 +1133,7 @@ function setDrawMode(m){
   drawMode=m;dzPolyPts=[];dzDrawing=false;dzDragging=false;
   ['rect','poly','select'].forEach(id=>document.getElementById('dt-'+id)?.classList.toggle('active',id===m));
   dzUpdCursor();
-  const hints={rect:'Drag to draw a rectangular zone',poly:'Click to place corner points · Double-click or click first point to close',select:'Click to select · Drag to move · Drag handles to resize · Del to delete'};
+  const hints={rect:'Drag to draw a rectangular room',poly:'Click to place corner points · Double-click or click first point to close',select:'Click to select · Drag to move · Drag handles to resize · Del to delete'};
   document.getElementById('dt-hint').textContent=hints[m]||'';
   dzRedraw();
 }
@@ -1142,7 +1142,7 @@ function toggleZoneSidebar(){document.getElementById('zone-sidebar').classList.t
 function updateZoneSidebar(){
   document.getElementById('dt-zone-count').textContent=drawZones.length;
   const body=document.getElementById('zone-sidebar-body');
-  if(!drawZones.length){body.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px">No zones yet</div>';return;}
+  if(!drawZones.length){body.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px">No rooms yet</div>';return;}
   body.innerHTML=drawZones.map(z=>`<div class="zone-item ${z.id===selZoneId?'sel':''}" onclick="selZoneInSidebar('${z.id}')"><div style="width:8px;height:8px;border-radius:50%;background:${drawColor};flex-shrink:0"></div><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${z.name}</span><span style="font-size:10px;color:var(--text3)">${z.type==='poly'?'⬡':'▭'}</span><button style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:0 2px;line-height:1" onclick="event.stopPropagation();delZoneInSidebar('${z.id}')">×</button></div>`).join('');
 }
 function selZoneInSidebar(id){selZoneId=id;setDrawMode('select');dzRedraw();updateZoneSidebar();}
@@ -1150,7 +1150,7 @@ function delZoneInSidebar(id){drawZones=drawZones.filter(z=>z.id!==id);if(selZon
 
 /* Name modal */
 function showZoneNameModal(){
-  const word=drawCatId&&['floors','existing-plans'].includes(drawCatId)?'room':'zone';
+  const word=drawCatId&&['floors','existing-plans'].includes(drawCatId)?'room':'area';
   document.getElementById('name-modal-title').textContent='Name this '+word;
   document.getElementById('name-input').value='';
   document.getElementById('name-modal').style.display='flex';
@@ -1160,7 +1160,7 @@ document.getElementById('name-input').addEventListener('keydown',e=>{if(e.key===
 function confirmZoneName(){const name=document.getElementById('name-input').value.trim();if(!name){document.getElementById('name-input').focus();return;}document.getElementById('name-modal').style.display='none';if(!pendingZone)return;const z={id:uid(),name,...pendingZone};drawZones.push(z);selZoneId=z.id;pendingZone=null;dzRedraw();updateZoneSidebar();}
 function cancelZoneName(){document.getElementById('name-modal').style.display='none';pendingZone=null;dzRedraw();}
 
-/* Save zones back */
+/* Save rooms back */
 function saveZonesBack(){
   if(!drawCatId||!drawSheetId)return;
   const setup=getSetup(currentProjectId);
@@ -1302,7 +1302,7 @@ async function buildZoneCanvas(container, setup, catId, sheetId, color, emptyMsg
   });
   if(!(sheet.zones||[]).length){
     const hint=document.createElement('div');hint.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:rgba(0,0,0,.4);text-align:center;pointer-events:none';
-    hint.textContent='No zones drawn. Go to Project Setup to draw zones.';
+    hint.textContent='No rooms drawn. Go to Project Setup to draw zones.';
     wrap.appendChild(hint);
   }
   container.appendChild(wrap);
