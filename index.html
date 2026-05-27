@@ -631,7 +631,8 @@ function fmtDate(d){if(!d)return'';return new Date(d+'T12:00:00').toLocaleDateSt
 function today(){return new Date().toISOString().slice(0,10);}
 function getProject(id){return state.projects.find(p=>p.id===id);}
 function getVersion(p,vid){return(p.versions||[]).find(v=>v.id===vid);}
-function getSetup(projId){const p=getProject(projId);if(!p.setup)p.setup={planSetName:null,planSetPageCount:0,floors:[],site:{pageIndex:null,zones:[]},elevations:[]};return p.setup;}
+function getSetup(projId){const p=getProject(projId);if(!p.setup)p.setup={planSetName:null,planSetPageCount:0,sheets:{}};if(!p.setup.sheets)p.setup.sheets={};if(!("planSetName" in p.setup))p.setup.planSetName=null;if(!("planSetPageCount" in p.setup))p.setup.planSetPageCount=0;return p.setup;}
+function getCatSheets(setup,catId){if(!setup.sheets)setup.sheets={};if(!setup.sheets[catId])setup.sheets[catId]=[];return setup.sheets[catId];}
 
 /* ════ ROUTING ════ */
 let currentProjectId=null,currentVersionId=null,currentAsmId=null,asmDraft=null;
