@@ -2,437 +2,678 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Sheet Assignment Test v2</title>
+<title>Room Drawing Tool Test</title>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f0efe9;height:100vh;overflow:hidden;display:flex;flex-direction:column}
 
-.topbar{background:#fff;border-bottom:1px solid rgba(0,0,0,.12);padding:0 20px;height:48px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.topbar h1{font-size:15px;font-weight:700}
-.topbar-hint{font-size:12px;color:#888}
+.topbar{background:#fff;border-bottom:1px solid rgba(0,0,0,.12);padding:0 16px;height:48px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.topbar h1{font-size:14px;font-weight:700;margin-right:8px}
+.divider{width:1px;height:24px;background:rgba(0,0,0,.12);margin:0 4px}
 
-.workspace{flex:1;display:grid;grid-template-columns:1fr 380px;overflow:hidden}
+.tool-btn{
+  padding:5px 12px;font-size:12px;font-weight:500;
+  border-radius:6px;border:1.5px solid rgba(0,0,0,.15);
+  background:#fff;color:#333;cursor:pointer;
+  display:flex;align-items:center;gap:5px;
+  transition:all .1s;white-space:nowrap;
+}
+.tool-btn:hover{background:#f0efe9;border-color:rgba(0,0,0,.25)}
+.tool-btn.active{background:#185fa5;color:#fff;border-color:#185fa5}
+.tool-btn.danger:hover{background:#fcebeb;color:#a32d2d;border-color:#f09595}
+.tool-btn.success{background:#3b6d11;color:#eaf3de;border-color:#3b6d11}
+.tool-btn.success:hover{background:#2d5209}
 
-/* LEFT — thumbnails */
-.thumb-panel{background:#f7f7f5;border-right:1px solid rgba(0,0,0,.12);display:flex;flex-direction:column;overflow:hidden}
-.thumb-panel-head{padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.12);background:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
-.thumb-panel-title{font-size:13px;font-weight:600;color:#1a1a18}
-.thumb-panel-sub{font-size:11px;color:#888;margin-top:2px}
-.thumb-grid{flex:1;overflow-y:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;align-content:start}
+.tool-hint{font-size:11px;color:#888;margin-left:auto}
 
-.thumb-item{
-  position:relative;border:2px solid #ddd;border-radius:8px;overflow:hidden;
-  background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.1);
-  cursor:grab;transition:border-color .15s,box-shadow .15s,opacity .2s;
-  user-select:none;
-}
-.thumb-item:hover{border-color:#185fa5;box-shadow:0 3px 12px rgba(24,95,165,.2)}
-.thumb-item.assigned{opacity:0.45}
-.thumb-item.dragging-active{opacity:0.3}
-.thumb-item canvas{display:block;width:100%;height:auto}
-.thumb-item .page-label{font-size:11px;font-weight:600;color:#555;text-align:center;padding:5px 4px;background:#fff;border-top:1px solid #eee}
-.assigned-badge{
-  position:absolute;top:0;left:0;right:0;
-  background:rgba(24,95,165,.88);color:#fff;
-  font-size:10px;font-weight:600;padding:4px 8px;
-  text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  display:none;
-}
-.thumb-item.assigned .assigned-badge{display:block}
-.view-btn{
-  position:absolute;bottom:28px;right:6px;
-  background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:5px;
-  padding:3px 8px;font-size:10px;cursor:pointer;
-  opacity:0;transition:opacity .15s;z-index:2;
-}
-.thumb-item:hover .view-btn{opacity:1}
-
-/* RIGHT — categories */
-.cat-panel{background:#fff;display:flex;flex-direction:column;overflow:hidden}
-.cat-panel-head{
-  padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.12);
-  font-size:13px;font-weight:600;color:#1a1a18;
-  flex-shrink:0;background:#fff;
-}
-.cat-scroll{flex:1;overflow-y:auto;padding:8px 12px 16px}
-
-.cat-group{margin-bottom:4px}
-.cat-group-label{
-  font-size:9px;font-weight:700;color:#9a9994;
-  text-transform:uppercase;letter-spacing:.08em;
-  padding:8px 4px 4px;
-}
-
-.cat-block{
-  border:1px solid rgba(0,0,0,.1);border-radius:8px;
-  overflow:hidden;margin-bottom:6px;background:#fafaf8;
-}
-.cat-block-head{
-  display:flex;align-items:center;gap:8px;
-  padding:7px 10px;background:#f0efe9;border-bottom:1px solid rgba(0,0,0,.08);
-}
-.cat-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-.cat-block-name{font-size:12px;font-weight:600;color:#1a1a18;flex:1}
-.add-sheet-btn{
-  font-size:10px;padding:2px 8px;border-radius:10px;
-  border:1px solid rgba(0,0,0,.15);background:#fff;
-  color:#555;cursor:pointer;white-space:nowrap;
-  transition:all .1s;
-}
-.add-sheet-btn:hover{border-color:#185fa5;color:#185fa5}
-
-.sheet-rows{padding:4px 8px}
-
-.sheet-row{
-  display:flex;align-items:center;gap:6px;
-  padding:4px 6px;border-radius:5px;margin-bottom:3px;
-  border:1.5px solid rgba(0,0,0,.1);background:#fff;
-  min-height:32px;transition:all .15s;
-}
-.sheet-row.drag-over{background:#e6f1fb;border-color:#185fa5;border-style:solid}
-.sheet-row.has-page{border-color:transparent;background:#f0f8f0}
-
-.sheet-name-input{
-  flex:1;font-size:12px;border:none;background:transparent;
-  outline:none;color:#1a1a18;min-width:0;
-  padding:0;font-family:inherit;
-}
-.sheet-name-input::placeholder{color:#bbb}
-
-.pg-badge{
-  font-size:10px;font-weight:600;padding:2px 7px;
-  border-radius:10px;white-space:nowrap;flex-shrink:0;
-}
-.drop-hint{font-size:10px;color:#ccc;white-space:nowrap;flex-shrink:0}
-.remove-btn{
-  background:none;border:none;cursor:pointer;
-  color:#bbb;font-size:14px;line-height:1;
-  padding:0 2px;flex-shrink:0;transition:color .1s;
-}
-.remove-btn:hover{color:#a32d2d}
-
-.new-drop-zone{
-  border:1.5px dashed rgba(0,0,0,.12);border-radius:5px;
-  padding:5px 8px;margin-bottom:3px;
-  font-size:10px;color:#bbb;text-align:center;
-  transition:all .15s;
-}
-.new-drop-zone.drag-over{background:#e6f1fb;border-color:#185fa5;color:#185fa5;border-style:solid}
-
-/* Upload zone */
+.workspace{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.upload-area{flex:1;display:flex;align-items:center;justify-content:center}
 .upload-zone{
-  grid-column:1/-1;border:2px dashed #ccc;border-radius:12px;
-  padding:40px;text-align:center;cursor:pointer;
-  transition:all .15s;background:#fff;
+  border:2px dashed #ccc;border-radius:12px;padding:40px 60px;
+  text-align:center;cursor:pointer;transition:all .15s;background:#fff;
 }
 .upload-zone:hover{border-color:#185fa5;background:#e6f1fb}
 
-/* Full view */
-#full-viewer{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;display:none;flex-direction:column}
-#full-viewer.open{display:flex}
-.viewer-bar{padding:10px 20px;background:#1a1a18;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.viewer-body{flex:1;overflow:auto;background:#525659;display:flex;justify-content:center;padding:20px}
-.viewer-body img{max-width:100%;height:auto;box-shadow:0 4px 24px rgba(0,0,0,.5);background:#fff}
+.canvas-wrap{flex:1;overflow:auto;background:#525659;display:flex;align-items:flex-start;justify-content:flex-start;padding:20px}
+.canvas-container{position:relative;flex-shrink:0;line-height:0}
+#pdf-canvas{display:block}
+#draw-canvas{position:absolute;top:0;left:0}
 
-.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(0,0,0,.1);border-top-color:#185fa5;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px}
+/* Rooms overlay */
+.room-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+
+/* Name modal */
+.name-modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.4);
+  z-index:200;display:flex;align-items:center;justify-content:center;
+}
+.name-modal{
+  background:#fff;border-radius:10px;padding:20px;width:320px;
+  box-shadow:0 8px 32px rgba(0,0,0,.2);
+}
+.name-modal h3{font-size:14px;font-weight:600;margin-bottom:12px}
+.name-modal input{
+  width:100%;padding:8px 10px;font-size:13px;border:1.5px solid #ddd;
+  border-radius:6px;outline:none;font-family:inherit;
+}
+.name-modal input:focus{border-color:#185fa5}
+.name-modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* Room list sidebar */
+.room-list-panel{
+  position:fixed;right:0;top:48px;bottom:0;width:220px;
+  background:#fff;border-left:1px solid rgba(0,0,0,.12);
+  display:flex;flex-direction:column;z-index:10;
+  transform:translateX(100%);transition:transform .2s;
+}
+.room-list-panel.open{transform:translateX(0)}
+.rlp-head{padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.1);font-size:12px;font-weight:600;color:#333}
+.rlp-body{flex:1;overflow-y:auto;padding:8px}
+.room-list-item{
+  display:flex;align-items:center;gap:8px;padding:6px 8px;
+  border-radius:6px;cursor:pointer;margin-bottom:2px;
+  transition:background .1s;font-size:12px;
+}
+.room-list-item:hover{background:#f0efe9}
+.room-list-item.selected{background:#e6f1fb;color:#185fa5;font-weight:500}
+.rl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.rl-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rl-del{background:none;border:none;cursor:pointer;color:#bbb;font-size:14px;padding:0 2px;line-height:1}
+.rl-del:hover{color:#a32d2d}
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <h1>Sheet Assignment Test v2</h1>
-  <span class="topbar-hint" id="topbar-hint">Upload a plan set PDF to begin</span>
+  <h1>Room Drawing Tool</h1>
+  <div class="divider"></div>
+
+  <!-- Mode buttons -->
+  <button class="tool-btn active" id="btn-rect" onclick="setMode('rect')" title="Draw rectangle">
+    ▭ Rectangle
+  </button>
+  <button class="tool-btn" id="btn-poly" onclick="setMode('poly')" title="Click to place points, double-click to close">
+    ⬡ Polygon
+  </button>
+
+  <div class="divider"></div>
+
+  <button class="tool-btn" id="btn-select" onclick="setMode('select')" title="Select and modify rooms">
+    ↖ Select
+  </button>
+  <button class="tool-btn danger" id="btn-delete" onclick="deleteSelected()" title="Delete selected room (Del)">
+    🗑 Delete
+  </button>
+
+  <div class="divider"></div>
+
+  <button class="tool-btn" id="btn-rooms" onclick="toggleRoomList()">
+    ☰ Rooms (<span id="room-count">0</span>)
+  </button>
+
+  <div class="divider"></div>
+
+  <button class="tool-btn success" onclick="saveRooms()">✓ Save rooms</button>
+
+  <span class="tool-hint" id="tool-hint">Upload a PDF to start drawing</span>
+
+  <input type="file" id="pdf-input" accept=".pdf" style="display:none" onchange="loadPDF(event)">
+  <button class="tool-btn" onclick="document.getElementById('pdf-input').click()" style="margin-left:4px">↑ Load PDF</button>
 </div>
 
-<div class="workspace">
-  <div class="thumb-panel">
-    <div class="thumb-panel-head">
-      <div>
-        <div class="thumb-panel-title" id="panel-title">Plan Set Pages</div>
-        <div class="thumb-panel-sub" id="panel-sub">Upload a PDF to see thumbnails</div>
-      </div>
-      <button onclick="document.getElementById('pdf-input').click()"
-        style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #ccc;background:#fff;cursor:pointer;color:#555">
-        ↑ Upload
-      </button>
+<div class="workspace" id="workspace">
+  <div class="upload-area" id="upload-area">
+    <div class="upload-zone" onclick="document.getElementById('pdf-input').click()">
+      <div style="font-size:36px;margin-bottom:10px">📐</div>
+      <div style="font-size:15px;font-weight:600;color:#333;margin-bottom:4px">Load a floor plan PDF</div>
+      <div style="font-size:12px;color:#888">Then draw room boundaries on top of it</div>
     </div>
-    <div class="thumb-grid" id="thumb-grid">
-      <div class="upload-zone" onclick="document.getElementById('pdf-input').click()">
-        <div style="font-size:32px;margin-bottom:8px">📄</div>
-        <div style="font-size:14px;font-weight:500;color:#555">Click to upload plan set PDF</div>
-        <div style="font-size:12px;color:#888;margin-top:4px">All floors, elevations, site plan in one file</div>
-      </div>
+  </div>
+</div>
+
+<!-- Room list sidebar -->
+<div class="room-list-panel" id="room-list-panel">
+  <div class="rlp-head">Rooms</div>
+  <div class="rlp-body" id="rlp-body"></div>
+</div>
+
+<!-- Name prompt modal -->
+<div class="name-modal-backdrop" id="name-modal" style="display:none">
+  <div class="name-modal">
+    <h3 id="name-modal-title">Name this room</h3>
+    <input type="text" id="name-input" placeholder="e.g. Kitchen, Master Bath..." autofocus>
+    <div class="name-modal-footer">
+      <button class="tool-btn" onclick="cancelNameModal()">Cancel</button>
+      <button class="tool-btn active" onclick="confirmName()">Add room</button>
     </div>
   </div>
-
-  <div class="cat-panel">
-    <div class="cat-panel-head">Drawing Categories — drag pages here</div>
-    <div class="cat-scroll" id="cat-scroll"></div>
-  </div>
 </div>
-
-<div id="full-viewer">
-  <div class="viewer-bar">
-    <span id="viewer-title" style="font-size:14px;font-weight:600"></span>
-    <button onclick="closeViewer()" style="background:#555;color:#fff;border:none;border-radius:6px;padding:6px 16px;cursor:pointer;font-size:13px">✕ Close</button>
-  </div>
-  <div class="viewer-body" id="viewer-body"></div>
-</div>
-
-<input type="file" id="pdf-input" accept=".pdf" style="display:none">
 
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js';
 
-const GROUPS = [
-  { label:'Existing', cats:[
-    {id:'existing-plans',      name:'Existing Plans',          color:'#5F5E5A'},
-    {id:'existing-elevations', name:'Existing Elevations',     color:'#5F5E5A'},
-  ]},
-  { label:'Proposed', cats:[
-    {id:'floors',              name:'Floor Plans',             color:'#185FA5'},
-    {id:'elevations',          name:'Elevations',              color:'#534AB7'},
-    {id:'site',                name:'Site Plan',               color:'#3B6D11'},
-    {id:'interior-elevations', name:'Interior Elevations',     color:'#D4537E'},
-  ]},
-  { label:'Engineering', cats:[
-    {id:'electrical',          name:'Electrical Plans',        color:'#EF9F27'},
-    {id:'mechanical',          name:'Mechanical / Plumbing',   color:'#1D9E75'},
-    {id:'structural',          name:'Structural',              color:'#712B13'},
-  ]},
-  { label:'Other', cats:[
-    {id:'landscape',           name:'Landscape',               color:'#3B6D11'},
-    {id:'details',             name:'Details',                 color:'#888780'},
-    {id:'sections',            name:'Sections',                color:'#888780'},
-    {id:'schedules',           name:'Door / Window Schedules', color:'#083344'},
-  ]},
-];
+/* ════ STATE ════ */
+const ROOM_COLOR = '#185FA5';
+const FILL_ALPHA = 0.15;
+const SELECTED_ALPHA = 0.28;
+const HANDLE_SIZE = 8;
 
-// assignments: { catId: [ {id, name, pageIndex}, ... ] }
-let assignments = {};
+let mode = 'rect'; // rect | poly | select
+let rooms = []; // {id, name, type:'rect'|'poly', ...shape data}
+let selectedId = null;
 let pdfDoc = null;
+let pdfScale = 1.5;
+let pdfWidth = 0, pdfHeight = 0;
 
-function uid(){ return 'sh-' + Date.now() + '-' + Math.floor(Math.random()*9999); }
-function hexToRgb(hex){
-  return `${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`;
-}
-function getCatSheets(catId){
-  if(!assignments[catId]) assignments[catId] = [];
-  return assignments[catId];
-}
+// Drawing state
+let drawing = false;
+let drawStart = {x:0, y:0};
+let drawCurrent = {x:0, y:0};
+let polyPoints = []; // for polygon mode
 
-/* ── Build category panel ── */
-function buildCatList(){
-  const scroll = document.getElementById('cat-scroll');
-  let html = '';
-  GROUPS.forEach(g => {
-    html += `<div class="cat-group"><div class="cat-group-label">${g.label}</div>`;
-    g.cats.forEach(cat => {
-      const sheets = getCatSheets(cat.id);
-      const rgb = hexToRgb(cat.color);
-      html += `<div class="cat-block">
-        <div class="cat-block-head">
-          <div class="cat-dot" style="background:${cat.color}"></div>
-          <div class="cat-block-name">${cat.name}</div>
-          <button class="add-sheet-btn" onclick="addSheet('${cat.id}')">+ Add sheet</button>
-        </div>
-        <div class="sheet-rows" id="sheets-${cat.id}">`;
+// Drag/resize state
+let dragging = false;
+let dragType = null; // 'move' | 'handle-N/NE/E/SE/S/SW/W/NW'
+let dragStart = {x:0, y:0};
+let dragOrigShape = null;
 
-      sheets.forEach(sheet => {
-        const hasPg = sheet.pageIndex !== null && sheet.pageIndex !== undefined;
-        html += `<div class="sheet-row ${hasPg?'has-page':''}" id="sheet-${sheet.id}"
-          ondragover="dragOver(event,this)" ondragleave="dragLeave(this)" ondrop="dropOnSheet(event,'${cat.id}','${sheet.id}')">
-          <input class="sheet-name-input" value="${sheet.name.replace(/"/g,'&quot;')}"
-            onchange="renameSheet('${cat.id}','${sheet.id}',this.value)"
-            placeholder="Sheet name">
-          ${hasPg
-            ? `<span class="pg-badge" style="background:rgba(${rgb},.15);color:${cat.color}">Page ${sheet.pageIndex+1}</span>
-               <button class="remove-btn" onclick="unassignSheet('${cat.id}','${sheet.id}')" title="Remove page">×</button>`
-            : `<span class="drop-hint">drop page</span>
-               <button class="remove-btn" onclick="removeSheet('${cat.id}','${sheet.id}')" title="Remove sheet">×</button>`
-          }
-        </div>`;
-      });
+// Pending shape waiting for name
+let pendingShape = null;
 
-      // Drop zone to create a new sheet
-      html += `<div class="new-drop-zone" 
-        ondragover="dragOver(event,this)" ondragleave="dragLeave(this)" ondrop="dropNewSheet(event,'${cat.id}')">
-        + drop page to add new sheet
-      </div>`;
+function uid(){ return 'r-' + Date.now() + '-' + Math.floor(Math.random()*9999); }
 
-      html += `</div></div>`;
-    });
-    html += '</div>';
-  });
-  scroll.innerHTML = html;
-}
-
-/* ── Sheet management ── */
-function addSheet(catId){
-  const cat = GROUPS.flatMap(g=>g.cats).find(c=>c.id===catId);
-  const sheets = getCatSheets(catId);
-  sheets.push({ id:uid(), name:cat.name + ' ' + (sheets.length+1), pageIndex:null });
-  buildCatList();
-  updateThumbStates();
-}
-
-function removeSheet(catId, sheetId){
-  assignments[catId] = getCatSheets(catId).filter(s=>s.id!==sheetId);
-  buildCatList();
-  updateThumbStates();
-}
-
-function renameSheet(catId, sheetId, name){
-  const s = getCatSheets(catId).find(x=>x.id===sheetId);
-  if(s) s.name = name;
-}
-
-function unassignSheet(catId, sheetId){
-  const s = getCatSheets(catId).find(x=>x.id===sheetId);
-  if(s){ s.pageIndex = null; }
-  buildCatList();
-  updateThumbStates();
-}
-
-/* ── Drag handlers ── */
-function dragOver(e, el){
-  e.preventDefault();
-  el.classList.add('drag-over');
-}
-function dragLeave(el){
-  el.classList.remove('drag-over');
-}
-function dropOnSheet(e, catId, sheetId){
-  e.preventDefault();
-  document.getElementById('sheet-'+sheetId)?.classList.remove('drag-over');
-  const pageIdx = parseInt(e.dataTransfer.getData('text/plain'));
-  if(isNaN(pageIdx)) return;
-  const s = getCatSheets(catId).find(x=>x.id===sheetId);
-  if(s){ s.pageIndex = pageIdx; }
-  buildCatList();
-  updateThumbStates();
-}
-function dropNewSheet(e, catId){
-  e.preventDefault();
-  const pageIdx = parseInt(e.dataTransfer.getData('text/plain'));
-  if(isNaN(pageIdx)) return;
-  const cat = GROUPS.flatMap(g=>g.cats).find(c=>c.id===catId);
-  const sheets = getCatSheets(catId);
-  sheets.push({ id:uid(), name:cat.name + ' ' + (sheets.length+1), pageIndex:pageIdx });
-  buildCatList();
-  updateThumbStates();
-}
-
-/* ── Update thumb visual state ── */
-function updateThumbStates(){
-  // Build map of pageIndex -> sheet names
-  const labels = {};
-  Object.entries(assignments).forEach(([catId, sheets]) => {
-    sheets.forEach(s => {
-      if(s.pageIndex !== null && s.pageIndex !== undefined){
-        if(!labels[s.pageIndex]) labels[s.pageIndex] = [];
-        labels[s.pageIndex].push(s.name);
-      }
-    });
-  });
-  const assignedPages = new Set(Object.keys(labels).map(Number));
-
-  document.querySelectorAll('.thumb-item').forEach(item => {
-    const pg = parseInt(item.dataset.page);
-    const badge = item.querySelector('.assigned-badge');
-    if(assignedPages.has(pg)){
-      item.classList.add('assigned');
-      if(badge) badge.textContent = labels[pg].join(', ');
-    } else {
-      item.classList.remove('assigned');
-      if(badge) badge.textContent = '';
-    }
-  });
-}
-
-/* ── PDF Upload ── */
-document.getElementById('pdf-input').addEventListener('change', async function(e){
+/* ════ PDF LOAD ════ */
+async function loadPDF(e) {
   const file = e.target.files[0]; if(!file) return;
-  assignments = {};
-  document.getElementById('thumb-grid').innerHTML =
-    '<div style="grid-column:1/-1;padding:20px;font-size:13px;color:#888"><span class="spinner"></span>Loading PDF...</div>';
-  document.getElementById('panel-title').textContent = file.name;
-  document.getElementById('topbar-hint').textContent = 'Drag page thumbnails onto category sheets →';
-  buildCatList();
-
+  setHint('<span class="spinner"></span>Loading PDF...');
   const buf = await file.arrayBuffer();
-  pdfDoc = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
-  document.getElementById('panel-sub').textContent = pdfDoc.numPages + ' pages — drag onto categories →';
-  document.getElementById('thumb-grid').innerHTML = '';
+  pdfDoc = await pdfjsLib.getDocument({data: new Uint8Array(buf)}).promise;
+  await renderPage(1);
+  e.target.value = '';
+}
 
-  for(let i=1; i<=pdfDoc.numPages; i++){
-    const page = await pdfDoc.getPage(i);
-    const base = page.getViewport({scale:1});
-    const scale = (260 * 2.5) / base.width;
-    const vp = page.getViewport({scale});
-    const c = document.createElement('canvas');
-    c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
-    await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
-
-    const item = document.createElement('div');
-    item.className = 'thumb-item';
-    item.draggable = true;
-    item.dataset.page = String(i-1);
-
-    item.addEventListener('dragstart', ev => {
-      ev.dataTransfer.setData('text/plain', String(i-1));
-      ev.dataTransfer.effectAllowed = 'copy';
-      item.classList.add('dragging-active');
-    });
-    item.addEventListener('dragend', () => item.classList.remove('dragging-active'));
-
-    const badge = document.createElement('div'); badge.className='assigned-badge';
-    const viewBtn = document.createElement('button'); viewBtn.className='view-btn';
-    viewBtn.textContent = '⤢ Full view';
-    viewBtn.addEventListener('click', async ev => { ev.stopPropagation(); await openViewer(i); });
-    const lbl = document.createElement('div'); lbl.className='page-label';
-    lbl.textContent = 'Page ' + i;
-
-    item.appendChild(badge); item.appendChild(c); item.appendChild(viewBtn); item.appendChild(lbl);
-    document.getElementById('thumb-grid').appendChild(item);
-  }
-  document.getElementById('topbar-hint').textContent = pdfDoc.numPages + ' pages — drag onto categories →';
-  this.value = '';
-});
-
-/* ── Full view ── */
-async function openViewer(pageNum){
-  if(!pdfDoc) return;
-  document.getElementById('viewer-title').textContent = 'Page ' + pageNum + ' — rendering...';
-  document.getElementById('viewer-body').innerHTML = '<div style="color:#fff;padding:40px"><span class="spinner"></span>Rendering...</div>';
-  document.getElementById('full-viewer').classList.add('open');
+async function renderPage(pageNum) {
   const page = await pdfDoc.getPage(pageNum);
-  const vp = page.getViewport({scale:4.0});
-  const c = document.createElement('canvas');
-  c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
-  await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
-  c.toBlob(blob => {
-    const img = document.createElement('img');
-    img.src = URL.createObjectURL(blob);
-    document.getElementById('viewer-body').innerHTML = '';
-    document.getElementById('viewer-body').appendChild(img);
-    document.getElementById('viewer-title').textContent = 'Page ' + pageNum;
-  }, 'image/png');
+  const vp = page.getViewport({scale: pdfScale});
+  pdfWidth = Math.floor(vp.width);
+  pdfHeight = Math.floor(vp.height);
+
+  document.getElementById('upload-area')?.remove();
+
+  // Build canvas container
+  const workspace = document.getElementById('workspace');
+  workspace.innerHTML = `<div class="canvas-wrap" id="canvas-wrap">
+    <div class="canvas-container" id="canvas-container">
+      <canvas id="pdf-canvas" width="${pdfWidth}" height="${pdfHeight}"></canvas>
+      <canvas id="draw-canvas" width="${pdfWidth}" height="${pdfHeight}"></canvas>
+    </div>
+  </div>`;
+
+  const pdfCanvas = document.getElementById('pdf-canvas');
+  await page.render({canvasContext: pdfCanvas.getContext('2d'), viewport: vp}).promise;
+
+  // Wire draw canvas events
+  const dc = document.getElementById('draw-canvas');
+  dc.addEventListener('mousedown', onMouseDown);
+  dc.addEventListener('mousemove', onMouseMove);
+  dc.addEventListener('mouseup', onMouseUp);
+  dc.addEventListener('dblclick', onDblClick);
+
+  document.addEventListener('keydown', onKeyDown);
+
+  setHint('Rectangle mode — drag to draw a room');
+  redraw();
 }
 
-function closeViewer(){
-  document.getElementById('full-viewer').classList.remove('open');
-  document.getElementById('viewer-body').innerHTML = '';
+/* ════ DRAW CANVAS ════ */
+function getCanvas(){ return document.getElementById('draw-canvas'); }
+function getCtx(){ return getCanvas()?.getContext('2d'); }
+
+function redraw() {
+  const c = getCanvas(); if(!c) return;
+  const ctx = getCtx();
+  ctx.clearRect(0,0,pdfWidth,pdfHeight);
+
+  // Draw all rooms
+  rooms.forEach(r => {
+    const isSelected = r.id === selectedId;
+    drawRoom(ctx, r, isSelected);
+  });
+
+  // Draw in-progress shape
+  if(drawing && mode === 'rect') {
+    const x = Math.min(drawStart.x, drawCurrent.x);
+    const y = Math.min(drawStart.y, drawCurrent.y);
+    const w = Math.abs(drawCurrent.x - drawStart.x);
+    const h = Math.abs(drawCurrent.y - drawStart.y);
+    ctx.fillStyle = `rgba(24,95,165,${FILL_ALPHA})`;
+    ctx.strokeStyle = '#185FA5';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6,3]);
+    ctx.fillRect(x,y,w,h);
+    ctx.strokeRect(x,y,w,h);
+    ctx.setLineDash([]);
+  }
+
+  // Draw polygon in progress
+  if(mode === 'poly' && polyPoints.length > 0) {
+    ctx.beginPath();
+    ctx.moveTo(polyPoints[0].x, polyPoints[0].y);
+    polyPoints.forEach((p,i) => { if(i>0) ctx.lineTo(p.x,p.y); });
+    if(drawing) ctx.lineTo(drawCurrent.x, drawCurrent.y);
+    ctx.strokeStyle = '#185FA5';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6,3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // Draw points
+    polyPoints.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 5, 0, Math.PI*2);
+      ctx.fillStyle = '#185FA5';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+  }
 }
-document.getElementById('full-viewer').addEventListener('click', function(e){
-  if(e.target===this||e.target===document.getElementById('viewer-body')) closeViewer();
+
+function drawRoom(ctx, r, isSelected) {
+  ctx.save();
+  const alpha = isSelected ? SELECTED_ALPHA : FILL_ALPHA;
+  ctx.fillStyle = `rgba(24,95,165,${alpha})`;
+  ctx.strokeStyle = isSelected ? '#0c447c' : '#185FA5';
+  ctx.lineWidth = isSelected ? 2.5 : 2;
+
+  if(r.type === 'rect') {
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+    ctx.strokeRect(r.x, r.y, r.w, r.h);
+    // Label
+    drawLabel(ctx, r.name, r.x + r.w/2, r.y + r.h/2, isSelected);
+    // Handles if selected
+    if(isSelected) drawRectHandles(ctx, r);
+  } else if(r.type === 'poly') {
+    ctx.beginPath();
+    r.points.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    // Label at centroid
+    const cx = r.points.reduce((s,p)=>s+p.x,0)/r.points.length;
+    const cy = r.points.reduce((s,p)=>s+p.y,0)/r.points.length;
+    drawLabel(ctx, r.name, cx, cy, isSelected);
+    // Handles if selected
+    if(isSelected) drawPolyHandles(ctx, r);
+  }
+  ctx.restore();
+}
+
+function drawLabel(ctx, name, cx, cy, isSelected) {
+  ctx.font = `bold ${13}px -apple-system,sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const metrics = ctx.measureText(name);
+  const pad = 6;
+  const bw = metrics.width + pad*2, bh = 20;
+  ctx.fillStyle = isSelected ? 'rgba(12,68,124,0.85)' : 'rgba(24,95,165,0.75)';
+  ctx.beginPath();
+  ctx.roundRect(cx - bw/2, cy - bh/2, bw, bh, 4);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.fillText(name, cx, cy);
+}
+
+function drawRectHandles(ctx, r) {
+  const handles = getRectHandlePositions(r);
+  handles.forEach(h => {
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#185fa5';
+    ctx.lineWidth = 1.5;
+    ctx.fillRect(h.x - HANDLE_SIZE/2, h.y - HANDLE_SIZE/2, HANDLE_SIZE, HANDLE_SIZE);
+    ctx.strokeRect(h.x - HANDLE_SIZE/2, h.y - HANDLE_SIZE/2, HANDLE_SIZE, HANDLE_SIZE);
+  });
+}
+
+function drawPolyHandles(ctx, r) {
+  r.points.forEach(p => {
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#185fa5';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, HANDLE_SIZE/2+1, 0, Math.PI*2);
+    ctx.fill(); ctx.stroke();
+  });
+}
+
+function getRectHandlePositions(r) {
+  const {x,y,w,h} = r;
+  return [
+    {name:'NW', x:x,      y:y},
+    {name:'N',  x:x+w/2,  y:y},
+    {name:'NE', x:x+w,    y:y},
+    {name:'E',  x:x+w,    y:y+h/2},
+    {name:'SE', x:x+w,    y:y+h},
+    {name:'S',  x:x+w/2,  y:y+h},
+    {name:'SW', x:x,      y:y+h},
+    {name:'W',  x:x,      y:y+h/2},
+  ];
+}
+
+function getCursorForHandle(name) {
+  const map = {N:'n-resize',NE:'ne-resize',E:'e-resize',SE:'se-resize',S:'s-resize',SW:'sw-resize',W:'w-resize',NW:'nw-resize'};
+  return map[name] || 'pointer';
+}
+
+/* ════ HIT TESTING ════ */
+function hitTestHandle(room, mx, my) {
+  if(room.type === 'rect') {
+    const handles = getRectHandlePositions(room);
+    for(const h of handles) {
+      if(Math.abs(mx-h.x) <= HANDLE_SIZE && Math.abs(my-h.y) <= HANDLE_SIZE)
+        return h.name;
+    }
+  } else if(room.type === 'poly') {
+    for(let i=0; i<room.points.length; i++) {
+      const p = room.points[i];
+      if(Math.abs(mx-p.x) <= HANDLE_SIZE+2 && Math.abs(my-p.y) <= HANDLE_SIZE+2)
+        return 'POLY-' + i;
+    }
+  }
+  return null;
+}
+
+function hitTestRoom(mx, my) {
+  // Test in reverse order (topmost first)
+  for(let i=rooms.length-1; i>=0; i--) {
+    const r = rooms[i];
+    if(r.type === 'rect') {
+      if(mx >= r.x && mx <= r.x+r.w && my >= r.y && my <= r.y+r.h)
+        return r;
+    } else if(r.type === 'poly') {
+      if(pointInPolygon(mx, my, r.points)) return r;
+    }
+  }
+  return null;
+}
+
+function pointInPolygon(x, y, points) {
+  let inside = false;
+  for(let i=0,j=points.length-1; i<points.length; j=i++) {
+    const xi=points[i].x, yi=points[i].y, xj=points[j].x, yj=points[j].y;
+    if(((yi>y)!=(yj>y)) && (x < (xj-xi)*(y-yi)/(yj-yi)+xi)) inside=!inside;
+  }
+  return inside;
+}
+
+/* ════ MOUSE EVENTS ════ */
+function getPos(e) {
+  const c = getCanvas();
+  const r = c.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+function onMouseDown(e) {
+  const {x,y} = getPos(e);
+
+  if(mode === 'select') {
+    // Check handle first
+    if(selectedId) {
+      const sel = rooms.find(r=>r.id===selectedId);
+      if(sel) {
+        const h = hitTestHandle(sel, x, y);
+        if(h) {
+          dragging = true;
+          dragType = 'handle-' + h;
+          dragStart = {x,y};
+          dragOrigShape = JSON.parse(JSON.stringify(sel));
+          return;
+        }
+      }
+    }
+    // Check room body
+    const hit = hitTestRoom(x, y);
+    if(hit) {
+      selectedId = hit.id;
+      dragging = true;
+      dragType = 'move';
+      dragStart = {x,y};
+      dragOrigShape = JSON.parse(JSON.stringify(hit));
+    } else {
+      selectedId = null;
+    }
+    redraw();
+    updateRoomList();
+    return;
+  }
+
+  if(mode === 'rect') {
+    drawing = true;
+    drawStart = {x,y};
+    drawCurrent = {x,y};
+  }
+
+  if(mode === 'poly') {
+    if(polyPoints.length === 0) drawing = true;
+    // Check if clicking near first point to close
+    if(polyPoints.length >= 3) {
+      const fp = polyPoints[0];
+      if(Math.abs(x-fp.x)<12 && Math.abs(y-fp.y)<12) {
+        closePoly();
+        return;
+      }
+    }
+    polyPoints.push({x,y});
+    redraw();
+  }
+}
+
+function onMouseMove(e) {
+  const {x,y} = getPos(e);
+  drawCurrent = {x,y};
+  const c = getCanvas();
+
+  if(mode === 'select' && !dragging) {
+    // Update cursor
+    if(selectedId) {
+      const sel = rooms.find(r=>r.id===selectedId);
+      if(sel) {
+        const h = hitTestHandle(sel, x, y);
+        if(h && h.startsWith('POLY-')) { c.style.cursor='move'; return; }
+        if(h) { c.style.cursor=getCursorForHandle(h); return; }
+      }
+    }
+    const hit = hitTestRoom(x,y);
+    c.style.cursor = hit ? 'move' : 'default';
+    return;
+  }
+
+  if(dragging && dragType) {
+    const dx = x - dragStart.x;
+    const dy = y - dragStart.y;
+    const r = rooms.find(r=>r.id===selectedId);
+    if(!r) return;
+
+    if(dragType === 'move') {
+      if(r.type === 'rect') {
+        r.x = dragOrigShape.x + dx;
+        r.y = dragOrigShape.y + dy;
+      } else if(r.type === 'poly') {
+        r.points = dragOrigShape.points.map(p=>({x:p.x+dx, y:p.y+dy}));
+      }
+    } else if(dragType.startsWith('handle-POLY-')) {
+      const idx = parseInt(dragType.replace('handle-POLY-',''));
+      r.points[idx] = {x: dragOrigShape.points[idx].x+dx, y: dragOrigShape.points[idx].y+dy};
+    } else {
+      // Rect handle resize
+      const handle = dragType.replace('handle-','');
+      const o = dragOrigShape;
+      let {x:rx,y:ry,w:rw,h:rh} = o;
+      if(handle.includes('E')) rw = Math.max(20, o.w + dx);
+      if(handle.includes('S')) rh = Math.max(20, o.h + dy);
+      if(handle.includes('W')) { rx = o.x + dx; rw = Math.max(20, o.w - dx); }
+      if(handle.includes('N')) { ry = o.y + dy; rh = Math.max(20, o.h - dy); }
+      r.x=rx; r.y=ry; r.w=rw; r.h=rh;
+    }
+    redraw();
+    return;
+  }
+
+  if(drawing) redraw();
+}
+
+function onMouseUp(e) {
+  if(dragging) {
+    dragging = false; dragType = null; dragOrigShape = null;
+    redraw(); return;
+  }
+
+  if(mode === 'rect' && drawing) {
+    drawing = false;
+    const {x,y} = getPos(e);
+    const rx = Math.min(drawStart.x, x);
+    const ry = Math.min(drawStart.y, y);
+    const rw = Math.abs(x - drawStart.x);
+    const rh = Math.abs(y - drawStart.y);
+    if(rw < 10 || rh < 10) { redraw(); return; }
+    pendingShape = {type:'rect', x:rx, y:ry, w:rw, h:rh};
+    showNameModal('Name this room');
+  }
+}
+
+function onDblClick(e) {
+  if(mode === 'poly' && polyPoints.length >= 3) {
+    closePoly();
+  }
+}
+
+function closePoly() {
+  if(polyPoints.length < 3) { polyPoints=[]; drawing=false; redraw(); return; }
+  pendingShape = {type:'poly', points: [...polyPoints]};
+  polyPoints = [];
+  drawing = false;
+  redraw();
+  showNameModal('Name this area');
+}
+
+/* ════ NAME MODAL ════ */
+function showNameModal(title) {
+  document.getElementById('name-modal-title').textContent = title;
+  document.getElementById('name-input').value = '';
+  document.getElementById('name-modal').style.display = 'flex';
+  setTimeout(()=>document.getElementById('name-input').focus(), 50);
+}
+
+document.getElementById('name-input').addEventListener('keydown', e => {
+  if(e.key==='Enter') confirmName();
+  if(e.key==='Escape') cancelNameModal();
 });
-document.addEventListener('keydown', e => { if(e.key==='Escape') closeViewer(); });
 
-/* ── Init ── */
-buildCatList();
+function confirmName() {
+  const name = document.getElementById('name-input').value.trim();
+  if(!name) { document.getElementById('name-input').focus(); return; }
+  document.getElementById('name-modal').style.display = 'none';
+  if(!pendingShape) return;
+  const room = { id:uid(), name, ...pendingShape };
+  rooms.push(room);
+  selectedId = room.id;
+  pendingShape = null;
+  redraw();
+  updateRoomList();
+}
+
+function cancelNameModal() {
+  document.getElementById('name-modal').style.display = 'none';
+  pendingShape = null;
+  redraw();
+}
+
+/* ════ MODE / TOOLS ════ */
+function setMode(m) {
+  mode = m;
+  polyPoints = [];
+  drawing = false;
+  dragging = false;
+  document.querySelectorAll('.tool-btn[id^="btn-"]').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-'+m)?.classList.add('active');
+  const c = getCanvas();
+  if(c) c.style.cursor = m==='select' ? 'default' : 'crosshair';
+  const hints = {
+    rect:'Drag to draw a rectangular room',
+    poly:'Click to place points · Double-click or click first point to close · Esc to cancel',
+    select:'Click a room to select · Drag to move · Drag handles to resize · Del to delete'
+  };
+  setHint(hints[m]||'');
+  redraw();
+}
+
+function deleteSelected() {
+  if(!selectedId) return;
+  rooms = rooms.filter(r=>r.id!==selectedId);
+  selectedId = null;
+  redraw();
+  updateRoomList();
+}
+
+function onKeyDown(e) {
+  if(e.key==='Delete'||e.key==='Backspace') {
+    if(document.activeElement.tagName!=='INPUT') deleteSelected();
+  }
+  if(e.key==='Escape') {
+    if(mode==='poly'&&polyPoints.length>0){ polyPoints=[]; drawing=false; redraw(); }
+    cancelNameModal();
+  }
+}
+
+/* ════ ROOM LIST ════ */
+function toggleRoomList() {
+  document.getElementById('room-list-panel').classList.toggle('open');
+}
+
+function updateRoomList() {
+  document.getElementById('room-count').textContent = rooms.length;
+  const body = document.getElementById('rlp-body');
+  if(!rooms.length){ body.innerHTML='<div style="font-size:12px;color:#aaa;padding:8px">No rooms yet</div>'; return; }
+  body.innerHTML = rooms.map(r=>`
+    <div class="room-list-item ${r.id===selectedId?'selected':''}" onclick="selectRoom('${r.id}')">
+      <div class="rl-dot" style="background:${ROOM_COLOR}"></div>
+      <span class="rl-name">${r.name}</span>
+      <span style="font-size:10px;color:#aaa;margin-right:2px">${r.type==='poly'?'⬡':'▭'}</span>
+      <button class="rl-del" onclick="event.stopPropagation();deleteRoom('${r.id}')">×</button>
+    </div>`).join('');
+}
+
+function selectRoom(id) {
+  selectedId = id;
+  setMode('select');
+  redraw();
+  updateRoomList();
+}
+
+function deleteRoom(id) {
+  rooms = rooms.filter(r=>r.id!==id);
+  if(selectedId===id) selectedId=null;
+  redraw();
+  updateRoomList();
+}
+
+/* ════ SAVE ════ */
+function saveRooms() {
+  if(!rooms.length){ alert('No rooms drawn yet.'); return; }
+  // In the main app this would save to the project.
+  // For now show a summary.
+  const summary = rooms.map(r=>`• ${r.name} (${r.type})`).join('\n');
+  alert(`Saved ${rooms.length} room${rooms.length!==1?'s':''}:\n\n${summary}\n\nIn the main app these will become drop zones for assemblies.`);
+}
+
+/* ════ HELPERS ════ */
+function setHint(html) {
+  document.getElementById('tool-hint').innerHTML = html;
+}
 </script>
 </body>
 </html>
