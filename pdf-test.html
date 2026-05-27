@@ -508,7 +508,7 @@ async function openDrawTool(catId,sheetId){
 
   // Update toolbar title
   document.getElementById('draw-hint').textContent =
-    `Drawing on: ${sheet.name} · Scroll=zoom · Space+drag=pan`;
+    `Drawing on: ${sheet.name} · Scroll=zoom · Middle mouse or Space+drag=pan`;
 }
 
 /* ══════════════════════════════════
@@ -536,6 +536,8 @@ function onWheel(e){
   const ws=document.getElementById('draw-workspace');
   const rect=ws.getBoundingClientRect();
   const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  // Ctrl+scroll or plain scroll = zoom
+  // No modifier = zoom (standard for design tools)
   const delta=e.deltaY>0?0.9:1.1;
   const newZoom=Math.min(Math.max(zoom*delta,0.1),8);
   panX=mx-(mx-panX)*(newZoom/zoom);
@@ -545,8 +547,12 @@ function onWheel(e){
 }
 
 function onPanStart(e){
-  if(e.target===document.getElementById('draw-canvas'))return;
-  if(spaceDown||e.button===1){
+  // Middle mouse button (button=1) OR space+drag OR ctrl+drag = pan
+  const isMiddle = e.button===1;
+  const isSpaceDrag = spaceDown && e.button===0;
+  const isCtrlDrag = e.ctrlKey && e.button===0 && e.target!==document.getElementById('draw-canvas');
+  if(isMiddle||isSpaceDrag||isCtrlDrag){
+    e.preventDefault();
     panning=true;
     panStart={x:e.clientX,y:e.clientY};
     panOrigin={x:panX,y:panY};
@@ -555,11 +561,17 @@ function onPanStart(e){
 }
 function onPanMove(e){
   if(!panning)return;
+  e.preventDefault();
   panX=panOrigin.x+(e.clientX-panStart.x);
   panY=panOrigin.y+(e.clientY-panStart.y);
   applyTransform();
 }
-function onPanEnd(){ panning=false; document.getElementById('draw-workspace').style.cursor=''; }
+function onPanEnd(e){
+  if(panning){
+    panning=false;
+    document.getElementById('draw-workspace').style.cursor='';
+  }
+}
 
 function onKD(e){
   if(e.code==='Space'&&!e.target.closest('input')){
