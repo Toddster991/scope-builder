@@ -245,237 +245,72 @@ textarea{resize:vertical;min-height:52px;line-height:1.5}
 
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}/* ══ DRAW PAGE ══ */
+#page-draw{flex-direction:column}
+.draw-toolbar{height:44px;background:#1a1a18;display:flex;align-items:center;padding:0 14px;gap:6px;flex-shrink:0}
+.draw-toolbar .btn{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2)}
+.draw-toolbar .btn:hover{background:rgba(255,255,255,.2)}
+.draw-toolbar .btn.active{background:#185fa5;border-color:#185fa5}
+.draw-toolbar .btn.success{background:#3b6d11;border-color:#3b6d11}
+.draw-toolbar .btn.danger:hover{background:#a32d2d;border-color:#a32d2d;color:#fff}
+.draw-toolbar .divider{background:rgba(255,255,255,.2)}
+.draw-hint{font-size:11px;color:rgba(255,255,255,.6);margin-left:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zoom-indicator{font-size:11px;color:rgba(255,255,255,.5);margin-left:auto;white-space:nowrap}
 
-/* === ASSIGN PANEL CSS === */
-
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f0efe9;height:100vh;overflow:hidden;display:flex;flex-direction:column}
-
-.topbar{background:#fff;border-bottom:1px solid rgba(0,0,0,.12);padding:0 20px;height:48px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.topbar h1{font-size:15px;font-weight:700}
-.topbar-hint{font-size:12px;color:#888}
-
-.workspace{flex:1;display:grid;grid-template-columns:1fr 380px;overflow:hidden}
-
-/* LEFT — thumbnails */
-.thumb-panel{background:#f7f7f5;border-right:1px solid rgba(0,0,0,.12);display:flex;flex-direction:column;overflow:hidden}
-.thumb-panel-head{padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.12);background:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
-.thumb-panel-title{font-size:13px;font-weight:600;color:#1a1a18}
-.thumb-panel-sub{font-size:11px;color:#888;margin-top:2px}
-.thumb-grid{flex:1;overflow-y:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;align-content:start}
-
-.thumb-item{
-  position:relative;border:2px solid #ddd;border-radius:8px;overflow:hidden;
-  background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.1);
-  cursor:grab;transition:border-color .15s,box-shadow .15s,opacity .2s;
-  user-select:none;
-}
-.thumb-item:hover{border-color:#185fa5;box-shadow:0 3px 12px rgba(24,95,165,.2)}
-.thumb-item.assigned{opacity:0.45}
-.thumb-item.dragging-active{opacity:0.3}
-.thumb-item canvas{display:block;width:100%;height:auto}
-.thumb-item .page-label{font-size:11px;font-weight:600;color:#555;text-align:center;padding:5px 4px;background:#fff;border-top:1px solid #eee}
-.assigned-badge{
-  position:absolute;top:0;left:0;right:0;
-  background:rgba(24,95,165,.88);color:#fff;
-  font-size:10px;font-weight:600;padding:4px 8px;
-  text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  display:none;
-}
-.thumb-item.assigned .assigned-badge{display:block}
-.view-btn{
-  position:absolute;bottom:28px;right:6px;
-  background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:5px;
-  padding:3px 8px;font-size:10px;cursor:pointer;
-  opacity:0;transition:opacity .15s;z-index:2;
-}
-.thumb-item:hover .view-btn{opacity:1}
-
-/* RIGHT — categories */
-.cat-panel{background:#fff;display:flex;flex-direction:column;overflow:hidden}
-.cat-panel-head{
-  padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.12);
-  font-size:13px;font-weight:600;color:#1a1a18;
-  flex-shrink:0;background:#fff;
-}
-.cat-scroll{flex:1;overflow-y:auto;padding:8px 12px 16px}
-
-.cat-group{margin-bottom:4px}
-.cat-group-label{
-  font-size:9px;font-weight:700;color:#9a9994;
-  text-transform:uppercase;letter-spacing:.08em;
-  padding:8px 4px 4px;
-}
-
-.cat-block{
-  border:1px solid rgba(0,0,0,.1);border-radius:8px;
-  overflow:hidden;margin-bottom:6px;background:#fafaf8;
-}
-.cat-block-head{
-  display:flex;align-items:center;gap:8px;
-  padding:7px 10px;background:#f0efe9;border-bottom:1px solid rgba(0,0,0,.08);
-}
-.cat-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-.cat-block-name{font-size:12px;font-weight:600;color:#1a1a18;flex:1}
-.add-sheet-btn{
-  font-size:10px;padding:2px 8px;border-radius:10px;
-  border:1px solid rgba(0,0,0,.15);background:#fff;
-  color:#555;cursor:pointer;white-space:nowrap;
-  transition:all .1s;
-}
-.add-sheet-btn:hover{border-color:#185fa5;color:#185fa5}
-
-.sheet-rows{padding:4px 8px}
-
-.sheet-row{
-  display:flex;align-items:center;gap:6px;
-  padding:4px 6px;border-radius:5px;margin-bottom:3px;
-  border:1.5px solid rgba(0,0,0,.1);background:#fff;
-  min-height:32px;transition:all .15s;
-}
-.sheet-row.drag-over{background:#e6f1fb;border-color:#185fa5;border-style:solid}
-.sheet-row.has-page{border-color:transparent;background:#f0f8f0}
-
-.sheet-name-input{
-  flex:1;font-size:12px;border:none;background:transparent;
-  outline:none;color:#1a1a18;min-width:0;
-  padding:0;font-family:inherit;
-}
-.sheet-name-input::placeholder{color:#bbb}
-
-.pg-badge{
-  font-size:10px;font-weight:600;padding:2px 7px;
-  border-radius:10px;white-space:nowrap;flex-shrink:0;
-}
-.drop-hint{font-size:10px;color:#ccc;white-space:nowrap;flex-shrink:0}
-.remove-btn{
-  background:none;border:none;cursor:pointer;
-  color:#bbb;font-size:14px;line-height:1;
-  padding:0 2px;flex-shrink:0;transition:color .1s;
-}
-.remove-btn:hover{color:#a32d2d}
-
-.new-drop-zone{
-  border:1.5px dashed rgba(0,0,0,.12);border-radius:5px;
-  padding:5px 8px;margin-bottom:3px;
-  font-size:10px;color:#bbb;text-align:center;
-  transition:all .15s;
-}
-.new-drop-zone.drag-over{background:#e6f1fb;border-color:#185fa5;color:#185fa5;border-style:solid}
-
-/* Upload zone */
-.upload-zone{
-  grid-column:1/-1;border:2px dashed #ccc;border-radius:12px;
-  padding:40px;text-align:center;cursor:pointer;
-  transition:all .15s;background:#fff;
-}
-.upload-zone:hover{border-color:#185fa5;background:#e6f1fb}
-
-/* Full view */
-#full-viewer{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;display:none;flex-direction:column}
-#full-viewer.open{display:flex}
-.viewer-bar{padding:10px 20px;background:#1a1a18;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.viewer-body{flex:1;overflow:auto;background:#525659;display:flex;justify-content:center;padding:20px}
-.viewer-body img{max-width:100%;height:auto;box-shadow:0 4px 24px rgba(0,0,0,.5);background:#fff}
-
-.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(0,0,0,.1);border-top-color:#185fa5;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* === DRAW TOOL CSS === */
-
-
-
-.tool-btn{
-  padding:5px 12px;font-size:12px;font-weight:500;
-  border-radius:6px;border:1.5px solid rgba(0,0,0,.15);
-  background:#fff;color:#333;cursor:pointer;
-  display:flex;align-items:center;gap:5px;
-  transition:all .1s;white-space:nowrap;
-}
-.tool-btn:hover{background:#f0efe9;border-color:rgba(0,0,0,.25)}
-.tool-btn.active{background:#185fa5;color:#fff;border-color:#185fa5}
-.tool-btn.danger:hover{background:#fcebeb;color:#a32d2d;border-color:#f09595}
-.tool-btn.success{background:#3b6d11;color:#eaf3de;border-color:#3b6d11}
-.tool-btn.success:hover{background:#2d5209}
-
-.tool-hint{font-size:11px;color:#888;margin-left:auto}
-
-.upload-area{flex:1;display:flex;align-items:center;justify-content:center}
-.upload-zone{
-  border:2px dashed #ccc;border-radius:12px;padding:40px 60px;
-  text-align:center;cursor:pointer;transition:all .15s;background:#fff;
-}
-.upload-zone:hover{border-color:#185fa5;background:#e6f1fb}
-
-.canvas-wrap{flex:1;overflow:auto;background:#525659;display:flex;align-items:flex-start;justify-content:flex-start;padding:20px}
-.canvas-container{position:relative;flex-shrink:0;line-height:0}
+.draw-workspace{flex:1;overflow:hidden;position:relative;background:#525659;cursor:crosshair}
+.canvas-viewport{position:absolute;inset:0;overflow:hidden}
+.canvas-scaler{position:absolute;transform-origin:0 0}
+.canvas-container{position:relative;line-height:0}
 #pdf-canvas{display:block}
 #draw-canvas{position:absolute;top:0;left:0}
 
-/* Rooms overlay */
-.room-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+/* Room list sidebar */
+.room-sidebar{position:absolute;right:0;top:0;bottom:0;width:210px;background:#fff;border-left:1px solid rgba(0,0,0,.15);display:flex;flex-direction:column;z-index:10;transform:translateX(100%);transition:transform .2s}
+.room-sidebar.open{transform:translateX(0)}
+.rs-head{padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.1);font-size:12px;font-weight:600;color:#333;flex-shrink:0}
+.rs-body{flex:1;overflow-y:auto;padding:8px}
+.rs-item{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:6px;cursor:pointer;margin-bottom:2px;font-size:12px;transition:background .1s}
+.rs-item:hover{background:#f0efe9}
+.rs-item.sel{background:#e6f1fb;color:#185fa5;font-weight:500}
+.rs-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.rs-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rs-del{background:none;border:none;cursor:pointer;color:#bbb;font-size:14px;padding:0 2px;line-height:1}
+.rs-del:hover{color:#a32d2d}
 
 /* Name modal */
-.name-modal-backdrop{
-  position:fixed;inset:0;background:rgba(0,0,0,.4);
-  z-index:200;display:flex;align-items:center;justify-content:center;
-}
-.name-modal{
-  background:#fff;border-radius:10px;padding:20px;width:320px;
-  box-shadow:0 8px 32px rgba(0,0,0,.2);
-}
-.name-modal h3{font-size:14px;font-weight:600;margin-bottom:12px}
-.name-modal input{
-  width:100%;padding:8px 10px;font-size:13px;border:1.5px solid #ddd;
-  border-radius:6px;outline:none;font-family:inherit;
-}
-.name-modal input:focus{border-color:#185fa5}
-.name-modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center}
+.modal{background:#fff;border-radius:10px;padding:22px;width:320px;box-shadow:0 8px 32px rgba(0,0,0,.25)}
+.modal h3{font-size:14px;font-weight:600;margin-bottom:12px;color:#1a1a18}
+.modal input{width:100%;padding:8px 10px;font-size:13px;border:1.5px solid #ddd;border-radius:6px;outline:none;font-family:inherit}
+.modal input:focus{border-color:#185fa5;box-shadow:0 0 0 3px rgba(24,95,165,.1)}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 
-.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px}
+/* Full view */
+#full-viewer{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:300;display:none;flex-direction:column}
+#full-viewer.open{display:flex}
+.fv-bar{padding:10px 20px;background:#1a1a18;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.fv-body{flex:1;overflow:auto;background:#525659;display:flex;justify-content:center;padding:20px}
+.fv-body img{max-width:100%;height:auto;box-shadow:0 4px 24px rgba(0,0,0,.5);background:#fff}
+
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(0,0,0,.15);border-top-color:#185fa5;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px}
+.spinner.white{border-color:rgba(255,255,255,.2);border-top-color:#fff}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* ═══ DRAW TOOL ═══ */
+.draw-tool-layout{display:flex;flex-direction:column;width:100%;overflow:hidden}
+.draw-toolbar{height:44px;background:#1a1a18;display:flex;align-items:center;padding:0 12px;gap:5px;flex-shrink:0}
+.draw-toolbar .btn{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2)}
+.draw-toolbar .btn:hover{background:rgba(255,255,255,.2)}
+.draw-toolbar .btn.active{background:#185fa5;border-color:#185fa5}
+.draw-toolbar .btn.success{background:#3b6d11;border-color:#3b6d11}
+.draw-workspace{flex:1;overflow:hidden;position:relative;background:#525659}
+.canvas-scaler{position:absolute;transform-origin:0 0}
+.draw-canvas-container{position:relative;line-height:0}
+.zone-sidebar{position:absolute;right:0;top:0;bottom:0;width:200px;background:var(--bg);border-left:0.5px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .2s;z-index:5}
+.zone-sidebar.open{transform:translateX(0)}
+.zone-item{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:12px;margin-bottom:2px;transition:background .1s}
+.zone-item:hover{background:var(--bg2)}
+.zone-item.sel{background:var(--bg-info);color:var(--text-info);font-weight:500}
 
-/* Room list sidebar */
-.room-list-panel{
-  position:fixed;right:0;top:48px;bottom:0;width:220px;
-  background:#fff;border-left:1px solid rgba(0,0,0,.12);
-  display:flex;flex-direction:column;z-index:10;
-  transform:translateX(100%);transition:transform .2s;
-}
-.room-list-panel.open{transform:translateX(0)}
-.rlp-head{padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.1);font-size:12px;font-weight:600;color:#333}
-.rlp-body{flex:1;overflow-y:auto;padding:8px}
-.room-list-item{
-  display:flex;align-items:center;gap:8px;padding:6px 8px;
-  border-radius:6px;cursor:pointer;margin-bottom:2px;
-  transition:background .1s;font-size:12px;
-}
-.room-list-item:hover{background:#f0efe9}
-.room-list-item.selected{background:#e6f1fb;color:#185fa5;font-weight:500}
-.rl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.rl-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rl-del{background:none;border:none;cursor:pointer;color:#bbb;font-size:14px;padding:0 2px;line-height:1}
-.rl-del:hover{color:#a32d2d}
-
-/* === DRAW TOOL EXTRA === */
-.draw-tool-page{display:flex;flex-direction:column;height:100%}
-.dt-toolbar{height:44px;background:#1a1a18;display:flex;align-items:center;padding:0 12px;gap:5px;flex-shrink:0}
-.dt-toolbar button{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit}
-.dt-toolbar button.active{background:#185fa5;border-color:#185fa5}
-.dt-toolbar button.success{background:#3b6d11;border-color:#3b6d11}
-.dt-workspace{flex:1;overflow:hidden;position:relative;background:#525659}
-.dt-scaler{position:absolute;transform-origin:0 0}
-.dt-canvas-wrap{position:relative;line-height:0}
-.dt-hint{font-size:11px;color:rgba(255,255,255,.5);margin-left:8px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dt-zoom{font-size:11px;color:rgba(255,255,255,.45);white-space:nowrap}
-.dt-sidebar{position:absolute;right:0;top:0;bottom:0;width:200px;background:#fff;border-left:0.5px solid rgba(0,0,0,.12);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .2s;z-index:5}
-.dt-sidebar.open{transform:translateX(0)}
-.dt-sidebar-head{padding:9px 13px;border-bottom:0.5px solid rgba(0,0,0,.1);font-size:12px;font-weight:600;flex-shrink:0}
-.dt-sidebar-body{flex:1;overflow-y:auto;padding:6px}
-.dt-item{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:12px;margin-bottom:2px;transition:background .1s}
-.dt-item:hover{background:#f7f7f5}
-.dt-item.sel{background:#e6f1fb;color:#185fa5;font-weight:500}
 </style>
 </head>
 <body>
@@ -568,53 +403,53 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
     </div>
   </div>
 
-  <!-- PROJECT SETUP — two-panel assign + draw tool -->
+  <!-- PROJECT SETUP -->
   <div class="page" id="page-setup">
-    <div style="display:grid;grid-template-columns:220px 1fr;width:100%;height:100%;overflow:hidden">
-      <div style="background:#fff;border-right:0.5px solid rgba(0,0,0,.12);display:flex;flex-direction:column;overflow:hidden">
-        <div style="padding:11px 14px;border-bottom:0.5px solid rgba(0,0,0,.12);font-size:11px;font-weight:600;color:#9a9994;text-transform:uppercase;letter-spacing:.07em;flex-shrink:0">Project Setup</div>
-        <div style="flex:1;overflow-y:auto;padding:8px" id="setup-nav-body"></div>
+    <div class="setup-layout">
+      <div class="setup-nav">
+        <div class="setup-nav-head">Project Setup</div>
+        <div class="setup-nav-body" id="setup-nav-body"></div>
       </div>
-      <div style="display:flex;flex-direction:column;overflow:hidden">
-        <div style="padding:11px 18px;border-bottom:0.5px solid rgba(0,0,0,.12);background:#fff;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-          <div style="font-size:14px;font-weight:600" id="setup-section-title">Plan Set</div>
+      <div class="setup-main">
+        <div class="setup-main-head">
+          <div class="setup-main-title" id="setup-section-title">Plan Set</div>
           <div id="setup-section-actions"></div>
         </div>
-        <div style="flex:1;overflow-y:auto;padding:20px;background:#f0efe9" id="setup-main-body"></div>
+        <div class="setup-main-body" id="setup-main-body"></div>
       </div>
     </div>
   </div>
 
-  <!-- DRAW TOOL PAGE -->
+  <!-- DRAW TOOL -->
   <div class="page" id="page-draw">
-    <div class="draw-tool-page">
-      <div class="dt-toolbar">
-        <button class="active" id="dt-rect" onclick="dtSetMode('rect')">▭ Rectangle</button>
-        <button id="dt-poly" onclick="dtSetMode('poly')">⬡ Polygon</button>
-        <div style="width:1px;height:20px;background:rgba(255,255,255,.2);margin:0 4px"></div>
-        <button id="dt-select" onclick="dtSetMode('select')">↖ Select</button>
-        <button onclick="dtDeleteSelected()" style="background:rgba(255,0,0,.2)!important">🗑 Delete</button>
-        <div style="width:1px;height:20px;background:rgba(255,255,255,.2);margin:0 4px"></div>
-        <button onclick="dtToggleSidebar()">☰ Rooms (<span id="dt-room-count">0</span>)</button>
-        <button onclick="dtFitScreen()">⊡ Fit</button>
-        <span class="dt-zoom" id="dt-zoom-lbl">100%</span>
-        <div style="width:1px;height:20px;background:rgba(255,255,255,.2);margin:0 4px"></div>
-        <button class="success" onclick="dtSaveRooms()">✓ Save rooms</button>
-        <button onclick="dtExit()">← Back</button>
-        <span class="dt-hint" id="dt-hint">Scroll=zoom · Middle mouse or Space+drag=pan</span>
+    <div class="draw-tool-layout">
+      <div class="draw-toolbar" id="draw-toolbar">
+        <button class="btn active" id="dt-rect" onclick="setDrawMode('rect')">▭ Rectangle</button>
+        <button class="btn" id="dt-poly" onclick="setDrawMode('poly')">⬡ Polygon</button>
+        <div class="divider-v" style="background:rgba(255,255,255,.2);margin:0 4px"></div>
+        <button class="btn" id="dt-select" onclick="setDrawMode('select')">↖ Select</button>
+        <button class="btn danger" onclick="deleteSelectedZone()"><i class="ti ti-trash"></i> Delete</button>
+        <div class="divider-v" style="background:rgba(255,255,255,.2);margin:0 4px"></div>
+        <button class="btn" onclick="toggleZoneSidebar()">☰ Zones (<span id="dt-zone-count">0</span>)</button>
+        <button class="btn" onclick="fitDrawScreen()">⊡ Fit</button>
+        <span id="dt-zoom-label" style="font-size:11px;color:rgba(255,255,255,.45);white-space:nowrap">100%</span>
+        <div class="divider-v" style="background:rgba(255,255,255,.2);margin:0 4px"></div>
+        <button class="btn success" onclick="saveZonesBack()">✓ Save zones</button>
+        <button class="btn" onclick="exitDrawTool()">← Back</button>
+        <span id="dt-hint" style="font-size:11px;color:rgba(255,255,255,.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-left:8px">Scroll=zoom · Middle mouse or Space+drag=pan</span>
       </div>
-      <div class="dt-workspace" id="dt-workspace">
+      <div class="draw-workspace" id="draw-workspace">
         <div style="position:absolute;inset:0;overflow:hidden">
-          <div class="dt-scaler" id="dt-scaler">
-            <div class="dt-canvas-wrap">
-              <canvas id="dt-pdf-canvas"></canvas>
-              <canvas id="dt-draw-canvas" style="position:absolute;top:0;left:0;cursor:crosshair"></canvas>
+          <div class="canvas-scaler" id="canvas-scaler">
+            <div class="draw-canvas-container">
+              <canvas id="draw-pdf-canvas"></canvas>
+              <canvas id="draw-overlay" style="position:absolute;top:0;left:0;cursor:crosshair"></canvas>
             </div>
           </div>
         </div>
-        <div class="dt-sidebar" id="dt-sidebar">
-          <div class="dt-sidebar-head" id="dt-sidebar-head">Rooms</div>
-          <div class="dt-sidebar-body" id="dt-sidebar-body"></div>
+        <div class="zone-sidebar" id="zone-sidebar">
+          <div style="padding:9px 13px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px;font-weight:600;flex-shrink:0" id="zone-sidebar-title">Zones</div>
+          <div style="flex:1;overflow-y:auto;padding:6px" id="zone-sidebar-body"></div>
         </div>
       </div>
     </div>
@@ -682,20 +517,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 </div>
 
 
-<div id="dt-name-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:200;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:12px;padding:22px;width:320px;box-shadow:0 8px 32px rgba(0,0,0,.2)">
-    <h3 id="dt-modal-title" style="font-size:14px;font-weight:600;margin-bottom:12px">Name this room</h3>
-    <input type="text" id="dt-name-input" placeholder="e.g. Kitchen, Garage, Master Bath..." style="width:100%;padding:8px 10px;font-size:13px;border:1.5px solid rgba(0,0,0,.22);border-radius:8px;outline:none;font-family:inherit">
-    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;padding-top:14px;border-top:0.5px solid rgba(0,0,0,.12)">
-      <button onclick="dtCancelName()" style="padding:6px 14px;font-size:12px;border-radius:8px;border:0.5px solid rgba(0,0,0,.22);background:#fff;cursor:pointer;font-family:inherit">Cancel</button>
-      <button onclick="dtConfirmName()" style="padding:6px 14px;font-size:12px;border-radius:8px;border:0.5px solid #185fa5;background:#185fa5;color:#e6f1fb;cursor:pointer;font-family:inherit">Add room</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- Full view overlay -->
-<div id="full-viewer" style="position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:300;display:none;flex-direction:column">
+<!-- Full view -->
+<div id="full-viewer" style="position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;display:none;flex-direction:column">
   <div style="padding:10px 18px;background:#1a1a18;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
     <span id="fv-title" style="font-size:14px;font-weight:600"></span>
     <button onclick="closeFV()" style="background:#555;color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px">✕ Close</button>
@@ -704,6 +527,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 </div>
 
 <div id="modal-container"></div>
+<!-- Name modal -->
+<div class="modal-bg" id="name-modal" style="display:none">
+  <div class="modal" style="width:320px">
+    <h3 id="name-modal-title" style="font-size:14px;font-weight:600;margin-bottom:12px">Name this zone</h3>
+    <input type="text" id="name-input" placeholder="e.g. Kitchen, Garage, Front Elevation...">
+    <div class="modal-footer">
+      <button class="btn" onclick="cancelZoneName()">Cancel</button>
+      <button class="btn primary" onclick="confirmZoneName()">Add zone</button>
+    </div>
+  </div>
+</div>
+
 <input type="file" id="pdf-file-input" accept=".pdf" style="display:none">
 
 <script>
@@ -796,20 +631,7 @@ function fmtDate(d){if(!d)return'';return new Date(d+'T12:00:00').toLocaleDateSt
 function today(){return new Date().toISOString().slice(0,10);}
 function getProject(id){return state.projects.find(p=>p.id===id);}
 function getVersion(p,vid){return(p.versions||[]).find(v=>v.id===vid);}
-function getSetup(projId){
-  const p=getProject(projId);
-  if(!p.setup)p.setup={planSetName:null,planSetPageCount:0,sheets:{}};
-  if(!p.setup.sheets)p.setup.sheets={};
-  if(!('planSetName' in p.setup))p.setup.planSetName=null;
-  if(!('planSetPageCount' in p.setup))p.setup.planSetPageCount=0;
-  return p.setup;
-}
-function getCatSheets(catId){
-  const s=getSetup(currentProjectId);
-  if(!s.sheets[catId])s.sheets[catId]=[];
-  return s.sheets[catId];
-}
-function hexToRgb(hex){return`${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`;}
+function getSetup(projId){const p=getProject(projId);if(!p.setup)p.setup={planSetName:null,planSetPageCount:0,floors:[],site:{pageIndex:null,zones:[]},elevations:[]};return p.setup;}
 
 /* ════ ROUTING ════ */
 let currentProjectId=null,currentVersionId=null,currentAsmId=null,asmDraft=null;
@@ -838,7 +660,7 @@ function openProject(id){
   currentProjectId=id;
   showPage('project');
   const p=getProject(id);
-  document.getElementById('crumb-proj-name').textContent=p.client;
+  document.getElementById('crumb-proj-name')&&(document.getElementById('crumb-proj-name').textContent=p.client);
   document.getElementById('crumb-ver-sep').style.display='none';
   document.getElementById('crumb-ver-name').textContent='';
   buildProjectView();updateTopbar();
@@ -847,7 +669,7 @@ function openProject(id){
 function openVersion(projId,verId){
   currentProjectId=projId;currentVersionId=verId;selectedRoom=null;
   const p=getProject(projId);const v=getVersion(p,verId);
-  document.getElementById('crumb-proj-name').textContent=p.client;
+  document.getElementById('crumb-proj-name')&&(document.getElementById('crumb-proj-name').textContent=p.client);
   document.getElementById('crumb-ver-sep').style.display='';
   document.getElementById('crumb-ver-name').textContent=v.name;
   switchWorkTab('setup');buildProjectView();
@@ -861,7 +683,7 @@ function switchWorkTab(tab){
   document.getElementById(map[tab])?.classList.add('active');
   const pageMap={setup:'setup',floorplan:'floorplan',site:'site',elevations:'elevations'};
   showPage(pageMap[tab]);
-  if(tab==='setup')renderSetupSection(currentSetupSection||'planset');
+  if(tab==='setup'){buildSetupNav();renderSetup('planset');}
   if(tab==='floorplan'){buildFpLibrary();buildFpFloorSelector();buildFloorPlanCanvas();}
   if(tab==='site')buildSiteCanvas();
   if(tab==='elevations')buildElevCanvas();
@@ -973,7 +795,7 @@ function showEditProjectModal(){
     <div class="modal-footer"><button class="btn danger" onclick="deleteProject()"><i class="ti ti-trash"></i> Delete</button><div style="flex:1"></div><button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="updateProject()">Save</button></div>
   </div>`);
 }
-function updateProject(){const p=getProject(currentProjectId);p.client=document.getElementById('m-client').value.trim()||p.client;p.address=document.getElementById('m-addr').value.trim();p.status=document.getElementById('m-status').value;p.created=document.getElementById('m-date').value;p.notes=document.getElementById('m-notes').value.trim();persist();closeModal();document.getElementById('crumb-proj-name').textContent=p.client;buildProjectView();buildDashboard();}
+function updateProject(){const p=getProject(currentProjectId);p.client=document.getElementById('m-client').value.trim()||p.client;p.address=document.getElementById('m-addr').value.trim();p.status=document.getElementById('m-status').value;p.created=document.getElementById('m-date').value;p.notes=document.getElementById('m-notes').value.trim();persist();closeModal();document.getElementById('crumb-proj-name')&&(document.getElementById('crumb-proj-name').textContent=p.client);buildProjectView();buildDashboard();}
 function deleteProject(){if(!confirm('Delete this project and all versions?'))return;state.projects=state.projects.filter(p=>p.id!==currentProjectId);persist();closeModal();goToDashboard();}
 function showNewVersionModal(){
   const p=getProject(currentProjectId);
@@ -994,720 +816,165 @@ function createVersion(){
 let currentSetupSection='planset';
 
 // All drawing categories config
-/* === DRAW TOOL FROM APPROVED TEST === */
-const ROOM_COLOR = '#185FA5';
-const FILL_ALPHA = 0.15;
-const SELECTED_ALPHA = 0.28;
-const HANDLE_SIZE = 8;
-
-let mode = 'rect'; // rect | poly | select
-let rooms = []; // {id, name, type:'rect'|'poly', ...shape data}
-let selectedId = null;
-// pdfDoc already declared above
-let pdfScale = 1.5;
-let pdfWidth = 0, pdfHeight = 0;
-
-// Drawing state
-let drawing = false;
-let drawStart = {x:0, y:0};
-let drawCurrent = {x:0, y:0};
-let polyPoints = []; // for polygon mode
-
-// Drag/resize state
-let dragging = false;
-let dragType = null; // 'move' | 'handle-N/NE/E/SE/S/SW/W/NW'
-let dragStart = {x:0, y:0};
-let dragOrigShape = null;
-
-// Pending shape waiting for name
-let pendingShape = null;
-
-function uid(){ return 'r-' + Date.now() + '-' + Math.floor(Math.random()*9999); }
-
-/* ════ PDF LOAD ════ */
-async function dtLoadPage_unused(e) {
-  const file = e.target.files[0]; if(!file) return;
-  dtSetHint('<span class="spinner"></span>Loading PDF...');
-  const buf = await file.arrayBuffer();
-  pdfDoc = await pdfjsLib.getDocument({data: new Uint8Array(buf)}).promise;
-  await renderPage(1);
-  e.target.value = '';
-}
-
-async function dtRenderPage(pageNum) {
-  const page = await pdfDoc.getPage(pageNum);
-  const vp = page.getViewport({scale: pdfScale});
-  pdfWidth = Math.floor(vp.width);
-  pdfHeight = Math.floor(vp.height);
-
-  document.getElementById('upload-area')?.remove();
-
-  // Build canvas container
-  const workspace = document.getElementById('workspace');
-  workspace.innerHTML = `<div class="canvas-wrap" id="canvas-wrap">
-    <div class="canvas-container" id="canvas-container">
-      <canvas id="pdf-canvas" width="${pdfWidth}" height="${pdfHeight}"></canvas>
-      <canvas id="draw-canvas" width="${pdfWidth}" height="${pdfHeight}"></canvas>
-    </div>
-  </div>`;
-
-  const pdfCanvas = document.getElementById('dt-pdf-canvas');
-  await page.render({canvasContext: pdfCanvas.getContext('2d'), viewport: vp}).promise;
-
-  // Wire draw canvas events
-  const dc = document.getElementById('dt-draw-canvas');
-  dc.addEventListener('mousedown', onMouseDown);
-  dc.addEventListener('mousemove', onMouseMove);
-  dc.addEventListener('mouseup', onMouseUp);
-  dc.addEventListener('dblclick', onDblClick);
-
-  document.addEventListener('keydown', onKeyDown);
-
-  dtSetHint('Rectangle mode — drag to draw a room');
-  dtRedraw();
-}
-
-/* ════ DRAW CANVAS ════ */
-function dtGetCanvas(){ return document.getElementById('dt-draw-canvas'); }
-function dtGetCtx(){ return dtGetCanvas()?.getContext('2d'); }
-
-function dtRedraw() {
-  const c = dtGetCanvas(); if(!c) return;
-  const ctx = dtGetCtx();
-  ctx.clearRect(0,0,pdfWidth,pdfHeight);
-
-  // Draw all rooms
-  rooms.forEach(r => {
-    const isSelected = r.id === selectedId;
-    dtDrawRoom(ctx, r, isSelected);
-  });
-
-  // Draw in-progress shape
-  if(drawing && mode === 'rect') {
-    const x = Math.min(drawStart.x, drawCurrent.x);
-    const y = Math.min(drawStart.y, drawCurrent.y);
-    const w = Math.abs(drawCurrent.x - drawStart.x);
-    const h = Math.abs(drawCurrent.y - drawStart.y);
-    ctx.fillStyle = `rgba(24,95,165,${FILL_ALPHA})`;
-    ctx.strokeStyle = '#185FA5';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6,3]);
-    ctx.fillRect(x,y,w,h);
-    ctx.strokeRect(x,y,w,h);
-    ctx.setLineDash([]);
-  }
-
-  // Draw polygon in progress
-  if(mode === 'poly' && polyPoints.length > 0) {
-    ctx.beginPath();
-    ctx.moveTo(polyPoints[0].x, polyPoints[0].y);
-    polyPoints.forEach((p,i) => { if(i>0) ctx.lineTo(p.x,p.y); });
-    if(drawing) ctx.lineTo(drawCurrent.x, drawCurrent.y);
-    ctx.strokeStyle = '#185FA5';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6,3]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    // Draw points
-    polyPoints.forEach(p => {
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 5, 0, Math.PI*2);
-      ctx.fillStyle = '#185FA5';
-      ctx.fill();
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    });
-  }
-}
-
-function dtDrawRoom(ctx, r, isSelected) {
-  ctx.save();
-  const alpha = isSelected ? SELECTED_ALPHA : FILL_ALPHA;
-  ctx.fillStyle = `rgba(24,95,165,${alpha})`;
-  ctx.strokeStyle = isSelected ? '#0c447c' : '#185FA5';
-  ctx.lineWidth = isSelected ? 2.5 : 2;
-
-  if(r.type === 'rect') {
-    ctx.fillRect(r.x, r.y, r.w, r.h);
-    ctx.strokeRect(r.x, r.y, r.w, r.h);
-    // Label
-    dtDrawLabel(ctx, r.name, r.x + r.w/2, r.y + r.h/2, isSelected);
-    // Handles if selected
-    if(isSelected) dtDrawRectHandles(ctx, r);
-  } else if(r.type === 'poly') {
-    ctx.beginPath();
-    r.points.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    // Label at centroid
-    const cx = r.points.reduce((s,p)=>s+p.x,0)/r.points.length;
-    const cy = r.points.reduce((s,p)=>s+p.y,0)/r.points.length;
-    dtDrawLabel(ctx, r.name, cx, cy, isSelected);
-    // Handles if selected
-    if(isSelected) dtDrawPolyHandles(ctx, r);
-  }
-  ctx.restore();
-}
-
-function dtDrawLabel(ctx, name, cx, cy, isSelected) {
-  ctx.font = `bold ${13}px -apple-system,sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const metrics = ctx.measureText(name);
-  const pad = 6;
-  const bw = metrics.width + pad*2, bh = 20;
-  ctx.fillStyle = isSelected ? 'rgba(12,68,124,0.85)' : 'rgba(24,95,165,0.75)';
-  ctx.beginPath();
-  ctx.roundRect(cx - bw/2, cy - bh/2, bw, bh, 4);
-  ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.fillText(name, cx, cy);
-}
-
-function dtDrawRectHandles(ctx, r) {
-  const handles = dtGetRectHandles(r);
-  handles.forEach(h => {
-    ctx.fillStyle = '#fff';
-    ctx.strokeStyle = '#185fa5';
-    ctx.lineWidth = 1.5;
-    ctx.fillRect(h.x - HANDLE_SIZE/2, h.y - HANDLE_SIZE/2, HANDLE_SIZE, HANDLE_SIZE);
-    ctx.strokeRect(h.x - HANDLE_SIZE/2, h.y - HANDLE_SIZE/2, HANDLE_SIZE, HANDLE_SIZE);
-  });
-}
-
-function dtDrawPolyHandles(ctx, r) {
-  r.points.forEach(p => {
-    ctx.fillStyle = '#fff';
-    ctx.strokeStyle = '#185fa5';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, HANDLE_SIZE/2+1, 0, Math.PI*2);
-    ctx.fill(); ctx.stroke();
-  });
-}
-
-function dtGetRectHandles(r) {
-  const {x,y,w,h} = r;
-  return [
-    {name:'NW', x:x,      y:y},
-    {name:'N',  x:x+w/2,  y:y},
-    {name:'NE', x:x+w,    y:y},
-    {name:'E',  x:x+w,    y:y+h/2},
-    {name:'SE', x:x+w,    y:y+h},
-    {name:'S',  x:x+w/2,  y:y+h},
-    {name:'SW', x:x,      y:y+h},
-    {name:'W',  x:x,      y:y+h/2},
-  ];
-}
-
-function dtGetCursor(name) {
-  const map = {N:'n-resize',NE:'ne-resize',E:'e-resize',SE:'se-resize',S:'s-resize',SW:'sw-resize',W:'w-resize',NW:'nw-resize'};
-  return map[name] || 'pointer';
-}
-
-/* ════ HIT TESTING ════ */
-function dtHitHandle(room, mx, my) {
-  if(room.type === 'rect') {
-    const handles = dtGetRectHandles(room);
-    for(const h of handles) {
-      if(Math.abs(mx-h.x) <= HANDLE_SIZE && Math.abs(my-h.y) <= HANDLE_SIZE)
-        return h.name;
-    }
-  } else if(room.type === 'poly') {
-    for(let i=0; i<room.points.length; i++) {
-      const p = room.points[i];
-      if(Math.abs(mx-p.x) <= HANDLE_SIZE+2 && Math.abs(my-p.y) <= HANDLE_SIZE+2)
-        return 'POLY-' + i;
-    }
-  }
-  return null;
-}
-
-function dtHitRoom(mx, my) {
-  // Test in reverse order (topmost first)
-  for(let i=rooms.length-1; i>=0; i--) {
-    const r = rooms[i];
-    if(r.type === 'rect') {
-      if(mx >= r.x && mx <= r.x+r.w && my >= r.y && my <= r.y+r.h)
-        return r;
-    } else if(r.type === 'poly') {
-      if(dtPtInPoly(mx, my, r.points)) return r;
-    }
-  }
-  return null;
-}
-
-function dtPtInPoly(x, y, points) {
-  let inside = false;
-  for(let i=0,j=points.length-1; i<points.length; j=i++) {
-    const xi=points[i].x, yi=points[i].y, xj=points[j].x, yj=points[j].y;
-    if(((yi>y)!=(yj>y)) && (x < (xj-xi)*(y-yi)/(yj-yi)+xi)) inside=!inside;
-  }
-  return inside;
-}
-
-/* ════ MOUSE EVENTS ════ */
-function dtGetPos(e) {
-  const c = dtGetCanvas();
-  const r = c.getBoundingClientRect();
-  return { x: e.clientX - r.left, y: e.clientY - r.top };
-}
-
-function dtOnMouseDown(e) {
-  const {x,y} = dtGetPos(e);
-
-  if(mode === 'select') {
-    // Check handle first
-    if(selectedId) {
-      const sel = rooms.find(r=>r.id===selectedId);
-      if(sel) {
-        const h = dtHitHandle(sel, x, y);
-        if(h) {
-          dragging = true;
-          dragType = 'handle-' + h;
-          dragStart = {x,y};
-          dragOrigShape = JSON.parse(JSON.stringify(sel));
-          return;
-        }
-      }
-    }
-    // Check room body
-    const hit = dtHitRoom(x, y);
-    if(hit) {
-      selectedId = hit.id;
-      dragging = true;
-      dragType = 'move';
-      dragStart = {x,y};
-      dragOrigShape = JSON.parse(JSON.stringify(hit));
-    } else {
-      selectedId = null;
-    }
-    dtRedraw();
-    dtUpdateRoomList();
-    return;
-  }
-
-  if(mode === 'rect') {
-    drawing = true;
-    drawStart = {x,y};
-    drawCurrent = {x,y};
-  }
-
-  if(mode === 'poly') {
-    if(polyPoints.length === 0) drawing = true;
-    // Check if clicking near first point to close
-    if(polyPoints.length >= 3) {
-      const fp = polyPoints[0];
-      if(Math.abs(x-fp.x)<12 && Math.abs(y-fp.y)<12) {
-        dtClosePoly();
-        return;
-      }
-    }
-    polyPoints.push({x,y});
-    dtRedraw();
-  }
-}
-
-function dtOnMouseMove(e) {
-  const {x,y} = dtGetPos(e);
-  drawCurrent = {x,y};
-  const c = dtGetCanvas();
-
-  if(mode === 'select' && !dragging) {
-    // Update cursor
-    if(selectedId) {
-      const sel = rooms.find(r=>r.id===selectedId);
-      if(sel) {
-        const h = dtHitHandle(sel, x, y);
-        if(h && h.startsWith('POLY-')) { c.style.cursor='move'; return; }
-        if(h) { c.style.cursor=dtGetCursor(h); return; }
-      }
-    }
-    const hit = dtHitRoom(x,y);
-    c.style.cursor = hit ? 'move' : 'default';
-    return;
-  }
-
-  if(dragging && dragType) {
-    const dx = x - dragStart.x;
-    const dy = y - dragStart.y;
-    const r = rooms.find(r=>r.id===selectedId);
-    if(!r) return;
-
-    if(dragType === 'move') {
-      if(r.type === 'rect') {
-        r.x = dragOrigShape.x + dx;
-        r.y = dragOrigShape.y + dy;
-      } else if(r.type === 'poly') {
-        r.points = dragOrigShape.points.map(p=>({x:p.x+dx, y:p.y+dy}));
-      }
-    } else if(dragType.startsWith('handle-POLY-')) {
-      const idx = parseInt(dragType.replace('handle-POLY-',''));
-      r.points[idx] = {x: dragOrigShape.points[idx].x+dx, y: dragOrigShape.points[idx].y+dy};
-    } else {
-      // Rect handle resize
-      const handle = dragType.replace('handle-','');
-      const o = dragOrigShape;
-      let {x:rx,y:ry,w:rw,h:rh} = o;
-      if(handle.includes('E')) rw = Math.max(20, o.w + dx);
-      if(handle.includes('S')) rh = Math.max(20, o.h + dy);
-      if(handle.includes('W')) { rx = o.x + dx; rw = Math.max(20, o.w - dx); }
-      if(handle.includes('N')) { ry = o.y + dy; rh = Math.max(20, o.h - dy); }
-      r.x=rx; r.y=ry; r.w=rw; r.h=rh;
-    }
-    dtRedraw();
-    return;
-  }
-
-  if(drawing) dtRedraw();
-}
-
-function dtOnMouseUp(e) {
-  if(dragging) {
-    dragging = false; dragType = null; dragOrigShape = null;
-    dtRedraw(); return;
-  }
-
-  if(mode === 'rect' && drawing) {
-    drawing = false;
-    const {x,y} = dtGetPos(e);
-    const rx = Math.min(drawStart.x, x);
-    const ry = Math.min(drawStart.y, y);
-    const rw = Math.abs(x - drawStart.x);
-    const rh = Math.abs(y - drawStart.y);
-    if(rw < 10 || rh < 10) { dtRedraw(); return; }
-    pendingShape = {type:'rect', x:rx, y:ry, w:rw, h:rh};
-    dtShowNameModal('Name this room');
-  }
-}
-
-function dtOnDblClick(e) {
-  if(mode === 'poly' && polyPoints.length >= 3) {
-    dtClosePoly();
-  }
-}
-
-function dtClosePoly() {
-  if(polyPoints.length < 3) { polyPoints=[]; drawing=false; dtRedraw(); return; }
-  pendingShape = {type:'poly', points: [...polyPoints]};
-  polyPoints = [];
-  drawing = false;
-  dtRedraw();
-  dtShowNameModal('Name this area');
-}
-
-/* ════ NAME MODAL ════ */
-function dtShowNameModal(title) {
-  document.getElementById('dt-modal-title').textContent = title;
-  document.getElementById('dt-name-input').value = '';
-  document.getElementById('dt-name-modal').style.display = 'flex';
-  setTimeout(()=>document.getElementById('dt-name-input').focus(), 50);
-}
-
-document.getElementById('dt-name-input').addEventListener('keydown', e => {
-  if(e.key==='Enter') dtConfirmName();
-  if(e.key==='Escape') dtCancelName();
-});
-
-function dtConfirmName() {
-  const name = document.getElementById('dt-name-input').value.trim();
-  if(!name) { document.getElementById('dt-name-input').focus(); return; }
-  document.getElementById('dt-name-modal').style.display = 'none';
-  if(!pendingShape) return;
-  const room = { id:uid(), name, ...pendingShape };
-  rooms.push(room);
-  selectedId = room.id;
-  pendingShape = null;
-  dtRedraw();
-  dtUpdateRoomList();
-}
-
-function dtCancelName() {
-  document.getElementById('dt-name-modal').style.display = 'none';
-  pendingShape = null;
-  dtRedraw();
-}
-
-/* ════ MODE / TOOLS ════ */
-function dtSetMode(m) {
-  mode = m;
-  polyPoints = [];
-  drawing = false;
-  dragging = false;
-  document.querySelectorAll('.tool-btn[id^="btn-"]').forEach(b=>b.classList.remove('active'));
-  document.getElementById('btn-'+m)?.classList.add('active');
-  const c = dtGetCanvas();
-  if(c) c.style.cursor = m==='select' ? 'default' : 'crosshair';
-  const hints = {
-    rect:'Drag to draw a rectangular room',
-    poly:'Click to place points · Double-click or click first point to close · Esc to cancel',
-    select:'Click a room to select · Drag to move · Drag handles to resize · Del to delete'
-  };
-  dtSetHint(hints[m]||'');
-  dtRedraw();
-}
-
-function dtDeleteSelected() {
-  if(!selectedId) return;
-  rooms = rooms.filter(r=>r.id!==selectedId);
-  selectedId = null;
-  dtRedraw();
-  dtUpdateRoomList();
-}
-
-function onKeyDown(e) {
-  if(e.key==='Delete'||e.key==='Backspace') {
-    if(document.activeElement.tagName!=='INPUT') dtDeleteSelected();
-  }
-  if(e.key==='Escape') {
-    if(mode==='poly'&&polyPoints.length>0){ polyPoints=[]; drawing=false; dtRedraw(); }
-    dtCancelName();
-  }
-}
-
-/* ════ ROOM LIST ════ */
-function dtToggleSidebar() {
-  document.getElementById('dt-sidebar').classList.toggle('open');
-}
-
-function dtUpdateRoomList() {
-  document.getElementById('dt-room-count').textContent = rooms.length;
-  const body = document.getElementById('dt-sidebar-body');
-  if(!rooms.length){ body.innerHTML='<div style="font-size:12px;color:#aaa;padding:8px">No rooms yet</div>'; return; }
-  body.innerHTML = rooms.map(r=>`
-    <div class="room-list-item ${r.id===selectedId?'selected':''}" onclick="dtSelectRoom('${r.id}')">
-      <div class="rl-dot" style="background:${ROOM_COLOR}"></div>
-      <span class="rl-name">${r.name}</span>
-      <span style="font-size:10px;color:#aaa;margin-right:2px">${r.type==='poly'?'⬡':'▭'}</span>
-      <button class="rl-del" onclick="event.stopPropagation();dtDeleteRoom('${r.id}')">×</button>
-    </div>`).join('');
-}
-
-function dtSelectRoom(id) {
-  selectedId = id;
-  dtSetMode('select');
-  dtRedraw();
-  dtUpdateRoomList();
-}
-
-function dtDeleteRoom(id) {
-  rooms = rooms.filter(r=>r.id!==id);
-  if(selectedId===id) selectedId=null;
-  dtRedraw();
-  dtUpdateRoomList();
-}
-
-/* ════ SAVE ════ */
-function dtSaveRoomsOrig() {
-  if(!rooms.length){ alert('No rooms drawn yet.'); return; }
-  // In the main app this would save to the project.
-  // For now show a summary.
-  const summary = rooms.map(r=>`• ${r.name} (${r.type})`).join('\n');
-  alert(`Saved ${rooms.length} room${rooms.length!==1?'s':''}:\n\n${summary}\n\nIn the main app these will become drop zones for assemblies.`);
-}
-
-/* ════ HELPERS ════ */
-function dtSetHint(html) {
-  document.getElementById('dt-hint').innerHTML = html;
-}
-
-
-/* === SETUP WIRING === */
-
 /* ═══════════════════════════════════════════
-   PROJECT SETUP — wired to v4 data structure
+   PROJECT SETUP — PDF UPLOAD + SHEET ASSIGNMENT
 ═══════════════════════════════════════════ */
-let dtDrawCatId=null, dtDrawSheetId=null, dtDrawColor='#185FA5';
-let dtZoom=1, dtPanX=0, dtPanY=0, dtPanning=false;
-let dtPanStart={x:0,y:0}, dtPanOrigin={x:0,y:0}, dtSpaceDown=false;
-let dtPdfW=0, dtPdfH=0;
 
-// Setup nav
+const DRAW_GROUPS=[
+  {label:'Existing',cats:[{id:'existing-plans',name:'Existing Plans',color:'#5F5E5A'},{id:'existing-elevations',name:'Existing Elevations',color:'#5F5E5A'}]},
+  {label:'Proposed',cats:[{id:'floors',name:'Floor Plans',color:'#185FA5'},{id:'elevations',name:'Elevations',color:'#534AB7'},{id:'site',name:'Site Plan',color:'#3B6D11'},{id:'interior-elevations',name:'Interior Elevations',color:'#D4537E'}]},
+  {label:'Engineering',cats:[{id:'electrical',name:'Electrical Plans',color:'#EF9F27'},{id:'mechanical',name:'Mechanical / Plumbing',color:'#1D9E75'},{id:'structural',name:'Structural',color:'#712B13'}]},
+  {label:'Other',cats:[{id:'landscape',name:'Landscape',color:'#3B6D11'},{id:'details',name:'Details',color:'#888780'},{id:'sections',name:'Sections',color:'#888780'},{id:'schedules',name:'Door/Window Schedules',color:'#083344'}]},
+];
+const ALL_DRAW_CATS=DRAW_GROUPS.flatMap(g=>g.cats);
+
+let curSetupSec='planset';
+let drawCatId=null,drawSheetId=null,drawColor='#185FA5';
+let drawMode='rect',drawZones=[],selZoneId=null,pendingZone=null;
+let dzDrawing=false,dzStart={x:0,y:0},dzCurrent={x:0,y:0},dzPolyPts=[];
+let dzDragging=false,dzDragType=null,dzDragStart={x:0,y:0},dzDragOrig=null;
+let dzZoom=1,dzPanX=0,dzPanY=0,dzPanning=false,dzPanStart={x:0,y:0},dzPanOrig={x:0,y:0},dzSpaceDown=false;
+let dzPdfW=0,dzPdfH=0;
+
+/* ── Helpers ── */
+function setupHexRgb(hex){return`${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`;}
+function setupDarken(hex){return'#'+[1,3,5].map(i=>Math.max(0,parseInt(hex.slice(i,i+2),16)-40).toString(16).padStart(2,'0')).join('');}
+
+/* ── Setup Nav ── */
 function buildSetupNav(){
-  const body=document.getElementById('setup-nav-body'); if(!body)return;
-  const setup=getSetup(currentProjectId);
-  let html=`<div style="padding:7px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:#5f5e5a;margin-bottom:1px;${currentSetupSec==='planset'?'background:#e6f1fb;color:#185fa5;font-weight:500':''}" onclick="renderSetupSection('planset')"><i class="ti ti-file-upload"></i> Plan Set</div>`;
+  const body=document.getElementById('setup-nav-body');if(!body)return;
+  let html=`<div class="setup-nav-item ${curSetupSec==='planset'?'active':''}" onclick="renderSetup('planset')"><i class="ti ti-file-upload"></i> Plan Set</div>`;
   DRAW_GROUPS.forEach(g=>{
-    html+=`<div style="font-size:9px;font-weight:700;color:#9a9994;text-transform:uppercase;letter-spacing:.08em;padding:8px 8px 3px">${g.label}</div>`;
+    html+=`<div style="padding:6px 8px 2px;font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">${g.label}</div>`;
     g.cats.forEach(cat=>{
-      const sheets=getCatSheets(cat.id);
+      const setup=getSetup(currentProjectId);const sheets=getCatSheets(setup,cat.id);
       const total=sheets.reduce((s,sh)=>s+(sh.zones||[]).length,0);
-      html+=`<div style="padding:7px 10px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;color:#5f5e5a;margin-bottom:1px;${currentSetupSec===cat.id?'background:#e6f1fb;color:#185fa5;font-weight:500':''}" onclick="renderSetupSection('${cat.id}')"><span style="width:8px;height:8px;border-radius:50%;background:${cat.color};flex-shrink:0;display:inline-block"></span>${cat.name}${total?`<span style="margin-left:auto;font-size:10px;color:#3b6d11;font-weight:600">${total}</span>`:''}</div>`;
+      html+=`<div class="setup-nav-item ${curSetupSec===cat.id?'active':''}" id="snav-${cat.id}" onclick="renderSetup('${cat.id}')"><span style="width:8px;height:8px;border-radius:50%;background:${cat.color};flex-shrink:0;display:inline-block"></span>${cat.name}${total?`<span style="margin-left:auto;font-size:10px;color:var(--text-success);font-weight:600">${total}</span>`:''}</div>`;
     });
   });
   body.innerHTML=html;
 }
 
-let currentSetupSec='planset';
-
-function renderSetupSection(sec){
-  currentSetupSec=sec;
-  buildSetupNav();
+/* ── Main render ── */
+function renderSetup(sec){
+  curSetupSec=sec;buildSetupNav();
   const setup=getSetup(currentProjectId);
-  document.getElementById('setup-section-title').textContent=sec==='planset'?'Plan Set Upload':(DRAW_GROUPS.flatMap(g=>g.cats).find(c=>c.id===sec)?.name||sec);
+  document.getElementById('setup-section-title').textContent=sec==='planset'?'Plan Set Upload':(ALL_DRAW_CATS.find(c=>c.id===sec)?.name||sec);
   document.getElementById('setup-section-actions').innerHTML='';
   const body=document.getElementById('setup-main-body');
 
   if(sec==='planset'){
     if(!setup.planSetName){
-      body.innerHTML=`<div style="max-width:600px">
-        <p style="font-size:13px;color:#5f5e5a;margin-bottom:20px;line-height:1.6">Upload your complete plan set PDF — all floors, site plan, and elevations in one file. Drag thumbnails onto categories to assign pages.</p>
-        <div style="border:2px dashed rgba(0,0,0,.22);border-radius:12px;padding:32px;text-align:center;cursor:pointer;background:#fff;max-width:540px" onclick="document.getElementById('pdf-file-input').click()">
-          <i class="ti ti-file-upload" style="font-size:36px;color:#9a9994;display:block;margin-bottom:8px"></i>
-          <div style="font-size:14px;font-weight:500;color:#5f5e5a">Click to upload plan set PDF</div>
-          <div style="font-size:12px;color:#9a9994;margin-top:4px">One combined PDF — all drawings in one file</div>
-        </div>
-      </div>`;
+      body.innerHTML=`<div style="max-width:640px"><p style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6">Upload your complete plan set PDF — all floors, site plan, and elevations in one file. Then drag page thumbnails onto drawing categories to assign them.</p><div style="border:2px dashed var(--border2);border-radius:var(--radius-lg);padding:32px;text-align:center;cursor:pointer;background:var(--bg);max-width:540px" onclick="document.getElementById('pdf-file-input').click()"><i class="ti ti-file-upload" style="font-size:36px;color:var(--text3);display:block;margin-bottom:8px"></i><div style="font-size:14px;font-weight:500;color:var(--text2)">Click to upload plan set PDF</div><div style="font-size:12px;color:var(--text3);margin-top:4px">One combined PDF — all drawings in one file</div></div></div>`;
       return;
     }
-    // Two-panel layout: thumbs left, categories right
-    body.innerHTML=`<div style="display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start;max-width:1000px">
-      <div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div>
-            <div style="font-size:13px;font-weight:600" id="setup-panel-title">${setup.planSetName}</div>
-            <div style="font-size:11px;color:#9a9994;margin-top:2px" id="setup-panel-sub">${setup.planSetPageCount} pages — drag thumbnails onto categories →</div>
-          </div>
-          <div style="display:flex;gap:6px">
-            <button class="btn sm" onclick="document.getElementById('pdf-file-input').click()"><i class="ti ti-refresh"></i> Replace</button>
-            <button class="btn sm" onclick="setupRemovePlanSet()"><i class="ti ti-trash"></i></button>
-          </div>
-        </div>
-        <div id="setup-thumb-grid" style="display:flex;flex-wrap:wrap;gap:12px"></div>
-      </div>
-      <div>
-        <div style="font-size:11px;font-weight:600;color:#9a9994;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Drawing categories</div>
-        <div id="cat-list-panel"></div>
-      </div>
-    </div>`;
-    buildSetupCatList();
-    if(!window._stl){window._stl=true;setTimeout(()=>{window._stl=false;setupLoadThumbs();},200);}
+    body.innerHTML=`<div style="max-width:1000px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><div><div style="font-size:13px;font-weight:600">${setup.planSetName}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${setup.planSetPageCount} pages · Drag thumbnails onto categories →</div></div><div style="display:flex;gap:6px"><button class="btn sm" onclick="document.getElementById('pdf-file-input').click()"><i class="ti ti-refresh"></i> Replace</button><button class="btn sm" onclick="setupRemovePlanSet()"><i class="ti ti-trash"></i></button></div></div><div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start"><div><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">All pages — drag onto categories</div><div id="setup-thumb-strip" style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px"></div></div><div><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Drawing categories</div><div id="assign-panel"></div></div></div></div>`;
+    buildAssignPanel();
+    if(!window._setupThumbLoading){window._setupThumbLoading=true;setTimeout(()=>{window._setupThumbLoading=false;loadSetupThumbs();},200);}
   } else {
-    // Category detail view
-    const cat=DRAW_GROUPS.flatMap(g=>g.cats).find(c=>c.id===sec);if(!cat)return;
-    document.getElementById('setup-section-actions').innerHTML=`<button class="btn sm" onclick="setupAddSheet('${cat.id}')"><i class="ti ti-plus"></i> Add sheet</button>`;
-    const sheets=getCatSheets(cat.id);
+    const cat=ALL_DRAW_CATS.find(c=>c.id===sec);if(!cat)return;
+    document.getElementById('setup-section-actions').innerHTML=`<button class="btn sm" onclick="addSetupSheet('${cat.id}')"><i class="ti ti-plus"></i> Add sheet</button>`;
+    const sheets=getCatSheets(setup,cat.id);
     const hasPdf=!!setup.planSetName;
-    const rgb=`${parseInt(cat.color.slice(1,3),16)},${parseInt(cat.color.slice(3,5),16)},${parseInt(cat.color.slice(5,7),16)}`;
     let html='';
-    if(!sheets.length){html=`<div style="max-width:640px;border:1.5px dashed rgba(0,0,0,.22);border-radius:12px;padding:32px;text-align:center;background:#fff"><i class="ti ti-file-plus" style="font-size:28px;color:#9a9994;display:block;margin-bottom:8px"></i><div style="font-size:13px;color:#9a9994">No sheets yet — click Add sheet above</div></div>`;}
-    else sheets.forEach(sheet=>{
-      const hasPg=sheet.pageIndex!=null;
-      const zc=(sheet.zones||[]).length;
-      html+=`<div style="max-width:640px;border:0.5px solid rgba(0,0,0,.12);border-radius:12px;overflow:hidden;margin-bottom:12px;background:#fff">
-        <div style="padding:10px 14px;background:#f7f7f5;border-bottom:0.5px solid rgba(0,0,0,.12);display:flex;align-items:center;gap:8px">
-          <input type="text" value="${sheet.name.replace(/"/g,'&quot;')}" onchange="setupRenameSheet('${cat.id}','${sheet.id}',this.value)" style="font-size:13px;font-weight:600;border:none;background:transparent;outline:none;flex:1;padding:0;font-family:inherit;color:#1a1a18">
-          ${hasPg?`<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:rgba(${rgb},.15);color:${cat.color}">Page ${sheet.pageIndex+1}</span>`:'<span style="font-size:11px;color:#9a9994">No page assigned</span>'}
-          <button class="icon-btn" onclick="setupRemoveSheet('${cat.id}','${sheet.id}')"><i class="ti ti-trash"></i></button>
-        </div>
-        <div style="padding:12px 14px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:${zc?'8':'0'}px">
-            <span style="font-size:12px;color:#5f5e5a">${zc} room${zc!==1?'s':''} drawn</span>
-            ${hasPdf&&hasPg?`<button style="font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid #185fa5;background:#e6f1fb;color:#185fa5;cursor:pointer;font-family:inherit" onclick="setupOpenDrawTool('${cat.id}','${sheet.id}')"><i class="ti ti-pencil"></i> Draw rooms</button>`:''}
-          </div>
-          ${zc?`<div style="display:flex;flex-wrap:wrap;gap:6px">${(sheet.zones||[]).map(z=>`<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(${rgb},.12);color:${cat.color}">${z.name}</span>`).join('')}</div>`:''}
-        </div>
-      </div>`;
-    });
+    if(!sheets.length){html=`<div style="max-width:640px;border:1.5px dashed var(--border2);border-radius:var(--radius-lg);padding:32px;text-align:center;background:var(--bg)"><i class="ti ti-file-plus" style="font-size:28px;color:var(--text3);display:block;margin-bottom:8px"></i><div style="font-size:13px;color:var(--text3)">No sheets yet — click Add sheet above</div></div>`;}
+    else{
+      const rgb=setupHexRgb(cat.color);
+      sheets.forEach(sheet=>{
+        const hasPg=sheet.pageIndex!=null;const zc=(sheet.zones||[]).length;
+        html+=`<div style="max-width:640px;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:12px;background:var(--bg)"><div style="padding:10px 14px;background:var(--bg2);border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:8px"><input type="text" value="${sheet.name.replace(/"/g,'&quot;')}" onchange="renameSetupSheet('${cat.id}','${sheet.id}',this.value)" style="font-size:13px;font-weight:600;border:none;background:transparent;outline:none;flex:1;padding:0;font-family:inherit;color:var(--text)">${hasPg?`<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:rgba(${rgb},.15);color:${cat.color}">Page ${sheet.pageIndex+1}</span>`:'<span style="font-size:11px;color:var(--text3)">No page assigned</span>'}<button class="icon-btn" onclick="removeSetupSheet('${cat.id}','${sheet.id}')"><i class="ti ti-trash"></i></button></div><div style="padding:12px 14px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:${zc?'8':'0'}px"><span style="font-size:12px;color:var(--text2)">${zc} zone${zc!==1?'s':''} drawn</span>${hasPdf&&hasPg?`<button style="font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid var(--blue);background:var(--bg-info);color:var(--blue);cursor:pointer;font-family:inherit" onclick="openDrawTool('${cat.id}','${sheet.id}')"><i class="ti ti-pencil"></i> Draw zones</button>`:''}</div>${zc?`<div style="display:flex;flex-wrap:wrap;gap:6px">${(sheet.zones||[]).map(z=>`<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(${rgb},.12);color:${cat.color}">${z.name}</span>`).join('')}</div>`:''}     </div></div>`;
+      });
+    }
     body.innerHTML=`<div>${html}</div>`;
   }
 }
 
-// Override switchWorkTab setup call
-const _origSwitchWorkTab = typeof switchWorkTab !== 'undefined' ? switchWorkTab : null;
+/* ── PDF Upload ── */
+document.getElementById('pdf-file-input').addEventListener('change',async function(e){
+  const file=e.target.files[0];if(!file)return;
+  const setup=getSetup(currentProjectId);
+  const arrayBuffer=await file.arrayBuffer();
+  await savePDF(currentProjectId,arrayBuffer.slice(0));
+  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(arrayBuffer)}).promise;
+  setup.planSetName=file.name;setup.planSetPageCount=pdf.numPages;
+  pdfDoc=pdf;persist();
+  renderSetup('planset');
+  this.value='';
+});
 
-// Sheet management
-function setupAddSheet(catId){const cat=DRAW_GROUPS.flatMap(g=>g.cats).find(c=>c.id===catId);const sheets=getCatSheets(catId);sheets.push({id:uid(),name:cat.name+' '+(sheets.length+1),pageIndex:null,zones:[]});persist();renderSetupSection(catId);}
-function setupRemoveSheet(catId,sheetId){const s=getSetup(currentProjectId);s.sheets[catId]=(s.sheets[catId]||[]).filter(x=>x.id!==sheetId);persist();renderSetupSection(catId);}
-function setupRenameSheet(catId,sheetId,name){const s=getCatSheets(catId).find(x=>x.id===sheetId);if(s){s.name=name;persist();}}
-function setupUnassignSheet(catId,sheetId){const s=getCatSheets(catId).find(x=>x.id===sheetId);if(s){s.pageIndex=null;persist();}buildSetupCatList();setupUpdateThumbStates();buildSetupNav();}
-function setupRemoveSheetFromPanel(catId,sheetId){const s=getSetup(currentProjectId);s.sheets[catId]=(s.sheets[catId]||[]).filter(x=>x.id!==sheetId);persist();buildSetupCatList();setupUpdateThumbStates();buildSetupNav();}
-
-// PDF remove
-function setupRemovePlanSet(){if(!confirm('Remove plan set? Page assignments cleared.'))return;const s=getSetup(currentProjectId);s.planSetName=null;s.planSetPageCount=0;DRAW_GROUPS.flatMap(g=>g.cats).forEach(cat=>getCatSheets(cat.id).forEach(sh=>sh.pageIndex=null));pdfDoc=null;persist();renderSetupSection('planset');}
-
-// Thumbnail loading — EXACT from approved test
-async function setupLoadThumbs(){
-  const grid=document.getElementById('setup-thumb-grid');if(!grid)return;
-  if(grid.dataset.loading==='1')return;grid.dataset.loading='1';
-  grid.innerHTML='<div style="font-size:12px;color:#9a9994"><span class="spinner"></span>Rendering pages...</div>';
-  try{
-    if(!pdfDoc){const buf=await loadPDF(currentProjectId);if(!buf){grid.innerHTML='<div style="font-size:12px;color:#9a9994">Re-upload PDF to see thumbnails.</div>';grid.dataset.loading='0';return;}pdfDoc=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;}
-    grid.innerHTML='';
-    // Build assigned labels
-    const labels={};DRAW_GROUPS.flatMap(g=>g.cats).forEach(cat=>getCatSheets(cat.id).forEach(s=>{if(s.pageIndex!=null){if(!labels[s.pageIndex])labels[s.pageIndex]=[];labels[s.pageIndex].push(s.name);}}));
-
-    for(let i=1;i<=pdfDoc.numPages;i++){
-      const page=await pdfDoc.getPage(i);
-      const base=page.getViewport({scale:1});
-      const DISPLAY_WIDTH=260;
-      const scale=(DISPLAY_WIDTH*2.5)/base.width;
-      const vp=page.getViewport({scale});
-      const c=document.createElement('canvas');
-      c.width=Math.floor(vp.width);c.height=Math.floor(vp.height);
-      await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
-
-      const pg=i-1;const isA=!!labels[pg];
-      const item=document.createElement('div');
-      item.className='thumb-item'+(isA?' assigned':'');
-      item.draggable=true;item.dataset.page=String(pg);
-      item.addEventListener('dragstart',ev=>{ev.dataTransfer.setData('text/plain',String(pg));ev.dataTransfer.effectAllowed='copy';item.classList.add('dragging-active');});
-      item.addEventListener('dragend',()=>setupUpdateThumbStates());
-      const badge=document.createElement('div');badge.className='assigned-badge';badge.textContent=isA?(labels[pg]||[]).join(', '):'';
-      const vb=document.createElement('button');vb.className='view-btn';vb.textContent='⤢ Full view';
-      vb.addEventListener('click',async ev=>{ev.stopPropagation();await setupOpenFV(i);});
-      const lbl=document.createElement('div');lbl.className='page-label';lbl.textContent='Page '+i;
-      item.appendChild(badge);item.appendChild(c);item.appendChild(vb);item.appendChild(lbl);
-      grid.appendChild(item);
-    }
-  }catch(err){const g2=document.getElementById('setup-thumb-grid');if(g2)g2.innerHTML='<div style="color:#a32d2d;font-size:12px">Error: '+err.message+'</div>';}
-  const g3=document.getElementById('setup-thumb-grid');if(g3)g3.dataset.loading='0';
+function setupRemovePlanSet(){
+  if(!confirm('Remove plan set? Page assignments will be cleared.'))return;
+  const setup=getSetup(currentProjectId);
+  setup.planSetName=null;setup.planSetPageCount=0;
+  ALL_DRAW_CATS.forEach(cat=>getCatSheets(setup,cat.id).forEach(s=>s.pageIndex=null));
+  pdfDoc=null;persist();renderSetup('planset');
 }
 
-function setupUpdateThumbStates(){
-  const labels={};DRAW_GROUPS.flatMap(g=>g.cats).forEach(cat=>getCatSheets(cat.id).forEach(s=>{if(s.pageIndex!=null){if(!labels[s.pageIndex])labels[s.pageIndex]=[];labels[s.pageIndex].push(s.name);}}));
+/* ── Thumbnails ── */
+async function loadSetupThumbs(){
+  const strip=document.getElementById('setup-thumb-strip');if(!strip)return;
+  if(strip.dataset.loading==='1')return;strip.dataset.loading='1';
+  strip.innerHTML='<div style="font-size:12px;color:var(--text3)"><span class="spinner"></span>Rendering pages...</div>';
+  try{
+    if(!pdfDoc){const buf=await loadPDF(currentProjectId);if(!buf){strip.innerHTML='<div style="font-size:12px;color:var(--text3)">Re-upload PDF to see thumbnails.</div>';strip.dataset.loading='0';return;}pdfDoc=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;}
+    strip.innerHTML='';
+    const setup=getSetup(currentProjectId);
+    const labels={};ALL_DRAW_CATS.forEach(cat=>getCatSheets(setup,cat.id).forEach(s=>{if(s.pageIndex!=null){if(!labels[s.pageIndex])labels[s.pageIndex]=[];labels[s.pageIndex].push(s.name);}}));
+    for(let i=1;i<=pdfDoc.numPages;i++){
+      const page=await pdfDoc.getPage(i);const base=page.getViewport({scale:1});
+      const scale=(192*2.5)/base.width;const vp=page.getViewport({scale});
+      const c=document.createElement('canvas');c.width=Math.floor(vp.width);c.height=Math.floor(vp.height);
+      await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+      const pg=i-1;const isA=!!labels[pg];
+      const item=document.createElement('div');
+      item.style.cssText=`position:relative;border:2px solid ${isA?'var(--blue)':'var(--border)'};border-radius:8px;overflow:hidden;background:var(--bg);box-shadow:0 1px 4px rgba(0,0,0,.1);cursor:grab;user-select:none;opacity:${isA?'.45':'1'};width:196px;flex-shrink:0;transition:opacity .2s,border-color .15s`;
+      item.draggable=true;item.dataset.page=String(pg);
+      item.addEventListener('dragstart',ev=>{ev.dataTransfer.setData('text/plain',String(pg));ev.dataTransfer.effectAllowed='copy';item.style.opacity='.3';});
+      item.addEventListener('dragend',()=>updateSetupThumbStates());
+      const badge=document.createElement('div');
+      badge.style.cssText=`position:absolute;top:0;left:0;right:0;background:rgba(24,95,165,.88);color:#fff;font-size:10px;font-weight:600;padding:3px 6px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:${isA?'block':'none'}`;
+      badge.textContent=isA?(labels[pg]||[]).join(', '):'';
+      const viewBtn=document.createElement('button');
+      viewBtn.style.cssText='position:absolute;bottom:26px;right:5px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:5px;padding:3px 7px;font-size:10px;cursor:pointer;opacity:0;transition:opacity .15s;z-index:2';
+      viewBtn.textContent='⤢ Full view';
+      item.addEventListener('mouseenter',()=>viewBtn.style.opacity='1');
+      item.addEventListener('mouseleave',()=>viewBtn.style.opacity='0');
+      viewBtn.addEventListener('click',async ev=>{ev.stopPropagation();await openSetupFV(i);});
+      const lbl=document.createElement('div');lbl.style.cssText='font-size:11px;font-weight:600;color:var(--text2);text-align:center;padding:5px 4px;background:var(--bg);border-top:0.5px solid var(--border)';lbl.textContent='Page '+i;
+      item.appendChild(badge);item.appendChild(c);item.appendChild(viewBtn);item.appendChild(lbl);
+      strip.appendChild(item);
+    }
+  }catch(err){const s=document.getElementById('setup-thumb-strip');if(s)s.innerHTML='<div style="color:var(--text-danger);font-size:12px">Error: '+err.message+'</div>';}
+  const s2=document.getElementById('setup-thumb-strip');if(s2)s2.dataset.loading='0';
+}
+
+function updateSetupThumbStates(){
+  const setup=getSetup(currentProjectId);
+  const labels={};ALL_DRAW_CATS.forEach(cat=>getCatSheets(setup,cat.id).forEach(s=>{if(s.pageIndex!=null){if(!labels[s.pageIndex])labels[s.pageIndex]=[];labels[s.pageIndex].push(s.name);}}));
   const assigned=new Set(Object.keys(labels).map(Number));
-  document.querySelectorAll('.thumb-item').forEach(item=>{
-    const pg=parseInt(item.dataset.page);const badge=item.querySelector('.assigned-badge');
-    if(assigned.has(pg)){item.classList.add('assigned');if(badge)badge.textContent=(labels[pg]||[]).join(', ');}
-    else{item.classList.remove('assigned');if(badge)badge.textContent='';}
+  document.querySelectorAll('#setup-thumb-strip > div').forEach(item=>{
+    const pg=parseInt(item.dataset.page);const badge=item.firstChild;
+    if(assigned.has(pg)){item.style.opacity='.45';item.style.borderColor='var(--blue)';if(badge){badge.style.display='block';badge.textContent=(labels[pg]||[]).join(', ');}}
+    else{item.style.opacity='1';item.style.borderColor='var(--border)';if(badge)badge.style.display='none';}
   });
 }
 
-// Category list in assign panel — EXACT from approved test adapted
-function buildSetupCatList(){
-  const panel=document.getElementById('cat-list-panel');if(!panel)return;
+/* ── Assign panel ── */
+function buildAssignPanel(){
+  const panel=document.getElementById('assign-panel');if(!panel)return;
   const setup=getSetup(currentProjectId);
   let html='';
   DRAW_GROUPS.forEach(g=>{
-    html+=`<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:700;color:#9a9994;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;padding-bottom:4px;border-bottom:0.5px solid rgba(0,0,0,.12)">${g.label}</div>`;
+    html+=`<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;padding-bottom:4px;border-bottom:0.5px solid var(--border)">${g.label}</div>`;
     g.cats.forEach(cat=>{
-      const sheets=getCatSheets(cat.id);
-      const rgb=`${parseInt(cat.color.slice(1,3),16)},${parseInt(cat.color.slice(3,5),16)},${parseInt(cat.color.slice(5,7),16)}`;
-      html+=`<div style="margin-bottom:8px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-          <span style="font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${cat.color};display:inline-block"></span>${cat.name}</span>
-          <button class="btn sm" onclick="setupAddSheetRefresh('${cat.id}')" style="font-size:10px;padding:2px 7px"><i class="ti ti-plus"></i></button>
-        </div>`;
-      if(!sheets.length){
-        html+=`<div class="new-drop-zone" ondragover="catDragOver(event,this)" ondragleave="catDragLeave(this)" ondrop="catDropNew(event,'${cat.id}')">Drop page to add sheet</div>`;
-      } else {
+      const sheets=getCatSheets(setup,cat.id);const rgb=setupHexRgb(cat.color);
+      html+=`<div style="margin-bottom:8px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${cat.color};display:inline-block"></span>${cat.name}</span><button class="btn sm" onclick="addSetupSheetRefresh('${cat.id}')" style="font-size:10px;padding:2px 7px"><i class="ti ti-plus"></i></button></div>`;
+      if(!sheets.length){html+=`<div style="border:1.5px dashed var(--border);border-radius:5px;padding:5px 8px;margin-bottom:3px;font-size:10px;color:var(--text3);text-align:center;transition:all .15s" class="setup-drop-zone" ondragover="setupDragOver(event,this)" ondragleave="setupDragLeave(this)" ondrop="setupDropNew(event,'${cat.id}')">Drop page to add sheet</div>`;}
+      else{
         sheets.forEach(s=>{const hasPg=s.pageIndex!=null;
-          html+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
-            <div class="${hasPg?'sheet-row has-page':'sheet-row'}" style="flex:1" ondragover="catDragOver(event,this)" ondragleave="catDragLeave(this)" ondrop="catDropOn(event,'${cat.id}','${s.id}')">
-              <input class="sheet-name-input" value="${s.name.replace(/"/g,'&quot;')}" onchange="setupRenameSheet('${cat.id}','${s.id}',this.value)">
-              ${hasPg
-                ?`<span class="pg-badge" style="background:rgba(${rgb},.15);color:${cat.color}">Pg ${s.pageIndex+1}</span>
-                  <button style="font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid #185fa5;background:#e6f1fb;color:#185fa5;cursor:pointer;font-family:inherit;white-space:nowrap" onclick="setupOpenDrawTool('${cat.id}','${s.id}')">✏ Draw rooms</button>
-                  <button class="remove-btn" onclick="setupUnassignSheet('${cat.id}','${s.id}')" title="Unassign">×</button>`
-                :`<span class="drop-hint">drop page</span><button class="remove-btn" onclick="setupRemoveSheetFromPanel('${cat.id}','${s.id}')">×</button>`
-              }
-            </div>
-          </div>`;
+          html+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px"><div style="flex:1;display:flex;align-items:center;gap:5px;padding:4px 6px;border-radius:5px;border:1.5px solid ${hasPg?'transparent':'var(--border)'};background:${hasPg?'#f0f8f0':'var(--bg)'};min-height:32px;transition:all .15s" class="setup-drop-zone" ondragover="setupDragOver(event,this)" ondragleave="setupDragLeave(this)" ondrop="setupDropOn(event,'${cat.id}','${s.id}')"><input style="flex:1;font-size:12px;border:none;background:transparent;outline:none;color:var(--text);padding:0;font-family:inherit;min-width:0" value="${s.name.replace(/"/g,'&quot;')}" onchange="renameSetupSheet('${cat.id}','${s.id}',this.value)">${hasPg?`<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(${rgb},.15);color:${cat.color};white-space:nowrap;flex-shrink:0">Pg ${s.pageIndex+1}</span><button style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;line-height:1;padding:0 2px;flex-shrink:0" onclick="unassignSetupSheet('${cat.id}','${s.id}')">×</button>`:`<span style="font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0">drop page</span><button style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;line-height:1;padding:0 2px;flex-shrink:0" onclick="removeSetupSheetAP('${cat.id}','${s.id}')">×</button>`}</div></div>`;
         });
-        html+=`<div class="new-drop-zone" ondragover="catDragOver(event,this)" ondragleave="catDragLeave(this)" ondrop="catDropNew(event,'${cat.id}')">+ drop to add sheet</div>`;
+        html+=`<div style="border:1.5px dashed var(--border);border-radius:5px;padding:4px 8px;margin-bottom:3px;font-size:10px;color:var(--text3);text-align:center;transition:all .15s" class="setup-drop-zone" ondragover="setupDragOver(event,this)" ondragleave="setupDragLeave(this)" ondrop="setupDropNew(event,'${cat.id}')">+ drop to add sheet</div>`;
       }
       html+='</div>';
     });
@@ -1716,176 +983,197 @@ function buildSetupCatList(){
   panel.innerHTML=html;
 }
 
-function setupAddSheetRefresh(catId){const cat=DRAW_GROUPS.flatMap(g=>g.cats).find(c=>c.id===catId);const sheets=getCatSheets(catId);sheets.push({id:uid(),name:cat.name+' '+(sheets.length+1),pageIndex:null,zones:[]});persist();buildSetupCatList();setupUpdateThumbStates();buildSetupNav();}
-function catDragOver(e,el){e.preventDefault();el.style.background='#e6f1fb';el.style.borderColor='#185fa5';}
-function catDragLeave(el){el.style.background='';el.style.borderColor='';}
-function catDropOn(e,catId,sheetId){e.preventDefault();document.querySelectorAll('.sheet-row,.new-drop-zone').forEach(el=>{el.style.background='';el.style.borderColor='';});const pg=parseInt(e.dataTransfer.getData('text/plain'));if(isNaN(pg))return;const s=getCatSheets(catId).find(x=>x.id===sheetId);if(s){s.pageIndex=pg;persist();}buildSetupCatList();setupUpdateThumbStates();buildSetupNav();}
-function catDropNew(e,catId){e.preventDefault();document.querySelectorAll('.sheet-row,.new-drop-zone').forEach(el=>{el.style.background='';el.style.borderColor='';});const pg=parseInt(e.dataTransfer.getData('text/plain'));if(isNaN(pg))return;const cat=DRAW_GROUPS.flatMap(g=>g.cats).find(c=>c.id===catId);const sheets=getCatSheets(catId);sheets.push({id:uid(),name:cat.name+' '+(sheets.length+1),pageIndex:pg,zones:[]});persist();buildSetupCatList();setupUpdateThumbStates();buildSetupNav();}
+/* ── Sheet CRUD ── */
+function addSetupSheet(catId){const setup=getSetup(currentProjectId);const cat=ALL_DRAW_CATS.find(c=>c.id===catId);const sheets=getCatSheets(setup,catId);sheets.push({id:uid(),name:cat.name+' '+(sheets.length+1),pageIndex:null,zones:[]});persist();renderSetup(catId);}
+function addSetupSheetRefresh(catId){const setup=getSetup(currentProjectId);const cat=ALL_DRAW_CATS.find(c=>c.id===catId);const sheets=getCatSheets(setup,catId);sheets.push({id:uid(),name:cat.name+' '+(sheets.length+1),pageIndex:null,zones:[]});persist();buildAssignPanel();updateSetupThumbStates();buildSetupNav();}
+function removeSetupSheet(catId,sheetId){const setup=getSetup(currentProjectId);setup.sheets[catId]=(setup.sheets[catId]||[]).filter(x=>x.id!==sheetId);persist();renderSetup(catId);}
+function removeSetupSheetAP(catId,sheetId){const setup=getSetup(currentProjectId);setup.sheets[catId]=(setup.sheets[catId]||[]).filter(x=>x.id!==sheetId);persist();buildAssignPanel();updateSetupThumbStates();buildSetupNav();}
+function renameSetupSheet(catId,sheetId,name){const setup=getSetup(currentProjectId);const s=getCatSheets(setup,catId).find(x=>x.id===sheetId);if(s){s.name=name;persist();}}
+function unassignSetupSheet(catId,sheetId){const setup=getSetup(currentProjectId);const s=getCatSheets(setup,catId).find(x=>x.id===sheetId);if(s){s.pageIndex=null;persist();}buildAssignPanel();updateSetupThumbStates();buildSetupNav();}
+function setupDragOver(e,el){e.preventDefault();el.style.background='var(--bg-info)';el.style.borderColor='var(--blue)';}
+function setupDragLeave(el){el.style.background='';el.style.borderColor='';}
+function setupDropOn(e,catId,sheetId){e.preventDefault();document.querySelectorAll('.setup-drop-zone').forEach(el=>{el.style.background='';el.style.borderColor='';});const pg=parseInt(e.dataTransfer.getData('text/plain'));if(isNaN(pg))return;const setup=getSetup(currentProjectId);const s=getCatSheets(setup,catId).find(x=>x.id===sheetId);if(s)s.pageIndex=pg;persist();buildAssignPanel();updateSetupThumbStates();buildSetupNav();}
+function setupDropNew(e,catId){e.preventDefault();document.querySelectorAll('.setup-drop-zone').forEach(el=>{el.style.background='';el.style.borderColor='';});const pg=parseInt(e.dataTransfer.getData('text/plain'));if(isNaN(pg))return;const setup=getSetup(currentProjectId);const cat=ALL_DRAW_CATS.find(c=>c.id===catId);const sheets=getCatSheets(setup,catId);sheets.push({id:uid(),name:cat.name+' '+(sheets.length+1),pageIndex:pg,zones:[]});persist();buildAssignPanel();updateSetupThumbStates();buildSetupNav();}
 
-// Full view — EXACT from pdf-thumb-test3
-async function setupOpenFV(pageNum){
+/* ── Full view from setup ── */
+async function openSetupFV(pageNum){
   if(!pdfDoc)return;
-  const fv=document.getElementById('full-viewer');
-  fv.style.display='flex';
   document.getElementById('fv-title').textContent='Page '+pageNum+' — rendering...';
   document.getElementById('fv-body').innerHTML='<div style="color:#fff;padding:40px"><span class="spinner"></span>Rendering...</div>';
+  document.getElementById('full-viewer').style.display='flex';
   const page=await pdfDoc.getPage(pageNum);
   const vp=page.getViewport({scale:4.0});
   const c=document.createElement('canvas');c.width=Math.floor(vp.width);c.height=Math.floor(vp.height);
   await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
-  c.toBlob(blob=>{
-    const img=document.createElement('img');img.src=URL.createObjectURL(blob);
-    img.style.cssText='max-width:100%;height:auto;box-shadow:0 4px 24px rgba(0,0,0,.5);background:#fff';
-    document.getElementById('fv-body').innerHTML='';document.getElementById('fv-body').appendChild(img);
-    document.getElementById('fv-title').textContent='Page '+pageNum;
-  },'image/png');
+  c.toBlob(blob=>{const img=document.createElement('img');img.src=URL.createObjectURL(blob);document.getElementById('fv-body').innerHTML='';document.getElementById('fv-body').appendChild(img);document.getElementById('fv-title').textContent='Page '+pageNum;},'image/png');
 }
 
 /* ═══════════════════════════════════════════
-   DRAW TOOL — wired to v4 data + dt_ prefixed functions
+   DRAW TOOL
 ═══════════════════════════════════════════ */
-function setupOpenDrawTool(catId,sheetId){
-  dtDrawCatId=catId;dtDrawSheetId=sheetId;
-  const cat=DRAW_GROUPS.flatMap(g=>g.cats).find(c=>c.id===catId);
-  dtDrawColor=cat?.color||'#185FA5';
-  const setup=getSetup(currentProjectId);
-  const sheet=getCatSheets(catId).find(s=>s.id===sheetId);
+const DZ_HANDLE=8;
+
+function openDrawTool(catId,sheetId){
+  drawCatId=catId;drawSheetId=sheetId;
+  const cat=ALL_DRAW_CATS.find(c=>c.id===catId);drawColor=cat?.color||'#185FA5';
+  const setup=getSetup(currentProjectId);const sheet=getCatSheets(setup,catId).find(s=>s.id===sheetId);
   if(!sheet||sheet.pageIndex==null){alert('Assign a page to this sheet first.');return;}
-  rooms=JSON.parse(JSON.stringify(sheet.zones||[]));
-  selectedId=null;
-  document.getElementById('dt-sidebar-head').textContent=(cat?.name||'')+' rooms';
-  // Override ROOM_COLOR for this category
-  window._dtColor=cat?.color||'#185FA5';
-  showPage('draw');
-  updateTopbar();
-  dtSetMode('rect');
-  dtLoadDrawPage(sheet.pageIndex+1);
+  drawZones=JSON.parse(JSON.stringify(sheet.zones||[]));selZoneId=null;
+  document.getElementById('zone-sidebar-title').textContent=(cat?.name||'')+' zones';
+  showPage('draw');updateTopbar();setDrawMode('rect');
+  loadDrawToolPage(sheet.pageIndex+1);
 }
 
-async function dtLoadDrawPage(pageNum){
-  if(!pdfDoc){const buf=await loadPDF(currentProjectId);if(!buf){alert('PDF not found. Re-upload in Setup.');dtExit();return;}pdfDoc=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;}
-  const page=await pdfDoc.getPage(pageNum);
-  const vp=page.getViewport({scale:1.5});
-  dtPdfW=Math.floor(vp.width);dtPdfH=Math.floor(vp.height);
-  const bg=document.getElementById('dt-pdf-canvas');bg.width=dtPdfW;bg.height=dtPdfH;
-  const dc=document.getElementById('dt-draw-canvas');dc.width=dtPdfW;dc.height=dtPdfH;
+async function loadDrawToolPage(pageNum){
+  if(!pdfDoc){const buf=await loadPDF(currentProjectId);if(!buf){alert('PDF not found. Re-upload in Setup.');exitDrawTool();return;}pdfDoc=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;}
+  const page=await pdfDoc.getPage(pageNum);const vp=page.getViewport({scale:1.5});
+  dzPdfW=Math.floor(vp.width);dzPdfH=Math.floor(vp.height);
+  const bg=document.getElementById('draw-pdf-canvas');bg.width=dzPdfW;bg.height=dzPdfH;
+  const ov=document.getElementById('draw-overlay');ov.width=dzPdfW;ov.height=dzPdfH;
   await page.render({canvasContext:bg.getContext('2d'),viewport:vp}).promise;
-  dc.onmousedown=dtOnMouseDown;dc.onmousemove=dtOnMouseMove;dc.onmouseup=dtOnMouseUp;dc.ondblclick=dtOnDblClick;
-  const ws=document.getElementById('dt-workspace');
-  ws.onwheel=dtWheelHandler;ws.onmousedown=dtPanMouseDown;ws.onmousemove=dtPanMouseMove;ws.onmouseup=dtPanMouseUp;ws.onmouseleave=dtPanMouseUp;
-  document.onkeydown=dtKeyDown;document.onkeyup=dtKeyUp;
-  setTimeout(()=>dtFitScreen(),100);
-  dtRedraw();dtUpdateRoomList();
+  ov.onmousedown=dzOnMD;ov.onmousemove=dzOnMM;ov.onmouseup=dzOnMU;ov.ondblclick=dzOnDbl;
+  const ws=document.getElementById('draw-workspace');
+  ws.onwheel=dzOnWheel;ws.onmousedown=dzOnPanStart;ws.onmousemove=dzOnPanMove;ws.onmouseup=dzOnPanEnd;ws.onmouseleave=dzOnPanEnd;
+  document.onkeydown=dzOnKD;document.onkeyup=dzOnKU;
+  setTimeout(()=>fitDrawScreen(),100);dzRedraw();updateZoneSidebar();
 }
 
-function dtExit(){showPage('setup');renderSetupSection(dtDrawCatId||'planset');updateTopbar();document.onkeydown=null;document.onkeyup=null;}
+function exitDrawTool(){showPage('setup');renderSetup(drawCatId||'planset');updateTopbar();document.onkeydown=null;document.onkeyup=null;}
 
-// Zoom/pan handlers
-function dtApplyTransform(){document.getElementById('dt-scaler').style.transform=`translate(${dtPanX}px,${dtPanY}px) scale(${dtZoom})`;document.getElementById('dt-zoom-lbl').textContent=Math.round(dtZoom*100)+'%';}
-function dtFitScreen(){const ws=document.getElementById('dt-workspace');const ww=ws.clientWidth,wh=ws.clientHeight;dtZoom=Math.min((ww-40)/dtPdfW,(wh-40)/dtPdfH,2);dtPanX=(ww-dtPdfW*dtZoom)/2;dtPanY=(wh-dtPdfH*dtZoom)/2;dtApplyTransform();}
-function dtWheelHandler(e){e.preventDefault();const ws=document.getElementById('dt-workspace');const r=ws.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;const d=e.deltaY>0?.9:1.1;const nz=Math.min(Math.max(dtZoom*d,.1),8);dtPanX=mx-(mx-dtPanX)*(nz/dtZoom);dtPanY=my-(my-dtPanY)*(nz/dtZoom);dtZoom=nz;dtApplyTransform();}
-function dtPanMouseDown(e){if(e.target===document.getElementById('dt-draw-canvas'))return;if(dtSpaceDown||e.button===1){e.preventDefault();dtPanning=true;dtPanStart={x:e.clientX,y:e.clientY};dtPanOrigin={x:dtPanX,y:dtPanY};document.getElementById('dt-workspace').style.cursor='grabbing';}}
-function dtPanMouseMove(e){if(!dtPanning)return;e.preventDefault();dtPanX=dtPanOrigin.x+(e.clientX-dtPanStart.x);dtPanY=dtPanOrigin.y+(e.clientY-dtPanStart.y);dtApplyTransform();}
-function dtPanMouseUp(){if(dtPanning){dtPanning=false;document.getElementById('dt-workspace').style.cursor='';}}
-function dtKeyDown(e){if(e.code==='Space'&&!e.target.closest('input')){e.preventDefault();dtSpaceDown=true;document.getElementById('dt-draw-canvas').style.cursor='grab';}if((e.key==='Delete'||e.key==='Backspace')&&!e.target.closest('input'))dtDeleteSelected();if(e.key==='Escape'){if(polyPoints.length>0){polyPoints=[];drawing=false;dtRedraw();}dtCancelName();}}
-function dtKeyUp(e){if(e.code==='Space'){dtSpaceDown=false;updateCursor();}}
+/* Zoom/pan */
+function dzApplyXT(){document.getElementById('canvas-scaler').style.transform=`translate(${dzPanX}px,${dzPanY}px) scale(${dzZoom})`;document.getElementById('dt-zoom-label').textContent=Math.round(dzZoom*100)+'%';}
+function fitDrawScreen(){const ws=document.getElementById('draw-workspace');const ww=ws.clientWidth,wh=ws.clientHeight;dzZoom=Math.min((ww-40)/dzPdfW,(wh-40)/dzPdfH,2);dzPanX=(ww-dzPdfW*dzZoom)/2;dzPanY=(wh-dzPdfH*dzZoom)/2;dzApplyXT();}
+function dzOnWheel(e){e.preventDefault();const ws=document.getElementById('draw-workspace');const r=ws.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;const d=e.deltaY>0?.9:1.1;const nz=Math.min(Math.max(dzZoom*d,.1),8);dzPanX=mx-(mx-dzPanX)*(nz/dzZoom);dzPanY=my-(my-dzPanY)*(nz/dzZoom);dzZoom=nz;dzApplyXT();}
+function dzOnPanStart(e){if(e.target===document.getElementById('draw-overlay'))return;if(dzSpaceDown||e.button===1){e.preventDefault();dzPanning=true;dzPanStart={x:e.clientX,y:e.clientY};dzPanOrig={x:dzPanX,y:dzPanY};document.getElementById('draw-workspace').style.cursor='grabbing';}}
+function dzOnPanMove(e){if(!dzPanning)return;e.preventDefault();dzPanX=dzPanOrig.x+(e.clientX-dzPanStart.x);dzPanY=dzPanOrig.y+(e.clientY-dzPanStart.y);dzApplyXT();}
+function dzOnPanEnd(){if(dzPanning){dzPanning=false;document.getElementById('draw-workspace').style.cursor='';}}
+function dzOnKD(e){if(e.code==='Space'&&!e.target.closest('input')){e.preventDefault();dzSpaceDown=true;document.getElementById('draw-overlay').style.cursor='grab';}if((e.key==='Delete'||e.key==='Backspace')&&!e.target.closest('input'))deleteSelectedZone();if(e.key==='Escape'){if(dzPolyPts.length>0){dzPolyPts=[];dzDrawing=false;dzRedraw();}cancelZoneName();}}
+function dzOnKU(e){if(e.code==='Space'){dzSpaceDown=false;dzUpdCursor();}}
 
-// Save rooms back to project
-function dtSaveRooms(){
-  if(!dtDrawCatId||!dtDrawSheetId)return;
+/* Canvas position */
+function dzGetPos(e){const c=document.getElementById('draw-overlay');const r=c.getBoundingClientRect();return{x:(e.clientX-r.left)*(dzPdfW/r.width),y:(e.clientY-r.top)*(dzPdfH/r.height)};}
+
+/* Redraw */
+function dzRedraw(){
+  const c=document.getElementById('draw-overlay');if(!c)return;
+  const ctx=c.getContext('2d');ctx.clearRect(0,0,dzPdfW,dzPdfH);
+  drawZones.forEach(z=>dzDrawZone(ctx,z,z.id===selZoneId));
+  if(dzDrawing&&drawMode==='rect'){const x=Math.min(dzStart.x,dzCurrent.x),y=Math.min(dzStart.y,dzCurrent.y),w=Math.abs(dzCurrent.x-dzStart.x),h=Math.abs(dzCurrent.y-dzStart.y);ctx.fillStyle=`rgba(${setupHexRgb(drawColor)},.15)`;ctx.strokeStyle=drawColor;ctx.lineWidth=2;ctx.setLineDash([6,3]);ctx.fillRect(x,y,w,h);ctx.strokeRect(x,y,w,h);ctx.setLineDash([]);}
+  if(drawMode==='poly'&&dzPolyPts.length>0){ctx.beginPath();ctx.moveTo(dzPolyPts[0].x,dzPolyPts[0].y);dzPolyPts.forEach((p,i)=>{if(i>0)ctx.lineTo(p.x,p.y);});if(dzDrawing)ctx.lineTo(dzCurrent.x,dzCurrent.y);ctx.strokeStyle=drawColor;ctx.lineWidth=2;ctx.setLineDash([6,3]);ctx.stroke();ctx.setLineDash([]);dzPolyPts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fillStyle=drawColor;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();});}
+}
+
+function dzDrawZone(ctx,z,isSel){
+  ctx.save();const rgb=setupHexRgb(drawColor);
+  ctx.fillStyle=`rgba(${rgb},${isSel?.22:.13})`;ctx.strokeStyle=isSel?setupDarken(drawColor):drawColor;ctx.lineWidth=isSel?2.5:2;
+  if(z.type==='rect'){ctx.fillRect(z.x,z.y,z.w,z.h);ctx.strokeRect(z.x,z.y,z.w,z.h);dzDrawLabel(ctx,z.name,z.x+z.w/2,z.y+z.h/2,isSel);if(isSel)dzDrawRH(ctx,z);}
+  else{ctx.beginPath();z.points.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));ctx.closePath();ctx.fill();ctx.stroke();const cx=z.points.reduce((s,p)=>s+p.x,0)/z.points.length;const cy=z.points.reduce((s,p)=>s+p.y,0)/z.points.length;dzDrawLabel(ctx,z.name,cx,cy,isSel);if(isSel)dzDrawPH(ctx,z);}
+  ctx.restore();
+}
+
+function dzDrawLabel(ctx,name,cx,cy,isSel){ctx.font='bold 13px -apple-system,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';const m=ctx.measureText(name),bw=m.width+14,bh=22;ctx.fillStyle=isSel?`rgba(${setupHexRgb(setupDarken(drawColor))},.88)`:`rgba(${setupHexRgb(drawColor)},.75)`;ctx.beginPath();ctx.roundRect(cx-bw/2,cy-bh/2,bw,bh,4);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(name,cx,cy);}
+function dzGetRH(z){const{x,y,w,h}=z;return[{n:'NW',x,y},{n:'N',x:x+w/2,y},{n:'NE',x:x+w,y},{n:'E',x:x+w,y:y+h/2},{n:'SE',x:x+w,y:y+h},{n:'S',x:x+w/2,y:y+h},{n:'SW',x,y:y+h},{n:'W',x,y:y+h/2}];}
+function dzDrawRH(ctx,z){dzGetRH(z).forEach(h=>{ctx.fillStyle='#fff';ctx.strokeStyle=drawColor;ctx.lineWidth=1.5;ctx.fillRect(h.x-DZ_HANDLE/2,h.y-DZ_HANDLE/2,DZ_HANDLE,DZ_HANDLE);ctx.strokeRect(h.x-DZ_HANDLE/2,h.y-DZ_HANDLE/2,DZ_HANDLE,DZ_HANDLE);});}
+function dzDrawPH(ctx,z){z.points.forEach(p=>{ctx.fillStyle='#fff';ctx.strokeStyle=drawColor;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(p.x,p.y,DZ_HANDLE/2+2,0,Math.PI*2);ctx.fill();ctx.stroke();});}
+
+/* Hit testing */
+function dzHitHandle(zone,mx,my){if(zone.type==='rect'){for(const h of dzGetRH(zone)){if(Math.abs(mx-h.x)<=DZ_HANDLE+2&&Math.abs(my-h.y)<=DZ_HANDLE+2)return h.n;}}else{for(let i=0;i<zone.points.length;i++){const p=zone.points[i];if(Math.abs(mx-p.x)<=DZ_HANDLE+3&&Math.abs(my-p.y)<=DZ_HANDLE+3)return'P'+i;}}return null;}
+function dzHitZone(mx,my){for(let i=drawZones.length-1;i>=0;i--){const z=drawZones[i];if(z.type==='rect'&&mx>=z.x&&mx<=z.x+z.w&&my>=z.y&&my<=z.y+z.h)return z;if(z.type==='poly'&&dzPtInPoly(mx,my,z.points))return z;}return null;}
+function dzPtInPoly(x,y,pts){let inside=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const xi=pts[i].x,yi=pts[i].y,xj=pts[j].x,yj=pts[j].y;if((yi>y)!=(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)inside=!inside;}return inside;}
+
+/* Mouse handlers */
+function dzOnMD(e){
+  if(dzSpaceDown)return;const{x,y}=dzGetPos(e);
+  if(drawMode==='select'){
+    if(selZoneId){const sel=drawZones.find(z=>z.id===selZoneId);if(sel){const h=dzHitHandle(sel,x,y);if(h){dzDragging=true;dzDragType='h-'+h;dzDragStart={x,y};dzDragOrig=JSON.parse(JSON.stringify(sel));return;}}}
+    const hit=dzHitZone(x,y);selZoneId=hit?hit.id:null;
+    if(hit){dzDragging=true;dzDragType='move';dzDragStart={x,y};dzDragOrig=JSON.parse(JSON.stringify(hit));}
+    dzRedraw();updateZoneSidebar();return;
+  }
+  if(drawMode==='rect'){dzDrawing=true;dzStart={x,y};dzCurrent={x,y};}
+  if(drawMode==='poly'){
+    if(dzPolyPts.length===0)dzDrawing=true;
+    if(dzPolyPts.length>=3){const fp=dzPolyPts[0];if(Math.abs(x-fp.x)<14&&Math.abs(y-fp.y)<14){dzClosePoly();return;}}
+    dzPolyPts.push({x,y});dzRedraw();
+  }
+}
+function dzOnMM(e){
+  if(dzSpaceDown)return;const{x,y}=dzGetPos(e);dzCurrent={x,y};
+  const ov=document.getElementById('draw-overlay');
+  if(drawMode==='select'&&!dzDragging){
+    if(selZoneId){const sel=drawZones.find(z=>z.id===selZoneId);if(sel){const h=dzHitHandle(sel,x,y);if(h){ov.style.cursor=dzHCursor(h);return;}}}
+    ov.style.cursor=dzHitZone(x,y)?'move':'crosshair';return;
+  }
+  if(dzDragging&&dzDragType){
+    const dx=x-dzDragStart.x,dy=y-dzDragStart.y;
+    const z=drawZones.find(z=>z.id===selZoneId);if(!z)return;
+    if(dzDragType==='move'){if(z.type==='rect'){z.x=dzDragOrig.x+dx;z.y=dzDragOrig.y+dy;}else z.points=dzDragOrig.points.map(p=>({x:p.x+dx,y:p.y+dy}));}
+    else if(dzDragType.startsWith('h-P')){const idx=parseInt(dzDragType.replace('h-P',''));z.points[idx]={x:dzDragOrig.points[idx].x+dx,y:dzDragOrig.points[idx].y+dy};}
+    else{const hn=dzDragType.replace('h-',''),o=dzDragOrig;let{x:rx,y:ry,w:rw,h:rh}=o;if(hn.includes('E'))rw=Math.max(20,o.w+dx);if(hn.includes('S'))rh=Math.max(20,o.h+dy);if(hn.includes('W')){rx=o.x+dx;rw=Math.max(20,o.w-dx);}if(hn.includes('N')){ry=o.y+dy;rh=Math.max(20,o.h-dy);}z.x=rx;z.y=ry;z.w=rw;z.h=rh;}
+    dzRedraw();return;
+  }
+  if(dzDrawing)dzRedraw();
+}
+function dzOnMU(e){
+  if(dzSpaceDown)return;
+  if(dzDragging){dzDragging=false;dzDragType=null;dzDragOrig=null;dzRedraw();return;}
+  if(drawMode==='rect'&&dzDrawing){
+    dzDrawing=false;const{x,y}=dzGetPos(e);
+    const rx=Math.min(dzStart.x,x),ry=Math.min(dzStart.y,y),rw=Math.abs(x-dzStart.x),rh=Math.abs(y-dzStart.y);
+    if(rw<10||rh<10){dzRedraw();return;}
+    pendingZone={type:'rect',x:rx,y:ry,w:rw,h:rh};showZoneNameModal();
+  }
+}
+function dzOnDbl(e){if(drawMode==='poly'&&dzPolyPts.length>=3)dzClosePoly();}
+function dzClosePoly(){if(dzPolyPts.length<3){dzPolyPts=[];dzDrawing=false;dzRedraw();return;}pendingZone={type:'poly',points:[...dzPolyPts]};dzPolyPts=[];dzDrawing=false;dzRedraw();showZoneNameModal();}
+function dzHCursor(h){if(h.startsWith('P'))return'move';const m={N:'n-resize',NE:'ne-resize',E:'e-resize',SE:'se-resize',S:'s-resize',SW:'sw-resize',W:'w-resize',NW:'nw-resize'};return m[h]||'pointer';}
+function dzUpdCursor(){const ov=document.getElementById('draw-overlay');if(ov)ov.style.cursor=drawMode==='select'?'default':'crosshair';}
+
+function setDrawMode(m){
+  drawMode=m;dzPolyPts=[];dzDrawing=false;dzDragging=false;
+  ['rect','poly','select'].forEach(id=>document.getElementById('dt-'+id)?.classList.toggle('active',id===m));
+  dzUpdCursor();
+  const hints={rect:'Drag to draw a rectangular zone',poly:'Click to place corner points · Double-click or click first point to close',select:'Click to select · Drag to move · Drag handles to resize · Del to delete'};
+  document.getElementById('dt-hint').textContent=hints[m]||'';
+  dzRedraw();
+}
+function deleteSelectedZone(){if(!selZoneId)return;drawZones=drawZones.filter(z=>z.id!==selZoneId);selZoneId=null;dzRedraw();updateZoneSidebar();}
+function toggleZoneSidebar(){document.getElementById('zone-sidebar').classList.toggle('open');}
+function updateZoneSidebar(){
+  document.getElementById('dt-zone-count').textContent=drawZones.length;
+  const body=document.getElementById('zone-sidebar-body');
+  if(!drawZones.length){body.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px">No zones yet</div>';return;}
+  body.innerHTML=drawZones.map(z=>`<div class="zone-item ${z.id===selZoneId?'sel':''}" onclick="selZoneInSidebar('${z.id}')"><div style="width:8px;height:8px;border-radius:50%;background:${drawColor};flex-shrink:0"></div><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${z.name}</span><span style="font-size:10px;color:var(--text3)">${z.type==='poly'?'⬡':'▭'}</span><button style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:0 2px;line-height:1" onclick="event.stopPropagation();delZoneInSidebar('${z.id}')">×</button></div>`).join('');
+}
+function selZoneInSidebar(id){selZoneId=id;setDrawMode('select');dzRedraw();updateZoneSidebar();}
+function delZoneInSidebar(id){drawZones=drawZones.filter(z=>z.id!==id);if(selZoneId===id)selZoneId=null;dzRedraw();updateZoneSidebar();}
+
+/* Name modal */
+function showZoneNameModal(){
+  const word=drawCatId&&['floors','existing-plans'].includes(drawCatId)?'room':'zone';
+  document.getElementById('name-modal-title').textContent='Name this '+word;
+  document.getElementById('name-input').value='';
+  document.getElementById('name-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('name-input').focus(),50);
+}
+document.getElementById('name-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmZoneName();if(e.key==='Escape')cancelZoneName();});
+function confirmZoneName(){const name=document.getElementById('name-input').value.trim();if(!name){document.getElementById('name-input').focus();return;}document.getElementById('name-modal').style.display='none';if(!pendingZone)return;const z={id:uid(),name,...pendingZone};drawZones.push(z);selZoneId=z.id;pendingZone=null;dzRedraw();updateZoneSidebar();}
+function cancelZoneName(){document.getElementById('name-modal').style.display='none';pendingZone=null;dzRedraw();}
+
+/* Save zones back */
+function saveZonesBack(){
+  if(!drawCatId||!drawSheetId)return;
   const setup=getSetup(currentProjectId);
-  const sheet=getCatSheets(dtDrawCatId).find(s=>s.id===dtDrawSheetId);
-  if(sheet){sheet.zones=JSON.parse(JSON.stringify(rooms));persist();}
-  dtExit();
+  const sheet=getCatSheets(setup,drawCatId).find(s=>s.id===drawSheetId);
+  if(sheet){sheet.zones=JSON.parse(JSON.stringify(drawZones));persist();}
+  exitDrawTool();
 }
-
-// Name modal
-document.getElementById('dt-name-input').addEventListener('keydown',e=>{if(e.key==='Enter')dtConfirmName();if(e.key==='Escape')dtCancelName();});
-function dtConfirmName(){const name=document.getElementById('dt-name-input').value.trim();if(!name){document.getElementById('dt-name-input').focus();return;}document.getElementById('dt-name-modal').style.display='none';if(!pendingShape)return;const room={id:uid(),name,...pendingShape};rooms.push(room);selectedId=room.id;pendingShape=null;dtRedraw();dtUpdateRoomList();}
-function dtCancelName(){document.getElementById('dt-name-modal').style.display='none';pendingShape=null;dtRedraw();}
-
-// Override showNameModal from draw test to use dt modal
-function showNameModal(title){document.getElementById('dt-modal-title').textContent=title||'Name this room';document.getElementById('dt-name-input').value='';document.getElementById('dt-name-modal').style.display='flex';setTimeout(()=>document.getElementById('dt-name-input').focus(),50);}
-function cancelNameModal(){dtCancelName();}
-
-// Override setHint to use dt-hint
-function setHint(html){const h=document.getElementById('dt-hint');if(h)h.innerHTML=html;}
-
-// Override getCanvas/getCtx to use dt canvases
-function getCanvas(){return document.getElementById('dt-draw-canvas');}
-function getCtx(){return getCanvas()?.getContext('2d');}
-
-// Override getPos for dt canvas coordinates
-function getPos(e){const c=document.getElementById('dt-draw-canvas');const r=c.getBoundingClientRect();return{x:(e.clientX-r.left)*(dtPdfW/r.width),y:(e.clientY-r.top)*(dtPdfH/r.height)};}
-
-// Override applyTransform for dt
-function applyTransform(){dtApplyTransform();}
-function fitToScreen(){dtFitScreen();}
-
-// Override updateRoomList for dt sidebar
-function updateRoomList(){
-  document.getElementById('dt-room-count').textContent=rooms.length;
-  const body=document.getElementById('dt-sidebar-body');
-  if(!body)return;
-  if(!rooms.length){body.innerHTML='<div style="font-size:12px;color:#9a9994;padding:8px">No rooms yet</div>';return;}
-  const color=window._dtColor||ROOM_COLOR;
-  body.innerHTML=rooms.map(r=>`<div class="dt-item ${r.id===selectedId?'sel':''}" onclick="selectRoom('${r.id}')">
-    <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></div>
-    <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.name}</span>
-    <span style="font-size:10px;color:#9a9994">${r.type==='poly'?'⬡':'▭'}</span>
-    <button style="background:none;border:none;cursor:pointer;color:#9a9994;font-size:14px;padding:0 2px;line-height:1" onclick="event.stopPropagation();deleteRoom('${r.id}')">×</button>
-  </div>`).join('');
-}
-
-// Override toggleRoomList
-function toggleRoomList(){document.getElementById('dt-sidebar').classList.toggle('open');}
-
-// Override saveRooms (called by dt-toolbar Save button)
-function saveRooms(){dtSaveRooms();}
-
-// Patch redraw to use correct canvas size
-const _origRedraw = redraw;
-function redraw(){
-  const c=document.getElementById('dt-draw-canvas');if(!c)return;
-  // Temporarily override pdfWidth/pdfHeight if draw test uses those
-  _origRedraw();
-}
-
-// Wire switchWorkTab to call renderSetupSection
-const _origSWTSetup = switchWorkTab;
-function switchWorkTab(tab){
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-  const map={setup:'nav-setup',floorplan:'nav-fp',site:'nav-site',elevations:'nav-elev'};
-  document.getElementById(map[tab])?.classList.add('active');
-  const pageMap={setup:'setup',floorplan:'floorplan',site:'site',elevations:'elevations'};
-  showPage(pageMap[tab]||tab);
-  if(tab==='setup'){buildSetupNav();renderSetupSection('planset');}
-  if(tab==='floorplan'){buildFpLibrary();buildFpFloorSelector();buildFloorPlanCanvas();}
-  if(tab==='site')buildSiteCanvas();
-  if(tab==='elevations')buildElevCanvas();
-  updateTopbar();
-}
-
-// PDF upload handler for v4
-document.getElementById('pdf-file-input').addEventListener('change',async function(e){
-  const file=e.target.files[0];if(!file)return;
-  const setup=getSetup(currentProjectId);
-  const buf=await file.arrayBuffer();
-  await savePDF(currentProjectId,buf.slice(0));
-  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
-  setup.planSetName=file.name;setup.planSetPageCount=pdf.numPages;
-  pdfDoc=pdf;persist();
-  renderSetupSection('planset');
-  this.value='';
-});
-
 
 
 function buildFpFloorSelector(){
   const setup=getSetup(currentProjectId);
   // Combine proposed floors and existing plans into selector
-  const proposedSheets=getCatSheets('floors');
-  const existingSheets=getCatSheets('existing-plans');
+  const proposedSheets=getCatSheets(setup,'floors');
+  const existingSheets=getCatSheets(setup,'existing-plans');
   const allSheets=[
     ...proposedSheets.map(s=>({...s,catId:'floors',label:s.name})),
     ...existingSheets.map(s=>({...s,catId:'existing-plans',label:'[Existing] '+s.name})),
@@ -1960,9 +1248,7 @@ function onDragEnd(e){e.target.classList.remove('dragging');draggingAsm=null;}
 function getRoomAsm(){
   if(!currentProjectId||!currentVersionId)return{};
   const p=getProject(currentProjectId);const v=getVersion(p,currentVersionId);
-  if(!v.zoneAssemblies)v.zoneAssemblies={};
-  if(!v.roomAssemblies)v.roomAssemblies=v.zoneAssemblies; // alias
-  return v.zoneAssemblies;
+  if(!v.roomAssemblies)v.roomAssemblies={};return v.roomAssemblies;
 }
 function addAsmToRoom(roomId,asmId){const ra=getRoomAsm();if(!ra[roomId])ra[roomId]=[];if(!ra[roomId].includes(asmId))ra[roomId].push(asmId);buildFloorPlanCanvas();}
 function selectRoomFp(id){selectedRoom=id;buildFloorPlanCanvas();document.getElementById('fp-right-footer').style.display='block';if(fpTab==='room')renderRoomDetail();}
@@ -2028,7 +1314,7 @@ function hexToRgb(hex){
 
 async function buildSiteCanvas(){
   const setup=getSetup(currentProjectId);
-  const sheets=getCatSheets('site');
+  const sheets=getCatSheets(setup,'site');
   const container=document.getElementById('site-plan-container');
   if(!sheets.length){container.innerHTML=`<div style="padding:24px;font-size:13px;color:var(--text3)">No site plan defined. Go to Project Setup → Site Plan.</div>`;return;}
   await buildZoneCanvas(container,setup,'site',sheets[0].id,'#3B6D11','No site plan defined.');
@@ -2036,8 +1322,8 @@ async function buildSiteCanvas(){
 
 async function buildElevCanvas(){
   const setup=getSetup(currentProjectId);
-  const elevSheets=getCatSheets('elevations');
-  const existElevSheets=getCatSheets('existing-elevations');
+  const elevSheets=getCatSheets(setup,'elevations');
+  const existElevSheets=getCatSheets(setup,'existing-elevations');
   const allElevs=[
     ...elevSheets.map(s=>({...s,catId:'elevations',label:s.name,color:'#534AB7'})),
     ...existElevSheets.map(s=>({...s,catId:'existing-elevations',label:'[Existing] '+s.name,color:'#5F5E5A'})),
@@ -2127,9 +1413,24 @@ function renderScopeOutput(text){
 }
 
 
-function closeFV(){const fv=document.getElementById('full-viewer');fv.style.display='none';document.getElementById('fv-body').innerHTML='';}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('full-viewer')?.style.display==='flex')closeFV();});
-document.getElementById('full-viewer').addEventListener('click',function(e){if(e.target===this||e.target===document.getElementById('fv-body'))closeFV();});
+/* ── Full view ── */
+async function openFV(pageNum){
+  if(!pdfDoc)return;
+  document.getElementById('fv-title').textContent='Page '+pageNum+' — rendering...';
+  document.getElementById('fv-body').innerHTML='<div style="color:#fff;padding:40px"><span class="spinner"></span>Rendering...</div>';
+  document.getElementById('full-viewer').style.display='flex';
+  const page=await pdfDoc.getPage(pageNum);
+  const vp=page.getViewport({scale:4.0});
+  const c=document.createElement('canvas');c.width=Math.floor(vp.width);c.height=Math.floor(vp.height);
+  await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+  c.toBlob(blob=>{
+    const img=document.createElement('img');img.src=URL.createObjectURL(blob);img.style.cssText='max-width:100%;height:auto;box-shadow:0 4px 24px rgba(0,0,0,.5)';
+    document.getElementById('fv-body').innerHTML='';document.getElementById('fv-body').appendChild(img);
+    document.getElementById('fv-title').textContent='Page '+pageNum;
+  },'image/png');
+}
+function closeFV(){document.getElementById('full-viewer').style.display='none';document.getElementById('fv-body').innerHTML='';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('full-viewer').style.display==='flex')closeFV();});
 
 /* ════ INIT ════ */
 loadState();buildDashboard();buildAbSidebar();
