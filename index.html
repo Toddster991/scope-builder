@@ -459,12 +459,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .rl-del:hover{color:#a32d2d}
 
 /* === DRAW TOOL EXTRA === */
-.draw-tool-page{display:flex;flex-direction:column;height:100%;width:100%}
+.draw-tool-page{display:flex;flex-direction:column;height:100%}
 .dt-toolbar{height:44px;background:#1a1a18;display:flex;align-items:center;padding:0 12px;gap:5px;flex-shrink:0}
 .dt-toolbar button{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit}
 .dt-toolbar button.active{background:#185fa5;border-color:#185fa5}
 .dt-toolbar button.success{background:#3b6d11;border-color:#3b6d11}
-.dt-workspace{flex:1;overflow:hidden;position:relative;background:#525659;width:100%}
+.dt-workspace{flex:1;overflow:hidden;position:relative;background:#525659}
 .dt-scaler{position:absolute;transform-origin:0 0}
 .dt-canvas-wrap{position:relative;line-height:0}
 .dt-hint{font-size:11px;color:rgba(255,255,255,.5);margin-left:8px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1256,7 +1256,6 @@ function dtGetPos(e) {
 }
 
 function dtOnMouseDown(e) {
-  if(e.button === 1 || dtSpaceDown) return; // let pan handler take over
   const {x,y} = dtGetPos(e);
 
   if(mode === 'select') {
@@ -1520,18 +1519,6 @@ function dtSetHint(html) {
 /* ═══════════════════════════════════════════
    PROJECT SETUP — wired to v4 data structure
 ═══════════════════════════════════════════ */
-/* ════ DRAW GROUPS (setup nav categories) ════ */
-const DRAW_GROUPS = [
-  { label: 'Proposed Plans', cats: [
-    { id: 'floors',      name: 'Proposed Floor Plans', color: '#185FA5' },
-    { id: 'site',        name: 'Site Plan',            color: '#3B6D11' },
-    { id: 'elevations',  name: 'Elevations',           color: '#534AB7' },
-  ]},
-  { label: 'Existing Plans', cats: [
-    { id: 'existing-plans',      name: 'Existing Floor Plans', color: '#5F5E5A' },
-    { id: 'existing-elevations', name: 'Existing Elevations',  color: '#854f0b' },
-  ]},
-];
 let dtDrawCatId=null, dtDrawSheetId=null, dtDrawColor='#185FA5';
 let dtZoom=1, dtPanX=0, dtPanY=0, dtPanning=false;
 let dtPanStart={x:0,y:0}, dtPanOrigin={x:0,y:0}, dtSpaceDown=false;
@@ -1797,7 +1784,7 @@ function dtExit(){showPage('setup');renderSetupSection(dtDrawCatId||'planset');u
 function dtApplyTransform(){document.getElementById('dt-scaler').style.transform=`translate(${dtPanX}px,${dtPanY}px) scale(${dtZoom})`;document.getElementById('dt-zoom-lbl').textContent=Math.round(dtZoom*100)+'%';}
 function dtFitScreen(){const ws=document.getElementById('dt-workspace');const ww=ws.clientWidth,wh=ws.clientHeight;dtZoom=Math.min((ww-40)/dtPdfW,(wh-40)/dtPdfH,2);dtPanX=(ww-dtPdfW*dtZoom)/2;dtPanY=(wh-dtPdfH*dtZoom)/2;dtApplyTransform();}
 function dtWheelHandler(e){e.preventDefault();const ws=document.getElementById('dt-workspace');const r=ws.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;const d=e.deltaY>0?.9:1.1;const nz=Math.min(Math.max(dtZoom*d,.1),8);dtPanX=mx-(mx-dtPanX)*(nz/dtZoom);dtPanY=my-(my-dtPanY)*(nz/dtZoom);dtZoom=nz;dtApplyTransform();}
-function dtPanMouseDown(e){if(e.target===document.getElementById('dt-draw-canvas')&&!dtSpaceDown&&e.button!==1)return;if(dtSpaceDown||e.button===1){e.preventDefault();dtPanning=true;dtPanStart={x:e.clientX,y:e.clientY};dtPanOrigin={x:dtPanX,y:dtPanY};document.getElementById('dt-workspace').style.cursor='grabbing';}}
+function dtPanMouseDown(e){if(e.target===document.getElementById('dt-draw-canvas'))return;if(dtSpaceDown||e.button===1){e.preventDefault();dtPanning=true;dtPanStart={x:e.clientX,y:e.clientY};dtPanOrigin={x:dtPanX,y:dtPanY};document.getElementById('dt-workspace').style.cursor='grabbing';}}
 function dtPanMouseMove(e){if(!dtPanning)return;e.preventDefault();dtPanX=dtPanOrigin.x+(e.clientX-dtPanStart.x);dtPanY=dtPanOrigin.y+(e.clientY-dtPanStart.y);dtApplyTransform();}
 function dtPanMouseUp(){if(dtPanning){dtPanning=false;document.getElementById('dt-workspace').style.cursor='';}}
 function dtKeyDown(e){if(e.code==='Space'&&!e.target.closest('input')){e.preventDefault();dtSpaceDown=true;document.getElementById('dt-draw-canvas').style.cursor='grab';}if((e.key==='Delete'||e.key==='Backspace')&&!e.target.closest('input'))dtDeleteSelected();if(e.key==='Escape'){if(polyPoints.length>0){polyPoints=[];drawing=false;dtRedraw();}dtCancelName();}}
