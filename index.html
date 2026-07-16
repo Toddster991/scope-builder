@@ -1519,6 +1519,18 @@ function dtSetHint(html) {
 /* ═══════════════════════════════════════════
    PROJECT SETUP — wired to v4 data structure
 ═══════════════════════════════════════════ */
+/* ════ DRAW GROUPS (setup nav categories) ════ */
+const DRAW_GROUPS = [
+  { label: 'Proposed Plans', cats: [
+    { id: 'floors',      name: 'Proposed Floor Plans', color: '#185FA5' },
+    { id: 'site',        name: 'Site Plan',            color: '#3B6D11' },
+    { id: 'elevations',  name: 'Elevations',           color: '#534AB7' },
+  ]},
+  { label: 'Existing Plans', cats: [
+    { id: 'existing-plans',      name: 'Existing Floor Plans', color: '#5F5E5A' },
+    { id: 'existing-elevations', name: 'Existing Elevations',  color: '#854f0b' },
+  ]},
+];
 let dtDrawCatId=null, dtDrawSheetId=null, dtDrawColor='#185FA5';
 let dtZoom=1, dtPanX=0, dtPanY=0, dtPanning=false;
 let dtPanStart={x:0,y:0}, dtPanOrigin={x:0,y:0}, dtSpaceDown=false;
