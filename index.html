@@ -1256,6 +1256,7 @@ function dtGetPos(e) {
 }
 
 function dtOnMouseDown(e) {
+  if(e.button === 1 || dtSpaceDown) return; // let pan handler take over
   const {x,y} = dtGetPos(e);
 
   if(mode === 'select') {
@@ -1796,7 +1797,7 @@ function dtExit(){showPage('setup');renderSetupSection(dtDrawCatId||'planset');u
 function dtApplyTransform(){document.getElementById('dt-scaler').style.transform=`translate(${dtPanX}px,${dtPanY}px) scale(${dtZoom})`;document.getElementById('dt-zoom-lbl').textContent=Math.round(dtZoom*100)+'%';}
 function dtFitScreen(){const ws=document.getElementById('dt-workspace');const ww=ws.clientWidth,wh=ws.clientHeight;dtZoom=Math.min((ww-40)/dtPdfW,(wh-40)/dtPdfH,2);dtPanX=(ww-dtPdfW*dtZoom)/2;dtPanY=(wh-dtPdfH*dtZoom)/2;dtApplyTransform();}
 function dtWheelHandler(e){e.preventDefault();const ws=document.getElementById('dt-workspace');const r=ws.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;const d=e.deltaY>0?.9:1.1;const nz=Math.min(Math.max(dtZoom*d,.1),8);dtPanX=mx-(mx-dtPanX)*(nz/dtZoom);dtPanY=my-(my-dtPanY)*(nz/dtZoom);dtZoom=nz;dtApplyTransform();}
-function dtPanMouseDown(e){if(e.target===document.getElementById('dt-draw-canvas'))return;if(dtSpaceDown||e.button===1){e.preventDefault();dtPanning=true;dtPanStart={x:e.clientX,y:e.clientY};dtPanOrigin={x:dtPanX,y:dtPanY};document.getElementById('dt-workspace').style.cursor='grabbing';}}
+function dtPanMouseDown(e){if(e.target===document.getElementById('dt-draw-canvas')&&!dtSpaceDown&&e.button!==1)return;if(dtSpaceDown||e.button===1){e.preventDefault();dtPanning=true;dtPanStart={x:e.clientX,y:e.clientY};dtPanOrigin={x:dtPanX,y:dtPanY};document.getElementById('dt-workspace').style.cursor='grabbing';}}
 function dtPanMouseMove(e){if(!dtPanning)return;e.preventDefault();dtPanX=dtPanOrigin.x+(e.clientX-dtPanStart.x);dtPanY=dtPanOrigin.y+(e.clientY-dtPanStart.y);dtApplyTransform();}
 function dtPanMouseUp(){if(dtPanning){dtPanning=false;document.getElementById('dt-workspace').style.cursor='';}}
 function dtKeyDown(e){if(e.code==='Space'&&!e.target.closest('input')){e.preventDefault();dtSpaceDown=true;document.getElementById('dt-draw-canvas').style.cursor='grab';}if((e.key==='Delete'||e.key==='Backspace')&&!e.target.closest('input'))dtDeleteSelected();if(e.key==='Escape'){if(polyPoints.length>0){polyPoints=[];drawing=false;dtRedraw();}dtCancelName();}}
