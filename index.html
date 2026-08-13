@@ -1014,17 +1014,15 @@ let _syncTimer=null;
 function persist(){
   // Always save locally first for immediate response
   try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
-  // Sync immediately for debugging
-  console.log('persist() called - triggering syncToCloud');
-  syncToCloud();
+  // Debounce cloud sync - 2 seconds after last change
+  clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(syncToCloud, 2000);
 }
 
 async function syncToCloud(){
-  console.log('syncToCloud called, projects:', state.projects.length);
   try{
     // Sync each project
     for(const proj of state.projects){
-      console.log('Syncing project:', proj.id, proj.client);
       const {error}=await sb.from('projects').upsert({
         id: proj.id,
         client: proj.client||'',
@@ -1034,7 +1032,6 @@ async function syncToCloud(){
         updated_at: new Date().toISOString()
       });
       if(error)console.warn('Project sync error:',error.message);
-      else console.log('Project synced OK:', proj.client);
     }
     // Sync library overrides
     const libData=localStorage.getItem('trdb_lib_overrides_v1');
