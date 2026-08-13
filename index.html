@@ -1024,6 +1024,7 @@ async function syncToCloud(){
   try{
     // Sync each project
     for(const proj of state.projects){
+      if(!proj||!proj.id||!proj.client)continue; // skip invalid projects
       const {error}=await sb.from('projects').upsert({
         id: proj.id,
         client: proj.client||'',
@@ -1331,7 +1332,7 @@ function createProject(){
   const p={id:uid(),client,address:document.getElementById('m-addr').value.trim(),status:document.getElementById('m-status').value,created:document.getElementById('m-date').value||today(),notes:document.getElementById('m-notes').value.trim(),
     setup:{planSetName:null,planSetPageCount:0,sheets:{}},
     versions:[{id:uid(),name:'Version 1',created:today(),zoneAssemblies:{}}]};
-  state.projects.unshift(p);persist();syncToCloud();closeModal();buildDashboard();openProject(p.id);
+  state.projects.unshift(p);persist();closeModal();buildDashboard();openProject(p.id);syncToCloud();
 }
 function showEditProjectModal(){
   const p=getProject(currentProjectId);if(!p)return;
