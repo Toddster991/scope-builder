@@ -1052,13 +1052,10 @@ async function loadState(){
   try{
     const {data:projects,error}=await sb.from('projects').select('*').order('created_at',{ascending:false});
     if(!error&&projects&&projects.length){
-      // Merge cloud projects into state - cloud wins for any project that exists there
+      // Cloud is source of truth - use all cloud projects
       const cloudProjs=projects.map(function(p){return p.data;}).filter(Boolean);
       if(cloudProjs.length){
-        // Replace local projects with cloud versions, keeping any local-only ones
-        const cloudIds=new Set(cloudProjs.map(function(p){return p.id;}));
-        const localOnly=state.projects.filter(function(p){return !cloudIds.has(p.id);});
-        state.projects=[...cloudProjs,...localOnly];
+        state.projects=cloudProjs;
         try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
         // Rebuild dashboard with fresh cloud data
         if(document.getElementById('page-dashboard')) buildDashboard();
