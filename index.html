@@ -1102,7 +1102,7 @@ let state={
 };
 
 function persist(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
-function loadState(){try{const s=localStorage.getItem(LS_KEY);if(s){const p=JSON.parse(s);if(p.assemblies&&p.projects)state=p;}}catch(e){}}
+// loadState moved to async version above
 
 /* PDF storage via IndexedDB */
 const DB_NAME='ScopeBuilderPDFs',DB_VER=1,DB_STORE='pdfs';
@@ -6749,7 +6749,7 @@ async function refreshFromCloud(){
 // Auto-refresh every 30 seconds when on dashboard
 setInterval(function(){
   if(document.getElementById('page-dashboard')&&document.getElementById('page-dashboard').classList.contains('active')){
-    loadState().then(function(){buildDashboard();});
+    loadState();
   }
 }, 30000);
 
