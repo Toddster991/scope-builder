@@ -6746,12 +6746,7 @@ async function refreshFromCloud(){
   if(btn){btn.textContent='⟳ Refresh';btn.disabled=false;}
 }
 
-// Auto-refresh every 30 seconds when on dashboard
-setInterval(function(){
-  if(document.getElementById('page-dashboard')&&document.getElementById('page-dashboard').classList.contains('active')){
-    loadState();
-  }
-}, 30000);
+// Auto-refresh disabled - use the Refresh button instead
 
 </script>
 </body>
