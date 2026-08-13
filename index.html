@@ -450,6 +450,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <button class="btn" onclick="showPage('library')" style="margin-right:8px"><i class="ti ti-books"></i> Scope Library</button>
         <button class="btn" onclick="showPage('contacts')"><i class="ti ti-address-book"></i> Contacts</button>
         <button class="btn" onclick="showPage('import')"><i class="ti ti-file-upload"></i> Import Library</button>
+        <button class="btn" id="btn-cloud-refresh" onclick="refreshFromCloud()" style="margin-right:8px">⟳ Refresh</button>
         <button class="btn primary" onclick="showNewProjectModal()"><i class="ti ti-plus"></i> New project</button>
       </div>
       <div class="dash-body">
@@ -1059,6 +1060,8 @@ async function loadState(){
         const localOnly=state.projects.filter(function(p){return !cloudIds.has(p.id);});
         state.projects=[...cloudProjs,...localOnly];
         try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
+        // Rebuild dashboard with fresh cloud data
+        if(document.getElementById('page-dashboard')) buildDashboard();
       }
     }
     // Load shared library
@@ -6736,6 +6739,22 @@ function importConfirm(){
 
   importParsed = null;
 }
+
+
+async function refreshFromCloud(){
+  const btn=document.getElementById('btn-cloud-refresh');
+  if(btn){btn.textContent='⟳ Syncing...';btn.disabled=true;}
+  await loadState();
+  buildDashboard();
+  if(btn){btn.textContent='⟳ Refresh';btn.disabled=false;}
+}
+
+// Auto-refresh every 30 seconds when on dashboard
+setInterval(function(){
+  if(document.getElementById('page-dashboard')&&document.getElementById('page-dashboard').classList.contains('active')){
+    loadState().then(function(){buildDashboard();});
+  }
+}, 30000);
 
 </script>
 </body>
