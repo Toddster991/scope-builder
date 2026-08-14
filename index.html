@@ -1047,14 +1047,19 @@ async function loadState(){
   // Load locally first for instant startup
   try{
     const s=localStorage.getItem(LS_KEY);
-    if(s){const p=JSON.parse(s);if(p.assemblies&&p.projects)state=p;}
+    if(s){const p=JSON.parse(s);if(p.assemblies&&p.projects){
+      // Filter out empty/corrupt project objects
+      p.projects=p.projects.filter(function(proj){return proj&&proj.id&&proj.client;});
+      state=p;
+    }}
   }catch(e){}
   // Then fetch from cloud and merge
   try{
     const {data:projects,error}=await sb.from('projects').select('*').order('created_at',{ascending:false});
     if(!error&&projects&&projects.length){
       // Cloud is source of truth - use all cloud projects
-      const cloudProjs=projects.map(function(p){return p.data;}).filter(Boolean);
+      const cloudProjs=projects.map(function(p){return p.data;})
+        .filter(function(p){return p&&p.id&&p.client;}); // only valid projects
       if(cloudProjs.length){
         state.projects=cloudProjs;
         try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
