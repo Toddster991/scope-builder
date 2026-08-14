@@ -1114,8 +1114,61 @@ function persist(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch
 const DB_NAME='ScopeBuilderPDFs',DB_VER=1,DB_STORE='pdfs';
 let db=null;
 function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,DB_VER);r.onupgradeneeded=e=>{e.target.result.createObjectStore(DB_STORE);};r.onsuccess=e=>{db=e.target.result;res(db);};r.onerror=()=>rej();});}
-function savePDF(projectId,arrayBuffer){return openDB().then(db=>new Promise((res,rej)=>{const tx=db.transaction(DB_STORE,'readwrite');tx.objectStore(DB_STORE).put(arrayBuffer,projectId);tx.oncomplete=()=>res();tx.onerror=()=>rej();}));}
-function loadPDF(projectId){return openDB().then(db=>new Promise((res,rej)=>{const tx=db.transaction(DB_STORE,'readonly');const req=tx.objectStore(DB_STORE).get(projectId);req.onsuccess=e=>res(e.target.result);req.onerror=()=>rej();}));}
+function savePDF(projectId,arrayBuffer){
+  // Save locally first
+  return openDB().then(db=>new Promise((res,rej)=>{
+    const tx=db.transaction(DB_STORE,'readwrite');
+    tx.objectStore(DB_STORE).put(arrayBuffer,projectId);
+    tx.oncomplete=()=>{
+      res();
+      // Also upload to Supabase Storage in background
+      uploadPDFToCloud(projectId, arrayBuffer);
+    };
+    tx.onerror=()=>rej();
+  }));
+}
+
+async function uploadPDFToCloud(projectId, arrayBuffer){
+  try{
+    const blob=new Blob([arrayBuffer],{type:'application/pdf'});
+    const path=projectId+'/planset.pdf';
+    const {error}=await sb.storage.from('plans').upload(path, blob, {upsert:true});
+    if(error)console.warn('PDF cloud upload error:',error.message);
+    else console.log('PDF uploaded to cloud for project:',projectId);
+  }catch(e){console.warn('PDF cloud upload failed:',e.message);}
+}
+
+async function downloadPDFFromCloud(projectId){
+  try{
+    const path=projectId+'/planset.pdf';
+    const {data,error}=await sb.storage.from('plans').download(path);
+    if(error||!data)return null;
+    return await data.arrayBuffer();
+  }catch(e){return null;}
+}
+function loadPDF(projectId){
+  return openDB().then(db=>new Promise((res,rej)=>{
+    const tx=db.transaction(DB_STORE,'readonly');
+    const req=tx.objectStore(DB_STORE).get(projectId);
+    req.onsuccess=async function(e){
+      if(e.target.result){
+        res(e.target.result); // Found locally
+      } else {
+        // Try Supabase Storage
+        console.log('PDF not local, downloading from cloud...');
+        const buf=await downloadPDFFromCloud(projectId);
+        if(buf){
+          // Cache locally for next time
+          savePDF(projectId, buf);
+          res(buf);
+        } else {
+          res(null);
+        }
+      }
+    };
+    req.onerror=()=>rej();
+  }));
+}
 
 /* ════ HELPERS ════ */
 function uid(){return 'id-'+Date.now()+'-'+Math.floor(Math.random()*99999);}
