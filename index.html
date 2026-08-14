@@ -1146,28 +1146,28 @@ async function downloadPDFFromCloud(projectId){
     return await data.arrayBuffer();
   }catch(e){return null;}
 }
-function loadPDF(projectId){
-  return openDB().then(db=>new Promise((res,rej)=>{
+async function loadPDF(projectId){
+  // Try local IndexedDB first
+  const db=await openDB();
+  const localBuf=await new Promise((res,rej)=>{
     const tx=db.transaction(DB_STORE,'readonly');
     const req=tx.objectStore(DB_STORE).get(projectId);
-    req.onsuccess=async function(e){
-      if(e.target.result){
-        res(e.target.result); // Found locally
-      } else {
-        // Try Supabase Storage
-        console.log('PDF not local, downloading from cloud...');
-        const buf=await downloadPDFFromCloud(projectId);
-        if(buf){
-          // Cache locally for next time
-          savePDF(projectId, buf);
-          res(buf);
-        } else {
-          res(null);
-        }
-      }
-    };
-    req.onerror=()=>rej();
-  }));
+    req.onsuccess=e=>res(e.target.result||null);
+    req.onerror=()=>res(null);
+  });
+  if(localBuf) return localBuf;
+  // Not local - try Supabase Storage
+  console.log('PDF not local, downloading from cloud...');
+  const cloudBuf=await downloadPDFFromCloud(projectId);
+  if(cloudBuf){
+    // Cache locally for next time (don't re-upload)
+    openDB().then(db2=>{
+      const tx=db2.transaction(DB_STORE,'readwrite');
+      tx.objectStore(DB_STORE).put(cloudBuf,projectId);
+    }).catch(()=>{});
+    return cloudBuf;
+  }
+  return null;
 }
 
 /* ════ HELPERS ════ */
