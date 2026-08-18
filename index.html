@@ -450,7 +450,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <button class="btn" onclick="showPage('library')" style="margin-right:8px"><i class="ti ti-books"></i> Scope Library</button>
         <button class="btn" onclick="showPage('contacts')"><i class="ti ti-address-book"></i> Contacts</button>
         <button class="btn" onclick="showPage('import')"><i class="ti ti-file-upload"></i> Import Library</button>
-        <button class="btn" id="btn-cloud-refresh" onclick="refreshFromCloud()" style="margin-right:8px">⟳ Refresh</button>
+        <button class="btn" onclick="sbLoad().then(()=>buildDashboard())" style="margin-right:8px" title="Refresh from cloud">⟳ Refresh</button>
         <button class="btn primary" onclick="showNewProjectModal()"><i class="ti ti-plus"></i> New project</button>
       </div>
       <div class="dash-body">
@@ -1004,77 +1004,6 @@ const DRAW_GROUPS=[
 
 /* ════ STATE ════ */
 const LS_KEY='scopebuilder_v3';
-
-/* ════ SUPABASE ════ */
-const SB_URL='https://ewomtmvhqkqnubfholzb.supabase.co';
-const SB_KEY='sb_publishable_3SfsOGtABdW1RxxqFkZpAQ_6nhADxLF';
-const sb=window.supabase.createClient(SB_URL, SB_KEY);
-
-// Sync state to Supabase (debounced)
-let _syncTimer=null;
-function persist(){
-  // Always save locally first for immediate response
-  try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
-  // Debounce cloud sync - 2 seconds after last change
-  clearTimeout(_syncTimer);
-  _syncTimer=setTimeout(syncToCloud, 2000);
-}
-
-async function syncToCloud(){
-  try{
-    // Sync each project
-    for(const proj of state.projects){
-      if(!proj||!proj.id||!proj.client)continue; // skip invalid projects
-      const {error}=await sb.from('projects').upsert({
-        id: proj.id,
-        client: proj.client||'',
-        address: proj.address||'',
-        status: proj.status||'active',
-        data: proj,
-        updated_at: new Date().toISOString()
-      });
-      if(error)console.warn('Project sync error:',error.message);
-    }
-    // Sync library overrides
-    const libData=localStorage.getItem('trdb_lib_overrides_v1');
-    if(libData){
-      await sb.from('library').upsert({id:'cats_overrides',data:JSON.parse(libData),updated_at:new Date().toISOString()});
-    }
-  }catch(e){console.warn('Cloud sync failed:',e.message);}
-}
-
-async function loadState(){
-  // Load locally first for instant startup
-  try{
-    const s=localStorage.getItem(LS_KEY);
-    if(s){const p=JSON.parse(s);if(p.assemblies&&p.projects){
-      // Filter out empty/corrupt project objects
-      p.projects=p.projects.filter(function(proj){return proj&&proj.id&&proj.client;});
-      state=p;
-    }}
-  }catch(e){}
-  // Then fetch from cloud and merge
-  try{
-    const {data:projects,error}=await sb.from('projects').select('*').order('created_at',{ascending:false});
-    if(!error&&projects&&projects.length){
-      // Cloud is source of truth - use all cloud projects
-      const cloudProjs=projects.map(function(p){return p.data;})
-        .filter(function(p){return p&&p.id&&p.client;}); // only valid projects
-      if(cloudProjs.length){
-        state.projects=cloudProjs;
-        try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
-        // Rebuild dashboard with fresh cloud data
-        if(document.getElementById('page-dashboard')) buildDashboard();
-      }
-    }
-    // Load shared library
-    const {data:lib}=await sb.from('library').select('*').eq('id','cats_overrides').single();
-    if(lib&&lib.data){
-      localStorage.setItem('trdb_lib_overrides_v1',JSON.stringify(lib.data));
-      libLoad();
-    }
-  }catch(e){console.warn('Cloud load failed, using local data:',e.message);}
-}
 let state={
   assemblies:[
     {id:'asm-window-new',name:'New Window Location',category:'Doors & Windows',canvases:['Interior','Elevations'],notes:'Coordinate rough opening size with window unit specs before framing.',trades:[
@@ -1107,67 +1036,121 @@ let state={
   projects:[],
 };
 
-function persist(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
-// loadState moved to async version above
+/* ════ SUPABASE SYNC ════ */
+const SB_URL='https://ewomtmvhqkqnubfholzb.supabase.co';
+const SB_KEY='sb_publishable_3SfsOGtABdW1RxxqFkZpAQ_6nhADxLF';
+let _sb=null;
+function getSB(){if(!_sb&&window.supabase)_sb=window.supabase.createClient(SB_URL,SB_KEY);return _sb;}
+
+let _syncTimer=null;
+function persist(){
+  // 1. Save locally - instant
+  try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
+  // 2. Debounce sync to cloud
+  clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(sbSync,2000);
+}
+
+async function sbSync(){
+  const sb=getSB();if(!sb)return;
+  try{
+    // Sync all valid projects
+    for(const proj of state.projects){
+      if(!proj||!proj.id||!proj.client)continue;
+      await sb.from('projects').upsert({
+        id:proj.id,
+        client:proj.client||'',
+        address:proj.address||'',
+        status:proj.status||'active',
+        data:proj,
+        updated_at:new Date().toISOString()
+      });
+    }
+    // Sync library
+    const lib=localStorage.getItem('trdb_lib_overrides_v1');
+    if(lib)await sb.from('library').upsert({id:'cats_overrides',data:JSON.parse(lib),updated_at:new Date().toISOString()});
+  }catch(e){console.warn('Sync error:',e.message);}
+}
+
+function loadState(){
+  // Load from localStorage immediately
+  try{
+    const s=localStorage.getItem(LS_KEY);
+    if(s){const p=JSON.parse(s);if(p.assemblies&&p.projects){
+      p.projects=p.projects.filter(function(x){return x&&x.id&&x.client;});
+      state=p;
+    }}
+  }catch(e){}
+  // Then refresh from cloud in background
+  sbLoad();
+}
+
+async function sbLoad(){
+  const sb=getSB();if(!sb)return;
+  try{
+    const {data,error}=await sb.from('projects').select('id,client,data').order('created_at',{ascending:false});
+    if(error||!data||!data.length)return;
+    // Merge: cloud wins per project ID
+    const cloudMap={};
+    data.forEach(function(row){
+      if(row.data&&row.data.id&&row.data.client)cloudMap[row.data.id]=row.data;
+    });
+    // Keep local projects not in cloud, add/update with cloud versions
+    const localOnly=state.projects.filter(function(p){return p&&p.id&&!cloudMap[p.id];});
+    state.projects=[...Object.values(cloudMap),...localOnly];
+    state.projects=state.projects.filter(function(p){return p&&p.id&&p.client;});
+    try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
+    // Rebuild dashboard if visible
+    const dash=document.getElementById('page-dashboard');
+    if(dash&&dash.classList.contains('active'))buildDashboard();
+    // Load shared library
+    const {data:lib}=await sb.from('library').select('data').eq('id','cats_overrides').maybeSingle();
+    if(lib&&lib.data){
+      localStorage.setItem('trdb_lib_overrides_v1',JSON.stringify(lib.data));
+      libLoad();
+    }
+  }catch(e){console.warn('Cloud load error:',e.message);}
+}
 
 /* PDF storage via IndexedDB */
 const DB_NAME='ScopeBuilderPDFs',DB_VER=1,DB_STORE='pdfs';
 let db=null;
 function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,DB_VER);r.onupgradeneeded=e=>{e.target.result.createObjectStore(DB_STORE);};r.onsuccess=e=>{db=e.target.result;res(db);};r.onerror=()=>rej();});}
 function savePDF(projectId,arrayBuffer){
-  // Save locally first
   return openDB().then(db=>new Promise((res,rej)=>{
     const tx=db.transaction(DB_STORE,'readwrite');
     tx.objectStore(DB_STORE).put(arrayBuffer,projectId);
-    tx.oncomplete=()=>{
-      res();
-      // Also upload to Supabase Storage in background
-      uploadPDFToCloud(projectId, arrayBuffer);
-    };
+    tx.oncomplete=()=>{res();sbUploadPDF(projectId,arrayBuffer);};
     tx.onerror=()=>rej();
   }));
 }
-
-async function uploadPDFToCloud(projectId, arrayBuffer){
+async function sbUploadPDF(projectId,arrayBuffer){
+  const sb=getSB();if(!sb)return;
   try{
     const blob=new Blob([arrayBuffer],{type:'application/pdf'});
-    const path=projectId+'/planset.pdf';
-    const {error}=await sb.storage.from('plans').upload(path, blob, {upsert:true});
-    if(error)console.warn('PDF cloud upload error:',error.message);
-    else console.log('PDF uploaded to cloud for project:',projectId);
-  }catch(e){console.warn('PDF cloud upload failed:',e.message);}
-}
-
-async function downloadPDFFromCloud(projectId){
-  try{
-    const path=projectId+'/planset.pdf';
-    const {data,error}=await sb.storage.from('plans').download(path);
-    if(error||!data)return null;
-    return await data.arrayBuffer();
-  }catch(e){return null;}
+    await sb.storage.from('plans').upload(projectId+'/planset.pdf',blob,{upsert:true});
+  }catch(e){console.warn('PDF upload error:',e.message);}
 }
 async function loadPDF(projectId){
-  // Try local IndexedDB first
+  // Try local first
   const db=await openDB();
-  const localBuf=await new Promise((res,rej)=>{
+  const local=await new Promise(res=>{
     const tx=db.transaction(DB_STORE,'readonly');
     const req=tx.objectStore(DB_STORE).get(projectId);
     req.onsuccess=e=>res(e.target.result||null);
     req.onerror=()=>res(null);
   });
-  if(localBuf) return localBuf;
-  // Not local - try Supabase Storage
-  console.log('PDF not local, downloading from cloud...');
-  const cloudBuf=await downloadPDFFromCloud(projectId);
-  if(cloudBuf){
-    // Cache locally for next time (don't re-upload)
-    openDB().then(db2=>{
-      const tx=db2.transaction(DB_STORE,'readwrite');
-      tx.objectStore(DB_STORE).put(cloudBuf,projectId);
-    }).catch(()=>{});
-    return cloudBuf;
-  }
-  return null;
+  if(local)return local;
+  // Try cloud
+  const sb=getSB();if(!sb)return null;
+  try{
+    const {data,error}=await sb.storage.from('plans').download(projectId+'/planset.pdf');
+    if(error||!data)return null;
+    const buf=await data.arrayBuffer();
+    // Cache locally
+    openDB().then(db2=>{const tx=db2.transaction(DB_STORE,'readwrite');tx.objectStore(DB_STORE).put(buf,projectId);}).catch(()=>{});
+    return buf;
+  }catch(e){return null;}
 }
 
 /* ════ HELPERS ════ */
@@ -1390,7 +1373,7 @@ function createProject(){
   const p={id:uid(),client,address:document.getElementById('m-addr').value.trim(),status:document.getElementById('m-status').value,created:document.getElementById('m-date').value||today(),notes:document.getElementById('m-notes').value.trim(),
     setup:{planSetName:null,planSetPageCount:0,sheets:{}},
     versions:[{id:uid(),name:'Version 1',created:today(),zoneAssemblies:{}}]};
-  state.projects.unshift(p);persist();closeModal();buildDashboard();openProject(p.id);syncToCloud();
+  state.projects.unshift(p);persist();closeModal();buildDashboard();openProject(p.id);
 }
 function showEditProjectModal(){
   const p=getProject(currentProjectId);if(!p)return;
@@ -3537,7 +3520,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElement
 document.getElementById('full-viewer').addEventListener('click',function(e){if(e.target===this||e.target===document.getElementById('fv-body'))closeFV();});
 
 /* ════ INIT ════ */
-(async function(){await loadState();libLoad();buildDashboard();buildAbSidebar();buildDrawingNav();})();
+loadState();libLoad();buildDashboard();buildAbSidebar();buildDrawingNav();
 
 
 /* ════ PROJECT INFO ════ */
@@ -6795,17 +6778,6 @@ function importConfirm(){
 
   importParsed = null;
 }
-
-
-async function refreshFromCloud(){
-  const btn=document.getElementById('btn-cloud-refresh');
-  if(btn){btn.textContent='⟳ Syncing...';btn.disabled=true;}
-  await loadState();
-  buildDashboard();
-  if(btn){btn.textContent='⟳ Refresh';btn.disabled=false;}
-}
-
-// Auto-refresh disabled - use the Refresh button instead
 
 </script>
 </body>
