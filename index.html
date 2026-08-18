@@ -5253,6 +5253,9 @@ function libSave(){
     localStorage.setItem(LIB_KEY, JSON.stringify(CATS.map(function(c){
       return {id:c.id, subs:c.subs};
     })));
+    // Sync library to cloud
+    clearTimeout(_syncTimer);
+    _syncTimer=setTimeout(sbSync, 2000);
   }catch(e){}
 }
 
