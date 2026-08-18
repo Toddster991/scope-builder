@@ -1270,9 +1270,7 @@ function switchWorkTab(tab){
   const pageMap={setup:'setup',floorplan:'floorplan',site:'site',elevations:'elevations'};
   showPage(pageMap[tab]||tab);
   if(tab==='setup'){currentSetupSec='planset';buildSetupNav();renderSetupSection('planset');}
-  if(tab==='floorplan'){buildFpLibrary();buildFpFloorSelector();(async()=>await buildFloorPlanCanvas())();
-    document.getElementById('nav-draw-tools').style.display='';
-    document.getElementById('btn-save-rooms').style.display='';}
+  if(tab==='floorplan'){buildFpLibrary();buildFpFloorSelector();(async()=>await buildFloorPlanCanvas())();}
   if(tab==='site')buildSiteCanvas();
   if(tab==='elevations')buildElevCanvas();
   updateTopbar();
@@ -2299,8 +2297,11 @@ function fpMouseMove(e){
   if((dtMode==='rect'&&fpDrawing)||(dtMode==='poly'&&fpPolyOn))fpRedraw();
 }
 function fpMouseUp(e){
+  // Only allow room drawing when in Load Plans draw tool (page-draw)
+  const inDrawTool=document.getElementById('page-draw')&&document.getElementById('page-draw').classList.contains('active');
   if(dtMode==='rect'&&fpDrawing){
     fpDrawing=false;
+    if(!inDrawTool){fpRedraw();return;} // not in draw tool - ignore
     const{x,y}=fpGetPos(e);
     const rx=Math.min(fpStart.x,x),ry=Math.min(fpStart.y,y),rw=Math.abs(x-fpStart.x),rh=Math.abs(y-fpStart.y);
     if(rw<10||rh<10){fpRedraw();return;}
@@ -2314,13 +2315,14 @@ function fpShowName(){
   const modal=document.getElementById('dt-name-modal');if(!modal)return;
   modal.style.display='flex';
   const inp=document.getElementById('dt-name-input');if(inp){inp.value='';setTimeout(()=>inp.focus(),50);}
-  document.getElementById('dt-name-confirm').onclick=function(){
+  const confirmBtn=document.getElementById('dt-name-confirm');if(!confirmBtn)return;
+  confirmBtn.onclick=function(){
     const name=inp?inp.value.trim():'';if(!name){alert('Enter a room name.');return;}
     const room={id:'r-'+Date.now(),name,...fpPending};
     dtRooms.push(room);dtSelectedId=room.id;fpPending=null;
     modal.style.display='none';fpRedraw();dtUpdateRoomList();fpSaveRooms();
   };
-  document.getElementById('dt-name-cancel').onclick=function(){fpPending=null;modal.style.display='none';fpRedraw();};
+  const cancelBtn=document.getElementById('dt-name-cancel');if(cancelBtn)cancelBtn.onclick=function(){fpPending=null;modal.style.display='none';fpRedraw();};
 }
 
 function fpDrawChips(){
