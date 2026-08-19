@@ -1383,22 +1383,19 @@ function showNewProjectModal(){
     <div class="modal-footer"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="createProject()">Create project</button></div>
   </div>`);
 }
-async function deleteProject(projId){
+function deleteProject(projId){
   const proj=state.projects.find(p=>p.id===projId);
   if(!proj)return;
   if(!confirm('Delete project "'+proj.client+'"? This cannot be undone.'))return;
-  // Delete from Supabase first and wait for it
-  const sb=getSB();
-  if(sb){
-    try{await sb.from('projects').delete().eq('id',projId);}
-    catch(e){console.warn('Cloud delete error:',e.message);}
-  }
-  // Then remove locally
+  // Remove locally immediately
   deletedIds.add(projId);
   localStorage.setItem(DELETED_KEY,JSON.stringify([...deletedIds]));
   state.projects=state.projects.filter(p=>p.id!==projId);
   try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
   buildDashboard();
+  // Delete from Supabase in background (fire and forget)
+  const sb=getSB();
+  if(sb){sb.from('projects').delete().eq('id',projId).then(()=>{}).catch(e=>console.warn('Cloud delete error:',e.message));}
 }
 
 function createProject(){
