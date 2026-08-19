@@ -1293,7 +1293,8 @@ function buildDashboard(){
   const archived=state.projects.filter(p=>['Completed','Archived'].includes(p.status));
   const sc=s=>s==='Active'?'active':s==='Bidding'?'bid':'';
   const card=p=>{const vc=(p.versions||[]).length;const lt=(p.versions||[]).slice(-1)[0];
-    return `<div class="project-card" onclick="openProject('${p.id}')">
+    return `<div class="project-card" onclick="openProject('${p.id}')" style="position:relative">
+      <button onclick="event.stopPropagation();deleteProject('${p.id}')" title="Delete project" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;line-height:1;padding:2px 6px;border-radius:4px" onmouseover="this.style.color='#c0392b'" onmouseout="this.style.color='var(--text3)'">×</button>
       <div class="pc-client">${p.client}</div><div class="pc-address">${p.address||'No address'}</div>
       <div class="pc-meta"><span class="pc-badge ${sc(p.status)}">${p.status}</span><span class="pc-date">${fmtDate(p.created)}</span></div>
       <div class="pc-versions">${vc} version${vc!==1?'s':''} · Last: ${lt?fmtDate(lt.created):'—'}</div>
@@ -1369,6 +1370,24 @@ function showNewProjectModal(){
     <div class="modal-footer"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="createProject()">Create project</button></div>
   </div>`);
 }
+async function deleteProject(projId){
+  const proj=state.projects.find(p=>p.id===projId);
+  if(!proj)return;
+  if(!confirm('Delete project "'+proj.client+'"? This cannot be undone.'))return;
+  // Remove from state
+  state.projects=state.projects.filter(p=>p.id!==projId);
+  persist();
+  buildDashboard();
+  // Remove from Supabase
+  const sb=getSB();
+  if(sb){
+    try{
+      await sb.from('projects').delete().eq('id',projId);
+      await sb.from('versions').delete().eq('project_id',projId);
+    }catch(e){console.warn('Cloud delete error:',e.message);}
+  }
+}
+
 function createProject(){
   const client=document.getElementById('m-client').value.trim();if(!client){alert('Enter a client name.');return;}
   const p={id:uid(),client,address:document.getElementById('m-addr').value.trim(),status:document.getElementById('m-status').value,created:document.getElementById('m-date').value||today(),notes:document.getElementById('m-notes').value.trim(),
