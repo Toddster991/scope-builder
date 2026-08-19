@@ -1384,18 +1384,17 @@ async function deleteProject(projId){
   const proj=state.projects.find(p=>p.id===projId);
   if(!proj)return;
   if(!confirm('Delete project "'+proj.client+'"? This cannot be undone.'))return;
-  // Remove from state
-  state.projects=state.projects.filter(p=>p.id!==projId);
-  persist();
-  buildDashboard();
-  // Remove from Supabase
+  // Remove from Supabase FIRST so sbLoad won't restore it
   const sb=getSB();
   if(sb){
     try{
       await sb.from('projects').delete().eq('id',projId);
-      await sb.from('versions').delete().eq('project_id',projId);
     }catch(e){console.warn('Cloud delete error:',e.message);}
   }
+  // Then remove from local state and rebuild
+  state.projects=state.projects.filter(p=>p.id!==projId);
+  persist();
+  buildDashboard();
 }
 
 function createProject(){
