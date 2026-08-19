@@ -3284,7 +3284,14 @@ function removeTaskFromRoom(roomId, taskId, instanceId){
   const v=getVersion(getProject(currentProjectId),currentVersionId);
   if(!v.roomTasks||!v.roomTasks[roomId])return;
   if(instanceId){
-    v.roomTasks[roomId]=v.roomTasks[roomId].filter(t=>t.instanceId!==instanceId);
+    // Check if this is an assembly anchor - if so remove all components too
+    const item=v.roomTasks[roomId].find(t=>t.instanceId===instanceId);
+    if(item&&item.isAssembly&&item.asmId){
+      // Remove anchor AND all components with same asmId
+      v.roomTasks[roomId]=v.roomTasks[roomId].filter(t=>t.asmId!==item.asmId);
+    } else {
+      v.roomTasks[roomId]=v.roomTasks[roomId].filter(t=>t.instanceId!==instanceId);
+    }
   } else {
     // fallback: remove first match
     const idx=v.roomTasks[roomId].findIndex(t=>t.taskId===taskId);
