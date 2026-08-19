@@ -1004,6 +1004,8 @@ const DRAW_GROUPS=[
 
 /* ════ STATE ════ */
 const LS_KEY='scopebuilder_v3';
+const DELETED_KEY='scopebuilder_deleted_v1';
+let deletedIds=new Set(JSON.parse(localStorage.getItem(DELETED_KEY)||'[]'));
 let state={
   assemblies:[
     {id:'asm-window-new',name:'New Window Location',category:'Doors & Windows',canvases:['Interior','Elevations'],notes:'Coordinate rough opening size with window unit specs before framing.',trades:[
@@ -1090,22 +1092,16 @@ async function sbLoad(){
   try{
     const {data,error}=await sb.from('projects').select('id,client,data').order('created_at',{ascending:false});
     if(error||!data||!data.length)return;
-    // Merge: cloud wins per project ID, but respect local deletions
+    // Merge: cloud wins, but never restore deleted projects
     const cloudMap={};
     data.forEach(function(row){
-      if(row.data&&row.data.id&&row.data.client)cloudMap[row.data.id]=row.data;
+      if(row.data&&row.data.id&&row.data.client&&!deletedIds.has(row.data.id))
+        cloudMap[row.data.id]=row.data;
     });
-    // Get current local project IDs to detect deletions
-    const localIds=new Set(state.projects.map(function(p){return p&&p.id;}));
-    // Only include cloud projects that exist locally OR are new from cloud
-    // If a project was in cloud but not local, it was deleted locally - skip it
-    const merged=[];
-    Object.values(cloudMap).forEach(function(p){
-      if(localIds.has(p.id)){merged.push(p);} // update existing local
-    });
-    // Add local projects not yet in cloud
-    state.projects.filter(function(p){return p&&p.id&&!cloudMap[p.id];}).forEach(function(p){merged.push(p);});
-    state.projects=merged.filter(function(p){return p&&p.id&&p.client;});
+    // Add local projects not in cloud (new ones not yet synced)
+    const merged=Object.values(cloudMap);
+    state.projects.filter(function(p){return p&&p.id&&p.client&&!cloudMap[p.id]&&!deletedIds.has(p.id);}).forEach(function(p){merged.push(p);});
+    state.projects=merged;
     try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
     // Rebuild dashboard if visible
     const dash=document.getElementById('page-dashboard');
@@ -1391,17 +1387,19 @@ async function deleteProject(projId){
   const proj=state.projects.find(p=>p.id===projId);
   if(!proj)return;
   if(!confirm('Delete project "'+proj.client+'"? This cannot be undone.'))return;
-  // Remove from Supabase FIRST so sbLoad won't restore it
+  // Track as deleted locally
+  deletedIds.add(projId);
+  localStorage.setItem(DELETED_KEY,JSON.stringify([...deletedIds]));
+  // Remove from local state and rebuild immediately
+  state.projects=state.projects.filter(p=>p.id!==projId);
+  try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
+  buildDashboard();
+  // Remove from Supabase in background
   const sb=getSB();
   if(sb){
-    try{
-      await sb.from('projects').delete().eq('id',projId);
-    }catch(e){console.warn('Cloud delete error:',e.message);}
+    try{await sb.from('projects').delete().eq('id',projId);}
+    catch(e){console.warn('Cloud delete error:',e.message);}
   }
-  // Then remove from local state and rebuild
-  state.projects=state.projects.filter(p=>p.id!==projId);
-  persist();
-  buildDashboard();
 }
 
 function createProject(){
