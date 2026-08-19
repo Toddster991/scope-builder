@@ -1090,15 +1090,22 @@ async function sbLoad(){
   try{
     const {data,error}=await sb.from('projects').select('id,client,data').order('created_at',{ascending:false});
     if(error||!data||!data.length)return;
-    // Merge: cloud wins per project ID
+    // Merge: cloud wins per project ID, but respect local deletions
     const cloudMap={};
     data.forEach(function(row){
       if(row.data&&row.data.id&&row.data.client)cloudMap[row.data.id]=row.data;
     });
-    // Keep local projects not in cloud, add/update with cloud versions
-    const localOnly=state.projects.filter(function(p){return p&&p.id&&!cloudMap[p.id];});
-    state.projects=[...Object.values(cloudMap),...localOnly];
-    state.projects=state.projects.filter(function(p){return p&&p.id&&p.client;});
+    // Get current local project IDs to detect deletions
+    const localIds=new Set(state.projects.map(function(p){return p&&p.id;}));
+    // Only include cloud projects that exist locally OR are new from cloud
+    // If a project was in cloud but not local, it was deleted locally - skip it
+    const merged=[];
+    Object.values(cloudMap).forEach(function(p){
+      if(localIds.has(p.id)){merged.push(p);} // update existing local
+    });
+    // Add local projects not yet in cloud
+    state.projects.filter(function(p){return p&&p.id&&!cloudMap[p.id];}).forEach(function(p){merged.push(p);});
+    state.projects=merged.filter(function(p){return p&&p.id&&p.client;});
     try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
     // Rebuild dashboard if visible
     const dash=document.getElementById('page-dashboard');
