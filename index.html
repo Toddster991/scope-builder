@@ -1083,8 +1083,8 @@ function loadState(){
       state=p;
     }}
   }catch(e){}
-  // Then refresh from cloud in background
-  sbLoad();
+  // Cloud refresh happens via the ⟳ Refresh button
+  // sbLoad(); -- disabled to prevent overwriting local changes
 }
 
 async function sbLoad(){
