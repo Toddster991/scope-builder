@@ -2,10 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<!-- version: 1787102726 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Scope of Work Builder</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
@@ -1008,8 +1004,6 @@ const DRAW_GROUPS=[
 
 /* ════ STATE ════ */
 const LS_KEY='scopebuilder_v3';
-const DELETED_KEY='scopebuilder_deleted_v1';
-let deletedIds=new Set(JSON.parse(localStorage.getItem(DELETED_KEY)||'[]'));
 let state={
   assemblies:[
     {id:'asm-window-new',name:'New Window Location',category:'Doors & Windows',canvases:['Interior','Elevations'],notes:'Coordinate rough opening size with window unit specs before framing.',trades:[
@@ -1087,8 +1081,8 @@ function loadState(){
       state=p;
     }}
   }catch(e){}
-  // Cloud refresh happens via the ⟳ Refresh button
-  // sbLoad(); -- disabled to prevent overwriting local changes
+  // Then refresh from cloud in background
+  sbLoad();
 }
 
 async function sbLoad(){
@@ -1096,27 +1090,27 @@ async function sbLoad(){
   try{
     const {data,error}=await sb.from('projects').select('id,client,data').order('created_at',{ascending:false});
     if(error||!data||!data.length)return;
-    // Merge: cloud wins, but never restore deleted projects
+    // Merge: cloud wins per project ID
     const cloudMap={};
     data.forEach(function(row){
-      if(row.data&&row.data.id&&row.data.client&&!deletedIds.has(row.data.id))
-        cloudMap[row.data.id]=row.data;
+      if(row.data&&row.data.id&&row.data.client)cloudMap[row.data.id]=row.data;
     });
-    // Add local projects not in cloud (new ones not yet synced)
-    const merged=Object.values(cloudMap);
-    state.projects.filter(function(p){return p&&p.id&&p.client&&!cloudMap[p.id]&&!deletedIds.has(p.id);}).forEach(function(p){merged.push(p);});
-    state.projects=merged;
+    // Keep local projects not in cloud, add/update with cloud versions
+    const localOnly=state.projects.filter(function(p){return p&&p.id&&!cloudMap[p.id];});
+    state.projects=[...Object.values(cloudMap),...localOnly];
+    state.projects=state.projects.filter(function(p){return p&&p.id&&p.client;});
     try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
     // Rebuild dashboard if visible
     const dash=document.getElementById('page-dashboard');
     if(dash&&dash.classList.contains('active'))buildDashboard();
-    // Library sync: push local to cloud, never overwrite local with cloud
-    // Local library is the source of truth - cloud is just a backup
-    const localLib=localStorage.getItem('trdb_lib_overrides_v1');
-    if(localLib){
-      try{
-        await sb.from('library').upsert({id:'cats_overrides',data:JSON.parse(localLib),updated_at:new Date().toISOString()});
-      }catch(e){console.warn('Library push error:',e.message);}
+    // Load shared library
+    const {data:lib}=await sb.from('library').select('data').eq('id','cats_overrides').maybeSingle();
+    if(lib&&lib.data){
+      localStorage.setItem('trdb_lib_overrides_v1',JSON.stringify(lib.data));
+      libLoad();
+      // Rebuild library UI if open
+      if(typeof buildFpLibrary==='function')buildFpLibrary();
+      if(typeof libRenderCatList==='function'&&document.getElementById('page-library')?.classList.contains('active')){libRenderCatList();libRenderEditor();}
     }
   }catch(e){console.warn('Cloud load error:',e.message);}
 }
@@ -1299,8 +1293,7 @@ function buildDashboard(){
   const archived=state.projects.filter(p=>['Completed','Archived'].includes(p.status));
   const sc=s=>s==='Active'?'active':s==='Bidding'?'bid':'';
   const card=p=>{const vc=(p.versions||[]).length;const lt=(p.versions||[]).slice(-1)[0];
-    return `<div class="project-card" data-proj-id="${p.id}" style="position:relative;cursor:pointer">
-      <button class="proj-delete-btn" data-del-id="${p.id}" title="Delete project" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;line-height:1;padding:2px 6px;border-radius:4px;z-index:10">×</button>
+    return `<div class="project-card" onclick="openProject('${p.id}')">
       <div class="pc-client">${p.client}</div><div class="pc-address">${p.address||'No address'}</div>
       <div class="pc-meta"><span class="pc-badge ${sc(p.status)}">${p.status}</span><span class="pc-date">${fmtDate(p.created)}</span></div>
       <div class="pc-versions">${vc} version${vc!==1?'s':''} · Last: ${lt?fmtDate(lt.created):'—'}</div>
@@ -1309,16 +1302,6 @@ function buildDashboard(){
   document.getElementById('dash-subtitle').textContent=`${state.projects.length} project${state.projects.length!==1?'s':''}`;
   const al=document.getElementById('dash-arch-label'),ag=document.getElementById('dash-arch-grid');
   if(archived.length){al.style.display='';ag.innerHTML=archived.map(card).join('');}else{al.style.display='none';ag.innerHTML='';}
-  // Wire card clicks and delete buttons
-  document.querySelectorAll('.project-card[data-proj-id]').forEach(function(c){
-    c.onclick=function(e){
-      if(e.target.classList.contains('proj-delete-btn'))return;
-      openProject(this.dataset.projId);
-    };
-  });
-  document.querySelectorAll('.proj-delete-btn').forEach(function(btn){
-    btn.onclick=function(e){e.stopPropagation();deleteProject(this.dataset.delId);};
-  });
 }
 
 /* ════ PROJECT VIEW ════ */
@@ -1386,21 +1369,6 @@ function showNewProjectModal(){
     <div class="modal-footer"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="createProject()">Create project</button></div>
   </div>`);
 }
-function deleteProject(projId){
-  const proj=state.projects.find(p=>p.id===projId);
-  if(!proj)return;
-  if(!confirm('Delete project "'+proj.client+'"? This cannot be undone.'))return;
-  // Remove locally immediately
-  deletedIds.add(projId);
-  localStorage.setItem(DELETED_KEY,JSON.stringify([...deletedIds]));
-  state.projects=state.projects.filter(p=>p.id!==projId);
-  try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
-  buildDashboard();
-  // Delete from Supabase in background (fire and forget)
-  const sb=getSB();
-  if(sb){sb.from('projects').delete().eq('id',projId).then(()=>{}).catch(e=>console.warn('Cloud delete error:',e.message));}
-}
-
 function createProject(){
   const client=document.getElementById('m-client').value.trim();if(!client){alert('Enter a client name.');return;}
   const p={id:uid(),client,address:document.getElementById('m-addr').value.trim(),status:document.getElementById('m-status').value,created:document.getElementById('m-date').value||today(),notes:document.getElementById('m-notes').value.trim(),
@@ -5292,15 +5260,12 @@ function libLoad(){
 
 function libSave(){
   try{
-    const libData=JSON.stringify(CATS.map(function(c){return {id:c.id, subs:c.subs};}));
-    localStorage.setItem(LIB_KEY, libData);
-    // Sync library to Supabase immediately (not debounced - library changes are critical)
-    const sb=getSB();
-    if(sb){
-      sb.from('library').upsert({id:'cats_overrides',data:JSON.parse(libData),updated_at:new Date().toISOString()})
-        .then(function(){console.log('Library synced to cloud');})
-        .catch(function(e){console.warn('Library sync error:',e.message);});
-    }
+    localStorage.setItem(LIB_KEY, JSON.stringify(CATS.map(function(c){
+      return {id:c.id, subs:c.subs};
+    })));
+    // Sync library to cloud
+    clearTimeout(_syncTimer);
+    _syncTimer=setTimeout(sbSync, 2000);
   }catch(e){}
 }
 
