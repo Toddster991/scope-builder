@@ -5787,19 +5787,6 @@ function libShowTaskOptionDialog(title, defaults, onSave){
   document.getElementById('lib-opt-cancel').onclick=function(){dlg.remove();};
 }
 
-// Global handler for reorder buttons
-document.addEventListener('click', function(e){
-  const btn=e.target.closest('.lib-mv');
-  if(!btn)return;
-  const dir=parseInt(btn.dataset.dir);
-  const type=btn.dataset.type;
-  const catId=btn.dataset.cat;
-  const id=btn.dataset.id;
-  const subId=btn.dataset.sub;
-  if(type==='task')libMoveTask(catId,subId,id,dir);
-  else if(type==='sub')libMoveSub(catId,id,dir);
-});
-
 function libMoveTask(catId,subId,taskId,dir){
   const cat=CATS.find(c=>c.id===catId);if(!cat)return;
   const sub=cat.subs.find(s=>s.id===subId);if(!sub||!sub.tasks)return;
@@ -5808,7 +5795,6 @@ function libMoveTask(catId,subId,taskId,dir){
   [sub.tasks[i],sub.tasks[j]]=[sub.tasks[j],sub.tasks[i]];
   libSave();libRenderEditor();
 }
-
 function libMoveSub(catId,subId,dir){
   const cat=CATS.find(c=>c.id===catId);if(!cat)return;
   const i=cat.subs.findIndex(s=>s.id===subId);if(i===-1)return;
@@ -5881,9 +5867,15 @@ function libRenderEditor(){
     renameBtn.onclick=(function(cid,sid){return function(){libRenameSub(cid,sid);};})(cat.id,sub.id);
     const delSubBtn=document.createElement('button');delSubBtn.className='lib-ed-btn danger';delSubBtn.textContent='Delete';
     delSubBtn.onclick=(function(cid,sid){return function(){libDeleteSub(cid,sid);};})(cat.id,sub.id);
-    const smvU=document.createElement('button');smvU.className='lib-ed-btn lib-mv';smvU.textContent='▲';smvU.title='Move up';smvU.style.cssText='padding:2px 5px;font-size:10px';smvU.dataset.dir='-1';smvU.dataset.type='sub';smvU.dataset.cat=cat.id;smvU.dataset.id=sub.id;
-    const smvD=document.createElement('button');smvD.className='lib-ed-btn lib-mv';smvD.textContent='▼';smvD.title='Move down';smvD.style.cssText='padding:2px 5px;font-size:10px';smvD.dataset.dir='1';smvD.dataset.type='sub';smvD.dataset.cat=cat.id;smvD.dataset.id=sub.id;
-    subHead.appendChild(addTaskBtn);subHead.appendChild(addAsmBtn);subHead.appendChild(smvU);subHead.appendChild(smvD);subHead.appendChild(renameBtn);subHead.appendChild(delSubBtn);
+    const smvU=document.createElement('button');
+    smvU.className='lib-ed-btn';smvU.textContent='▲';smvU.title='Move up';smvU.style.cssText='padding:2px 5px;font-size:10px';
+    smvU.onclick=(function(c,s){return function(){libMoveSub(c,s,-1);};}(cat.id,sub.id));
+    const smvD=document.createElement('button');
+    smvD.className='lib-ed-btn';smvD.textContent='▼';smvD.title='Move down';smvD.style.cssText='padding:2px 5px;font-size:10px';
+    smvD.onclick=(function(c,s){return function(){libMoveSub(c,s,1);};}(cat.id,sub.id));
+    subHead.appendChild(addTaskBtn);subHead.appendChild(addAsmBtn);
+    subHead.appendChild(smvU);subHead.appendChild(smvD);
+    subHead.appendChild(renameBtn);subHead.appendChild(delSubBtn);
     subEl.appendChild(subHead);
 
     // Tasks
@@ -5924,9 +5916,14 @@ function libRenderEditor(){
         compCount.textContent=(task.components&&task.components.length||0)+' components';
         taskRow.appendChild(compCount);
       }
-      const mvU=document.createElement('button');mvU.className='lib-ed-btn lib-mv';mvU.textContent='▲';mvU.title='Move up';mvU.style.cssText='padding:2px 5px;font-size:10px';mvU.dataset.dir='-1';mvU.dataset.type='task';mvU.dataset.cat=cat.id;mvU.dataset.sub=sub.id;mvU.dataset.id=task.id;
-      const mvD=document.createElement('button');mvD.className='lib-ed-btn lib-mv';mvD.textContent='▼';mvD.title='Move down';mvD.style.cssText='padding:2px 5px;font-size:10px';mvD.dataset.dir='1';mvD.dataset.type='task';mvD.dataset.cat=cat.id;mvD.dataset.sub=sub.id;mvD.dataset.id=task.id;
-      taskRow.appendChild(mvU);taskRow.appendChild(mvD);taskRow.appendChild(delTaskBtn);
+      const mvU=document.createElement('button');
+      mvU.className='lib-ed-btn';mvU.textContent='▲';mvU.title='Move up';mvU.style.cssText='padding:2px 5px;font-size:10px';
+      mvU.onclick=(function(c,s,t){return function(){libMoveTask(c,s,t,-1);};}(cat.id,sub.id,task.id));
+      const mvD=document.createElement('button');
+      mvD.className='lib-ed-btn';mvD.textContent='▼';mvD.title='Move down';mvD.style.cssText='padding:2px 5px;font-size:10px';
+      mvD.onclick=(function(c,s,t){return function(){libMoveTask(c,s,t,1);};}(cat.id,sub.id,task.id));
+      taskRow.appendChild(mvU);taskRow.appendChild(mvD);
+      taskRow.appendChild(delTaskBtn);
 
       // Task-level options
       if(!task.isAssembly){
