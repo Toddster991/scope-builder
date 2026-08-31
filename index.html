@@ -3,7 +3,7 @@
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-08-31-v3]</title>
+<title>Scope of Work Builder [v4-functions-only]</title>
 <link rel="stylesheet" href="./Synch workin-assembly delte working-w some new scopes_files/tabler-icons.min.css">
 <script src="./Synch workin-assembly delte working-w some new scopes_files/pdf.min.js.download"></script>
 <style>
@@ -5868,11 +5868,6 @@ function libRenderEditor(){
     const delSubBtn=document.createElement('button');delSubBtn.className='lib-ed-btn danger';delSubBtn.textContent='Delete';
     delSubBtn.onclick=(function(cid,sid){return function(){libDeleteSub(cid,sid);};})(cat.id,sub.id);
     subHead.appendChild(addTaskBtn);subHead.appendChild(addAsmBtn);subHead.appendChild(renameBtn);subHead.appendChild(delSubBtn);
-    const smvU=document.createElement('button');smvU.className='lib-ed-btn';smvU.textContent='▲';smvU.title='Move up';smvU.style.cssText='padding:2px 5px;font-size:10px';
-    smvU.onclick=(function(c,s){return function(){libMoveSub(c,s,-1);};}(cat.id,sub.id));
-    const smvD=document.createElement('button');smvD.className='lib-ed-btn';smvD.textContent='▼';smvD.title='Move down';smvD.style.cssText='padding:2px 5px;font-size:10px';
-    smvD.onclick=(function(c,s){return function(){libMoveSub(c,s,1);};}(cat.id,sub.id));
-    subHead.appendChild(smvU);subHead.appendChild(smvD);
     subEl.appendChild(subHead);
 
     // Tasks
@@ -5914,11 +5909,6 @@ function libRenderEditor(){
         taskRow.appendChild(compCount);
       }
       taskRow.appendChild(delTaskBtn);
-      const mvU=document.createElement('button');mvU.className='lib-ed-btn';mvU.textContent='▲';mvU.title='Move up';mvU.style.cssText='padding:2px 5px;font-size:10px';
-      mvU.onclick=(function(c,s,t){return function(){libMoveTask(c,s,t,-1);};}(cat.id,sub.id,task.id));
-      const mvD=document.createElement('button');mvD.className='lib-ed-btn';mvD.textContent='▼';mvD.title='Move down';mvD.style.cssText='padding:2px 5px;font-size:10px';
-      mvD.onclick=(function(c,s,t){return function(){libMoveTask(c,s,t,1);};}(cat.id,sub.id,task.id));
-      taskRow.appendChild(mvU);taskRow.appendChild(mvD);
 
       // Task-level options
       if(!task.isAssembly){
