@@ -5462,36 +5462,6 @@ function libShowTaskOptionDialog(title, defaults, onSave){
   document.getElementById('lib-opt-cancel').onclick=function(){dlg.remove();};
 }
 
-// Global handler for reorder buttons
-document.addEventListener('click', function(e){
-  const btn=e.target.closest('.lib-mv');
-  if(!btn)return;
-  const dir=parseInt(btn.dataset.dir);
-  const type=btn.dataset.type;
-  const catId=btn.dataset.cat;
-  const id=btn.dataset.id;
-  const subId=btn.dataset.sub;
-  if(type==='task')libMoveTask(catId,subId,id,dir);
-  else if(type==='sub')libMoveSub(catId,id,dir);
-});
-
-function libMoveTask(catId,subId,taskId,dir){
-  const cat=CATS.find(c=>c.id===catId);if(!cat)return;
-  const sub=cat.subs.find(s=>s.id===subId);if(!sub||!sub.tasks)return;
-  const i=sub.tasks.findIndex(t=>t.id===taskId);if(i===-1)return;
-  const j=i+dir;if(j<0||j>=sub.tasks.length)return;
-  [sub.tasks[i],sub.tasks[j]]=[sub.tasks[j],sub.tasks[i]];
-  libSave();libRenderEditor();
-}
-
-function libMoveSub(catId,subId,dir){
-  const cat=CATS.find(c=>c.id===catId);if(!cat)return;
-  const i=cat.subs.findIndex(s=>s.id===subId);if(i===-1)return;
-  const j=i+dir;if(j<0||j>=cat.subs.length)return;
-  [cat.subs[i],cat.subs[j]]=[cat.subs[j],cat.subs[i]];
-  libSave();libRenderEditor();
-}
-
 function libResetToDefaults(){
   if(!confirm('Reset all library edits to factory defaults? This cannot be undone.'))return;
   localStorage.removeItem(LIB_KEY);
@@ -5556,8 +5526,6 @@ function libRenderEditor(){
     renameBtn.onclick=(function(cid,sid){return function(){libRenameSub(cid,sid);};})(cat.id,sub.id);
     const delSubBtn=document.createElement('button');delSubBtn.className='lib-ed-btn danger';delSubBtn.textContent='Delete';
     delSubBtn.onclick=(function(cid,sid){return function(){libDeleteSub(cid,sid);};})(cat.id,sub.id);
-    subHead.innerHTML+=('<button class="lib-ed-btn lib-mv" data-dir="-1" data-type="sub" data-cat="'+cat.id+'" data-id="'+sub.id+'" style="padding:2px 5px;font-size:10px" title="Move up">▲</button>');
-    subHead.innerHTML+=('<button class="lib-ed-btn lib-mv" data-dir="1" data-type="sub" data-cat="'+cat.id+'" data-id="'+sub.id+'" style="padding:2px 5px;font-size:10px" title="Move down">▼</button>');
     subHead.appendChild(addTaskBtn);subHead.appendChild(addAsmBtn);subHead.appendChild(renameBtn);subHead.appendChild(delSubBtn);
     subEl.appendChild(subHead);
 
@@ -5599,8 +5567,6 @@ function libRenderEditor(){
         compCount.textContent=(task.components&&task.components.length||0)+' components';
         taskRow.appendChild(compCount);
       }
-      taskRow.innerHTML+=('<button class="lib-ed-btn lib-mv" data-dir="-1" data-type="task" data-cat="'+cat.id+'" data-sub="'+sub.id+'" data-id="'+task.id+'" style="padding:2px 5px;font-size:10px" title="Move up">▲</button>');
-      taskRow.innerHTML+=('<button class="lib-ed-btn lib-mv" data-dir="1" data-type="task" data-cat="'+cat.id+'" data-sub="'+sub.id+'" data-id="'+task.id+'" style="padding:2px 5px;font-size:10px" title="Move down">▼</button>');
       taskRow.appendChild(delTaskBtn);
 
       // Task-level options
