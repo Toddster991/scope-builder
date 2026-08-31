@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-08-31-v9-db-library]</title>
+<title>Scope of Work Builder [2026-08-31-v10-dash]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -4068,7 +4068,7 @@ function buildScopeHtml() {
             html += '<div style="font-size:12pt;color:#333;line-height:1.19;padding-left:10px;white-space:pre-line">'+text+altTag+'</div>';
             if(t.selectedOptions&&t.selectedOptions.length){
               t.selectedOptions.forEach(function(opt){
-                html += '<div style="font-size:12pt;color:#333;line-height:1.19;padding-left:20px">'+opt.label+'</div>';
+                html += '<div style="font-size:12pt;color:#333;line-height:1.19;padding-left:20px">- '+opt.label+'</div>';
               });
             }
           });
