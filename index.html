@@ -5260,14 +5260,12 @@ function libLoad(){
 
 function libSave(){
   try{
-    const libData=JSON.stringify(CATS.map(function(c){return {id:c.id,subs:c.subs};}));
-    localStorage.setItem(LIB_KEY,libData);
-    // Sync to Supabase immediately
-    const sb=getSB();
-    if(sb){
-      sb.from('library').upsert({id:'cats_overrides',data:JSON.parse(libData),updated_at:new Date().toISOString()})
-        .catch(function(e){console.warn('Library sync error:',e.message);});
-    }
+    localStorage.setItem(LIB_KEY, JSON.stringify(CATS.map(function(c){
+      return {id:c.id, subs:c.subs};
+    })));
+    // Sync library to cloud
+    clearTimeout(_syncTimer);
+    _syncTimer=setTimeout(sbSync, 2000);
   }catch(e){}
 }
 
