@@ -1103,14 +1103,17 @@ async function sbLoad(){
     // Rebuild dashboard if visible
     const dash=document.getElementById('page-dashboard');
     if(dash&&dash.classList.contains('active'))buildDashboard();
-    // Load shared library
-    const {data:lib}=await sb.from('library').select('data').eq('id','cats_overrides').maybeSingle();
-    if(lib&&lib.data){
-      localStorage.setItem('trdb_lib_overrides_v1',JSON.stringify(lib.data));
-      libLoad();
-      // Rebuild library UI if open
-      if(typeof buildFpLibrary==='function')buildFpLibrary();
-      if(typeof libRenderCatList==='function'&&document.getElementById('page-library')?.classList.contains('active')){libRenderCatList();libRenderEditor();}
+    // Load shared library - only pull from cloud if local is empty
+    const localLib=localStorage.getItem('trdb_lib_overrides_v1');
+    if(!localLib||localLib==='null'||localLib.length<10){
+      // Local is empty - pull from cloud
+      const {data:lib}=await sb.from('library').select('data').eq('id','cats_overrides').maybeSingle();
+      if(lib&&lib.data){
+        localStorage.setItem('trdb_lib_overrides_v1',JSON.stringify(lib.data));
+        libLoad();
+        if(typeof buildFpLibrary==='function')buildFpLibrary();
+        if(typeof libRenderCatList==='function'&&document.getElementById('page-library')?.classList.contains('active')){libRenderCatList();libRenderEditor();}
+      }
     }
   }catch(e){console.warn('Cloud load error:',e.message);}
 }
@@ -5260,12 +5263,14 @@ function libLoad(){
 
 function libSave(){
   try{
-    localStorage.setItem(LIB_KEY, JSON.stringify(CATS.map(function(c){
-      return {id:c.id, subs:c.subs};
-    })));
-    // Sync library to cloud
-    clearTimeout(_syncTimer);
-    _syncTimer=setTimeout(sbSync, 2000);
+    const libData=JSON.stringify(CATS.map(function(c){return {id:c.id,subs:c.subs};}));
+    localStorage.setItem(LIB_KEY,libData);
+    // Sync to Supabase immediately - library changes are critical
+    const sb=getSB();
+    if(sb){
+      sb.from('library').upsert({id:'cats_overrides',data:JSON.parse(libData),updated_at:new Date().toISOString()})
+        .catch(function(e){console.warn('Library sync error:',e.message);});
+    }
   }catch(e){}
 }
 
