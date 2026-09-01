@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-09-01-v19-collapse]</title>
+<title>Scope of Work Builder [2026-09-01-v20-allfloors]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -3961,10 +3961,13 @@ function buildContract() {
 // content again. Returns { byCode: catCode -> roomId -> {room, subs: {subName -> {parentLabel -> tasks[]}}} }
 function getProjectScopeData(){
   const sheets = getCatSheets('floors');
-  const sheet = sheets.find(s=>s.id===activeFloorId) || sheets[0];
-  const rooms = (sheet && sheet.zones) || [];
-  if(!rooms.length) return {byCode:{}};
   if(!currentProjectId||!currentVersionId) return {byCode:{}};
+  // Collect rooms from ALL floor sheets, not just the active one
+  const rooms = [];
+  (sheets||[]).forEach(function(sheet){
+    (sheet.zones||[]).forEach(function(zone){rooms.push(zone);});
+  });
+  if(!rooms.length) return {byCode:{}};
   const v = getVersion(getProject(currentProjectId), currentVersionId);
   const roomTasks = (v && v.roomTasks) || {};
 
