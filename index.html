@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-09-01-v18-collapse]</title>
+<title>Scope of Work Builder [2026-09-01-v19-collapse]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -5187,6 +5187,11 @@ function libRenderEditor(){
     subHead.dataset.subId=sub.id;
     subHead.dataset.dtype='sub';
     subHead.style.cursor='grab';
+    const colKey=cat.id+'_'+sub.id;
+    const toggleBtn=document.createElement('button');
+    toggleBtn.style.cssText='background:none;border:none;cursor:pointer;font-size:11px;color:var(--text3);padding:0 6px 0 0;flex-shrink:0;line-height:1';
+    toggleBtn.textContent=libCollapsed.has(colKey)?'▶':'▼';
+    subHead.appendChild(toggleBtn);
     const subNameEl=document.createElement('span');
     subNameEl.style.cssText='flex:1;font-size:13px;font-weight:600;color:var(--text)';
     subNameEl.textContent=sub.name;
@@ -5201,6 +5206,14 @@ function libRenderEditor(){
     const delSubBtn=document.createElement('button');delSubBtn.className='lib-ed-btn danger';delSubBtn.textContent='Delete';
     delSubBtn.onclick=(function(cid,sid){return function(){libDeleteSub(cid,sid);};})(cat.id,sub.id);
     subHead.appendChild(addTaskBtn);subHead.appendChild(addAsmBtn);subHead.appendChild(renameBtn);subHead.appendChild(delSubBtn);
+    // Create collapsible content div
+    const subContent=document.createElement('div');
+    subContent.style.display=libCollapsed.has(colKey)?'none':'';
+    toggleBtn.onclick=(function(k,btn,c){return function(e){
+      e.stopPropagation();
+      if(libCollapsed.has(k)){libCollapsed.delete(k);btn.textContent='▼';c.style.display='';}
+      else{libCollapsed.add(k);btn.textContent='▶';c.style.display='none';}
+    };})(colKey,toggleBtn,subContent);
     subEl.appendChild(subHead);
 
     // Tasks
