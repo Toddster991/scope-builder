@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-08-31-v13-indent]</title>
+<title>Scope of Work Builder [2026-08-31-v14-redline]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -413,6 +413,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
     <span class="crumb-sep" id="crumb-ver-sep" style="display:none">/</span>
     <span class="crumb-ver" id="crumb-ver-name"></span>
     <button class="btn sm" id="btn-project-info" onclick="showPage('project-info');loadProjectInfo();" style="display:none;margin-left:4px;color:rgba(255,255,255,.75);border-color:rgba(255,255,255,.2)"><i class="ti ti-info-circle"></i> Project Info</button>
+    <button class="btn sm" id="btn-redline" onclick="showRedlineDialog(currentProjectId)" style="display:none;color:rgba(255,255,255,.75);border-color:rgba(255,255,255,.2)"><i class="ti ti-git-diff"></i> Redline</button>
     <button class="btn sm" id="btn-rfp" onclick="showPage('rfp')" style="display:none;color:rgba(255,255,255,.75);border-color:rgba(255,255,255,.2)"><i class="ti ti-send"></i> RFPs</button>
     <button class="btn sm" id="btn-contract" onclick="showPage('contract');buildContract();" style="display:none;color:rgba(255,255,255,.75);border-color:rgba(255,255,255,.2)"><i class="ti ti-file-text"></i> Contract</button>
     <button class="btn sm" id="btn-estimate" onclick="showPage('estimate');buildEstimate();" style="display:none;color:rgba(255,255,255,.75);border-color:rgba(255,255,255,.2)"><i class="ti ti-calculator"></i> Estimate</button>
@@ -1223,6 +1224,7 @@ function openVersion(projId,verId){
   document.getElementById("btn-contract").style.display="";
   const estBtn=document.getElementById("btn-estimate");if(estBtn)estBtn.style.display="";
   const rfpBtn=document.getElementById("btn-rfp");if(rfpBtn)rfpBtn.style.display="";
+  const rlBtn=document.getElementById("btn-redline");if(rlBtn)rlBtn.style.display="";
   currentProjectId=projId;currentVersionId=verId;selectedRoom=null;
   const p=getProject(projId);const v=getVersion(p,verId);
   document.getElementById('crumb-proj-name').textContent=p.client;
@@ -1315,10 +1317,11 @@ function buildProjectView(){
     const rc=Object.values(v.zoneAssemblies||v.roomAssemblies||{}).filter(a=>a&&a.length>0).length;
     html+=`<div class="ver-row ${ac}" onclick="openVersion('${p.id}','${v.id}')">
       <div class="ver-dot"></div>
-      <div style="flex:1;min-width:0"><div class="ver-name">${v.name}</div><div class="ver-date">${fmtDate(v.created)} · ${rc} room${rc!==1?'s':''}</div></div>
+      <div style="flex:1;min-width:0"><div class="ver-name">${v.locked?'🔒 ':''}{v.name}</div><div class="ver-date">${fmtDate(v.created)} · ${rc} room${rc!==1?'s':''}</div></div>
       <div class="ver-actions">
+        <button class="icon-btn" onclick="event.stopPropagation();toggleVersionLock('${p.id}','${v.id}')" title="${v.locked?'Unlock':'Lock'} version" style="color:${v.locked?'#185fa5':'var(--text3)'}"><i class="ti ti-${v.locked?'lock':'lock-open'}"></i></button>
         <button class="icon-btn" onclick="event.stopPropagation();duplicateVersion('${p.id}','${v.id}')" title="Duplicate"><i class="ti ti-copy"></i></button>
-        <button class="icon-btn" onclick="event.stopPropagation();deleteVersion('${p.id}','${v.id}')" title="Delete"><i class="ti ti-trash"></i></button>
+        <button class="icon-btn" onclick="event.stopPropagation();deleteVersion('${p.id}','${v.id}')" title="Delete" ${v.locked?'disabled style="opacity:.3"':''}><i class="ti ti-trash"></i></button>
       </div>
     </div>`;
   });
@@ -6459,6 +6462,134 @@ function importConfirm(){
   if(resultText) resultText.textContent = added+' tasks added, '+updated+' updated'+(newCats?' ('+newCats+' new cost code'+(newCats>1?'s':'')+' created)':'');
 
   importParsed = null;
+}
+
+
+function toggleVersionLock(pId,vId){
+  const p=getProject(pId);const v=getVersion(p,vId);if(!v)return;
+  v.locked=!v.locked;
+  persist();buildProjectView();
+}
+
+function showRedlineDialog(pId){
+  const p=getProject(pId);if(!p||!p.versions||p.versions.length<2){
+    alert('Need at least 2 versions to generate a redline.');return;
+  }
+  const existing=document.getElementById('redline-dlg');if(existing)existing.remove();
+  const dlg=document.createElement('div');
+  dlg.id='redline-dlg';
+  dlg.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999';
+  const box=document.createElement('div');
+  box.style.cssText='background:var(--bg);border-radius:10px;padding:24px 28px;width:420px;box-shadow:0 8px 32px rgba(0,0,0,.2);font-family:inherit';
+  box.innerHTML=
+    '<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:16px">Generate Redline Contract</div>'+
+    '<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;margin-bottom:4px">Original Version (Base)</div>'+
+    '<select id="rl-base" style="width:100%;padding:8px;font-size:12px;border:1.5px solid var(--border2);border-radius:6px;font-family:inherit;background:var(--bg);margin-bottom:12px">'+
+    p.versions.map(function(v){return'<option value="'+v.id+'">'+v.name+'</option>';}).join('')+
+    '</select>'+
+    '<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;margin-bottom:4px">Revised Version (New)</div>'+
+    '<select id="rl-new" style="width:100%;padding:8px;font-size:12px;border:1.5px solid var(--border2);border-radius:6px;font-family:inherit;background:var(--bg);margin-bottom:20px">'+
+    p.versions.map(function(v,i){return'<option value="'+v.id+'"'+(i===p.versions.length-1?' selected':'')+'>'+v.name+'</option>';}).join('')+
+    '</select>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end">'+
+    '<button id="rl-cancel" style="padding:8px 16px;font-size:13px;border:1px solid var(--border2);border-radius:6px;background:var(--bg);cursor:pointer;font-family:inherit">Cancel</button>'+
+    '<button id="rl-gen" style="padding:8px 16px;font-size:13px;border:none;border-radius:6px;background:#185fa5;color:#fff;cursor:pointer;font-weight:600;font-family:inherit">Generate Redline</button>'+
+    '</div>';
+  dlg.appendChild(box);document.body.appendChild(dlg);
+  document.getElementById('rl-cancel').onclick=function(){dlg.remove();};
+  document.getElementById('rl-gen').onclick=function(){
+    const baseId=document.getElementById('rl-base').value;
+    const newId=document.getElementById('rl-new').value;
+    if(baseId===newId){alert('Please select two different versions.');return;}
+    dlg.remove();
+    generateRedlineContract(pId,baseId,newId);
+  };
+}
+
+function generateRedlineContract(pId,baseVId,newVId){
+  const p=getProject(pId);
+  const baseV=getVersion(p,baseVId);
+  const newV=getVersion(p,newVId);
+  if(!baseV||!newV)return;
+  const baseRooms=baseV.roomTasks||{};
+  const newRooms=newV.roomTasks||{};
+  const sheets=getCatSheets('floors');
+  const sheet=sheets&&(sheets.find(function(s){return s.id===activeFloorId;})||sheets[0]);
+  const rooms=(sheet&&sheet.zones)||[];
+
+  function taskKey(roomId,t){return roomId+'|'+t.catCode+'|'+t.taskId;}
+  const baseKeys=new Set();
+  const newKeys=new Set();
+  rooms.forEach(function(room){
+    (baseRooms[room.id]||[]).forEach(function(t){if(!t.isAssembly)baseKeys.add(taskKey(room.id,t));});
+    (newRooms[room.id]||[]).forEach(function(t){if(!t.isAssembly)newKeys.add(taskKey(room.id,t));});
+  });
+  const removedKeys=new Set([...baseKeys].filter(function(k){return !newKeys.has(k);}));
+  const addedKeys=new Set([...newKeys].filter(function(k){return !baseKeys.has(k);}));
+
+  const byCat={};
+  function addToByCat(roomId,room,t,status){
+    if(t.isAssembly)return;
+    if(!byCat[t.catCode])byCat[t.catCode]={};
+    if(!byCat[t.catCode][roomId])byCat[t.catCode][roomId]={room:room,tasks:[]};
+    byCat[t.catCode][roomId].tasks.push({task:t,status:status});
+  }
+  rooms.forEach(function(room){
+    const seen=new Set();
+    (baseRooms[room.id]||[]).forEach(function(t){
+      const k=taskKey(room.id,t);
+      seen.add(k);
+      addToByCat(room.id,room,t,removedKeys.has(k)?'removed':'unchanged');
+    });
+    (newRooms[room.id]||[]).forEach(function(t){
+      const k=taskKey(room.id,t);
+      if(!seen.has(k))addToByCat(room.id,room,t,'added');
+    });
+  });
+
+  let html='<div style="font-family:Times New Roman,serif;font-size:12pt;padding:20px">';
+  html+='<div style="text-align:center;margin-bottom:24px"><div style="font-size:16pt;font-weight:700">SCOPE OF WORK — REDLINE</div>';
+  html+='<div style="font-size:10pt;color:#666;margin-top:4px">'+baseV.name+' → '+newV.name+'</div></div>';
+
+  Object.entries(byCat).forEach(function([code,roomMap]){
+    const cat=CATS.find(function(c){return c.code===code;});
+    const catName=cat?cat.name:code;
+    html+='<div style="margin-bottom:20px">';
+    html+='<div style="font-size:12pt;font-weight:700;color:#185fa5;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">'+catName+'</div>';
+    Object.values(roomMap).forEach(function(re){
+      html+='<div style="font-style:italic;font-weight:700;color:#333;padding-left:10px;margin-bottom:4px">'+re.room.name+'</div>';
+      re.tasks.forEach(function(te){
+        const t=te.task;const status=te.status;
+        const text=t.scopeOverride||t.scope||t.label;
+        const style=status==='removed'?'color:#c0392b;text-decoration:line-through':
+                    status==='added'?'color:#185fa5':'color:#333';
+        html+='<div style="'+style+';padding-left:24px;line-height:1.5;margin-bottom:3px">'+text+'</div>';
+        if(t.selectedOptions&&t.selectedOptions.length){
+          t.selectedOptions.forEach(function(opt){
+            html+='<div style="'+style+';padding-left:36px;font-size:11pt">- '+opt.label+'</div>';
+          });
+        }
+      });
+    });
+    html+='</div>';
+  });
+  html+='</div>';
+
+  // Show in contract area
+  showPage('contract');
+  const contractBody=document.getElementById('contract-body');
+  if(contractBody){
+    const existing=document.getElementById('redline-output');if(existing)existing.remove();
+    const div=document.createElement('div');div.id='redline-output';div.innerHTML=html;
+    contractBody.style.display='none';
+    contractBody.parentNode.insertBefore(div,contractBody);
+    // Add button to go back to regular contract
+    const backBtn=document.createElement('button');
+    backBtn.className='btn';backBtn.textContent='← Regular Contract';
+    backBtn.style.cssText='margin:12px 32px;display:block';
+    backBtn.onclick=function(){div.remove();contractBody.style.display='';buildContract();};
+    contractBody.parentNode.insertBefore(backBtn,div);
+  }
 }
 
 </script>
