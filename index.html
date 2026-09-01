@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-08-31-v17-sort]</title>
+<title>Scope of Work Builder [2026-09-01-v18-collapse]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -5135,6 +5135,8 @@ function libResetToDefaults(){
   location.reload();
 }
 
+const libCollapsed=new Set();
+
 function libRenderCatList(){
   const el=document.getElementById('lib-cat-list');
   if(!el)return;
@@ -5287,8 +5289,9 @@ function libRenderEditor(){
         taskEl.appendChild(varEl);
       });
 
-      subEl.appendChild(taskEl);
+      subContent.appendChild(taskEl);
     });
+    subEl.appendChild(subContent);
 
     panel.appendChild(subEl);
   });
