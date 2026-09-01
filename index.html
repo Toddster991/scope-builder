@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-08-31-v14-redline]</title>
+<title>Scope of Work Builder [2026-08-31-v15-redline]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -6517,7 +6517,10 @@ function generateRedlineContract(pId,baseVId,newVId){
   const sheet=sheets&&(sheets.find(function(s){return s.id===activeFloorId;})||sheets[0]);
   const rooms=(sheet&&sheet.zones)||[];
 
-  function taskKey(roomId,t){return roomId+'|'+t.catCode+'|'+t.taskId;}
+  function taskKey(roomId,t){
+    const opts=(t.selectedOptions||[]).map(function(o){return o.id||o.label;}).sort().join(',');
+    return roomId+'|'+t.catCode+'|'+t.taskId+'|'+opts;
+  }
   const baseKeys=new Set();
   const newKeys=new Set();
   rooms.forEach(function(room){
