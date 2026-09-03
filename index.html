@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-09-01-v26-asm-clean]</title>
+<title>Scope of Work Builder [2026-09-01-v27-asm-opts]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -3132,10 +3132,17 @@ function fpShowAssemblySelectionDialog(asmTask, roomId, x, y){
     resolved.resolvedComponents=resolved.components.map(function(comp){
       const sel=selections[comp.taskId];
       if(sel&&sel.selectedVariant){
+        // Has variant selected
         const v=sel.selectedVariant;
         const opts=sel.selectedOptions||[];
         const totalPrice=(v.price||0)+opts.reduce(function(s,o){return s+(o.price||0);},0);
         return {taskId:v.id, label:v.label, scope:v.scope||sel.task.scope, catCode:sel.cat.code, catColor:sel.cat.color, unit:v.unit, price:totalPrice, selectedOptions:opts};
+      }
+      if(sel&&sel.selectedOptions&&sel.selectedOptions.length){
+        // No variant but has options selected
+        const opts=sel.selectedOptions;
+        const totalPrice=(sel.task.price||0)+opts.reduce(function(s,o){return s+(o.price||0);},0);
+        return {taskId:comp.taskId, label:sel.task.label, scope:sel.task.scope||comp.scope||'', catCode:sel.cat.code, catColor:sel.cat.color, unit:sel.task.unit||'EA', price:totalPrice, selectedOptions:opts};
       }
       return comp;
     });
