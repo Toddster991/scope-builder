@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-09-01-v20-allfloors]</title>
+<title>Scope of Work Builder [2026-09-01-v21-asm-opts]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -3002,23 +3002,26 @@ function fpShowAssemblySelectionDialog(asmTask, roomId, x, y){
     compLbl.appendChild(dot);compLbl.appendChild(lbl);
     section.appendChild(compLbl);
 
-    // Variant selector
-    const varSel=document.createElement('select');
-    varSel.style.cssText='width:100%;padding:7px 10px;font-size:12px;border:1.5px solid var(--border2);border-radius:6px;font-family:inherit;background:var(--bg);margin-top:6px;margin-bottom:8px';
-    const defOpt=document.createElement('option');defOpt.value='';defOpt.textContent='— Select variant —';
-    varSel.appendChild(defOpt);
-    comp.srcTask.variants.forEach(function(v){
-      const o=document.createElement('option');o.value=v.id;
-      o.textContent=v.label+(v.price?' ($'+v.price+'/'+v.unit+')':'');
-      varSel.appendChild(o);
-    });
-    section.appendChild(varSel);
-    selections[comp.srcTask.id]={task:comp.srcTask, cat:comp.srcCat, variantEl:varSel, optionsContainer:null, selectedOptions:[]};
+    selections[comp.srcTask.id]={task:comp.srcTask, cat:comp.srcCat, variantEl:null, optionsContainer:null, selectedOptions:[], selectedVariant:null};
 
-    // Options container (shown when variant selected)
-    const optsContainer=document.createElement('div');
-    optsContainer.style.cssText='display:none;padding-left:10px';
-    selections[comp.srcTask.id].optionsContainer=optsContainer;
+    // Variant selector - only if task has variants
+    if(comp.hasVariants){
+      const varSel=document.createElement('select');
+      varSel.style.cssText='width:100%;padding:7px 10px;font-size:12px;border:1.5px solid var(--border2);border-radius:6px;font-family:inherit;background:var(--bg);margin-top:6px;margin-bottom:8px';
+      const defOpt=document.createElement('option');defOpt.value='';defOpt.textContent='— Select variant —';
+      varSel.appendChild(defOpt);
+      comp.srcTask.variants.forEach(function(v){
+        const o=document.createElement('option');o.value=v.id;
+        o.textContent=v.label+(v.price?' ($'+v.price+'/'+v.unit+')':'');
+        varSel.appendChild(o);
+      });
+      section.appendChild(varSel);
+      selections[comp.srcTask.id].variantEl=varSel;
+
+      // Options container (shown when variant selected)
+      const optsContainer=document.createElement('div');
+      optsContainer.style.cssText='display:none;padding-left:10px';
+      selections[comp.srcTask.id].optionsContainer=optsContainer;
 
     varSel.onchange=function(){
       const varId=this.value;
@@ -3044,6 +3047,26 @@ function fpShowAssemblySelectionDialog(asmTask, roomId, x, y){
       }
     };
     section.appendChild(optsContainer);
+    } // end if hasVariants
+
+    // Task-level options (no variants) - show directly
+    if(comp.hasOptions&&!comp.hasVariants){
+      const taskOptsDiv=document.createElement('div');
+      taskOptsDiv.style.cssText='padding-left:10px;margin-top:6px';
+      comp.srcTask.options.forEach(function(opt){
+        const row=document.createElement('label');
+        row.style.cssText='display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-size:12px;color:var(--text2)';
+        const chk=document.createElement('input');chk.type='checkbox';chk.style.cssText='width:14px;height:14px;cursor:pointer';
+        chk.onchange=function(){
+          if(this.checked){selections[comp.srcTask.id].selectedOptions.push(opt);}
+          else{selections[comp.srcTask.id].selectedOptions=selections[comp.srcTask.id].selectedOptions.filter(function(o){return o.id!==opt.id;});}
+        };
+        const optLbl=document.createElement('span');optLbl.textContent=opt.label+(opt.price?' (+$'+opt.price+')':'');
+        row.appendChild(chk);row.appendChild(optLbl);
+        taskOptsDiv.appendChild(row);
+      });
+      section.appendChild(taskOptsDiv);
+    }
     box.appendChild(section);
   });
 
@@ -3056,9 +3079,9 @@ function fpShowAssemblySelectionDialog(asmTask, roomId, x, y){
   const confirm=document.createElement('button');
   confirm.textContent='Place Assembly';confirm.style.cssText='padding:8px 16px;font-size:13px;border:none;border-radius:6px;background:#185fa5;color:#fff;cursor:pointer;font-weight:600;font-family:inherit';
   confirm.onclick=function(){
-    // Validate all need-selection components have a variant chosen
+    // Validate all components with variants have a variant chosen
     for(const taskId in selections){
-      if(!selections[taskId].selectedVariant){
+      if(selections[taskId].task.variants&&selections[taskId].task.variants.length&&!selections[taskId].selectedVariant){
         alert('Please select a variant for all components.');return;
       }
     }
