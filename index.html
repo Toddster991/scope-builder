@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-09-01-v23-asm-full]</title>
+<title>Scope of Work Builder [2026-09-01-v24-asm-lookup]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -2945,25 +2945,61 @@ function fpShowOptionsDialog(task, variant, dragTask, roomId, x, y){
 function fpShowAssemblySelectionDialog(asmTask, roomId, x, y){
   const existing=document.getElementById('fp-asm-sel-dlg');if(existing)existing.remove();
 
-  // Find all components and check which need variant selection
-  const components=[];
-  asmTask.components.forEach(function(comp){
-    let srcTask=null, srcCat=null;
-    CATS.forEach(function(cat){
-      cat.subs.forEach(function(sub){
-        (sub.tasks||[]).forEach(function(t){
-          if(t.id===comp.taskId){srcTask=t;srcCat=cat;}
-          (t.variants||[]).forEach(function(v){if(v.id===comp.taskId){srcTask=t;srcCat=cat;}});
+  // Build a full task lookup from the library (localStorage) to handle cases
+  // where CATS tasks haven't loaded yet from Supabase
+  const taskLookup={};
+  try{
+    const libRaw=localStorage.getItem('trdb_lib_overrides_v1');
+    if(libRaw){
+      const lib=JSON.parse(libRaw);
+      lib.forEach(function(cat){
+        (cat.subs||[]).forEach(function(sub){
+          (sub.tasks||[]).forEach(function(t){
+            taskLookup[t.id]={task:t,catId:cat.id,catCode:cat.code||cat.id,catName:cat.name,catColor:cat.color||'#888'};
+            (t.variants||[]).forEach(function(v){
+              taskLookup[v.id]={task:t,variant:v,catId:cat.id,catCode:cat.code||cat.id,catName:cat.name,catColor:cat.color||'#888'};
+            });
+          });
+        });
+      });
+    }
+  }catch(e){}
+  // Also populate from CATS (in case library is already merged)
+  CATS.forEach(function(cat){
+    (cat.subs||[]).forEach(function(sub){
+      (sub.tasks||[]).forEach(function(t){
+        taskLookup[t.id]={task:t,catId:cat.id,catCode:cat.code||cat.id,catName:cat.name,catColor:cat.color||'#888'};
+        (t.variants||[]).forEach(function(v){
+          taskLookup[v.id]={task:t,variant:v,catId:cat.id,catCode:cat.code||cat.id,catName:cat.name,catColor:cat.color||'#888'};
         });
       });
     });
-    // Fallback: use stored comp data if CATS tasks not loaded
-    if(!srcTask&&comp.label&&comp.catCode){
+  });
+
+  // Find all components and check which need selection
+  const components=[];
+  asmTask.components.forEach(function(comp){
+    const found=taskLookup[comp.taskId];
+    let srcTask=null,srcCat=null;
+    if(found){
+      srcTask=found.variant||found.task;
+      srcCat={code:found.catCode,name:found.catName,color:found.catColor};
+    } else if(comp.label&&comp.catCode){
+      // Use stored comp data as last resort
       srcTask={id:comp.taskId,label:comp.label,scope:comp.scope||'',variants:comp.variants||[],options:comp.options||[],price:comp.price||0,unit:comp.unit||'EA'};
       srcCat=CATS.find(function(c){return c.code===comp.catCode;})||{code:comp.catCode,name:comp.catCode,color:'#888'};
     }
     if(srcTask&&srcCat){
-      components.push({srcTask:srcTask, srcCat:srcCat, hasVariants:!!(srcTask.variants&&srcTask.variants.length), hasOptions:!!(srcTask.options&&srcTask.options.length)});
+      // For variants, show the parent task's options; for tasks, show task options
+      const optionsToShow=found&&found.variant?(found.variant.options||[]):(srcTask.options||[]);
+      components.push({
+        srcTask:srcTask,
+        srcCat:srcCat,
+        parentTask:found&&found.variant?found.task:null,
+        hasVariants:!!(srcTask.variants&&srcTask.variants.length),
+        hasOptions:!!(optionsToShow.length),
+        taskOptions:optionsToShow
+      });
     }
   });
 
@@ -3059,7 +3095,7 @@ function fpShowAssemblySelectionDialog(asmTask, roomId, x, y){
     if(comp.hasOptions&&!comp.hasVariants){
       const taskOptsDiv=document.createElement('div');
       taskOptsDiv.style.cssText='padding-left:10px;margin-top:6px';
-      comp.srcTask.options.forEach(function(opt){
+      (comp.taskOptions||comp.srcTask.options||[]).forEach(function(opt){
         const row=document.createElement('label');
         row.style.cssText='display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-size:12px;color:var(--text2)';
         const chk=document.createElement('input');chk.type='checkbox';chk.style.cssText='width:14px;height:14px;cursor:pointer';
