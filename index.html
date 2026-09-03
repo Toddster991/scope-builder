@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-09-01-v24-asm-lookup]</title>
+<title>Scope of Work Builder [2026-09-01-v25-debug]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -3004,7 +3004,9 @@ function fpShowAssemblySelectionDialog(asmTask, roomId, x, y){
   });
 
   // If no components need selection, place immediately
-  const needsSelection = components.filter(function(c){return c.hasVariants;});
+  console.log('ASM comps:',components.length,components.map(function(c){return c.srcTask.label+' v:'+c.hasVariants+' o:'+c.hasOptions;}));
+  const needsSelection = components.filter(function(c){return c.hasVariants||c.hasOptions;});
+  console.log('needsSelection:',needsSelection.length);
   if(!needsSelection.length){
     addTaskToRoom(roomId, asmTask, x, y);
     selectRoomFp(roomId);
