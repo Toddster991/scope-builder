@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-09-01-v21-asm-opts]</title>
+<title>Scope of Work Builder [2026-09-01-v23-asm-full]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -2953,11 +2953,17 @@ function fpShowAssemblySelectionDialog(asmTask, roomId, x, y){
       cat.subs.forEach(function(sub){
         (sub.tasks||[]).forEach(function(t){
           if(t.id===comp.taskId){srcTask=t;srcCat=cat;}
+          (t.variants||[]).forEach(function(v){if(v.id===comp.taskId){srcTask=t;srcCat=cat;}});
         });
       });
     });
+    // Fallback: use stored comp data if CATS tasks not loaded
+    if(!srcTask&&comp.label&&comp.catCode){
+      srcTask={id:comp.taskId,label:comp.label,scope:comp.scope||'',variants:comp.variants||[],options:comp.options||[],price:comp.price||0,unit:comp.unit||'EA'};
+      srcCat=CATS.find(function(c){return c.code===comp.catCode;})||{code:comp.catCode,name:comp.catCode,color:'#888'};
+    }
     if(srcTask&&srcCat){
-      components.push({srcTask:srcTask, srcCat:srcCat, hasVariants:!!(srcTask.variants&&srcTask.variants.length)});
+      components.push({srcTask:srcTask, srcCat:srcCat, hasVariants:!!(srcTask.variants&&srcTask.variants.length), hasOptions:!!(srcTask.options&&srcTask.options.length)});
     }
   });
 
@@ -4999,7 +5005,14 @@ function libShowAssemblyDialog(title, defaults, onSave){
     const taskId=sel.value;
     if(!taskId)return;
     if(components.find(function(c){return c.taskId===taskId;})){alert('Already added.');return;}
-    components.push({taskId:taskId});
+    // Store full task data so assembly works even when CATS tasks not yet loaded
+    const selectedOpt=taskOptions.find(function(o){return o.id===taskId;});
+    let fullTask=null;
+    CATS.forEach(function(cat){cat.subs.forEach(function(sub){(sub.tasks||[]).forEach(function(t){
+      if(t.id===taskId)fullTask={taskId:taskId,label:t.label,scope:t.scope||'',catCode:cat.code,variants:t.variants||[],options:t.options||[],price:t.price||0,unit:t.unit||'EA'};
+      (t.variants||[]).forEach(function(v){if(v.id===taskId)fullTask={taskId:taskId,label:v.label,scope:v.scope||t.scope||'',catCode:cat.code,variants:[],options:v.options||[],price:v.price||0,unit:v.unit||'EA'};});
+    });});});
+    components.push(fullTask||{taskId:taskId,label:selectedOpt?selectedOpt.label:'',catCode:selectedOpt?selectedOpt.catCode:''});
     sel.value='';
     renderComponents();
   };
