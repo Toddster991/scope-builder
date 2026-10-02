@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-10-02-v29-hover-controls]</title>
+<title>Scope of Work Builder [2026-10-02-v30-overlay-controls]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -5266,12 +5266,12 @@ function libRenderCatList(){
 
   CATS.forEach(function(cat,idx){
     const row=document.createElement('div');
-    row.style.cssText='display:flex;align-items:center;padding:2px 6px 2px 0;border-left:3px solid '+(libSelCat===cat.id?cat.color:'transparent');
+    row.style.cssText='position:relative;border-left:3px solid '+(libSelCat===cat.id?cat.color:'transparent');
     row.style.background=libSelCat===cat.id?'var(--bg2)':'';
 
-    // Color dot + name (clickable)
+    // Color dot + name (clickable) - full width, never wraps
     const nameArea=document.createElement('div');
-    nameArea.style.cssText='flex:1;display:flex;align-items:center;gap:8px;padding:7px 8px;cursor:pointer;font-size:12px;color:'+(libSelCat===cat.id?'var(--text)':'var(--text2)');
+    nameArea.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 8px;cursor:pointer;font-size:12px;color:'+(libSelCat===cat.id?'var(--text)':'var(--text2)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
     const dot=document.createElement('span');
     dot.style.cssText='width:8px;height:8px;border-radius:50%;background:'+cat.color+';flex-shrink:0';
     nameArea.appendChild(dot);
@@ -5279,21 +5279,21 @@ function libRenderCatList(){
     nameArea.onclick=(function(cid){return function(){libSelCat=cid;libRenderCatList();libRenderEditor();};})(cat.id);
     row.appendChild(nameArea);
 
-    // Controls - hidden until hover
+    // Controls - absolutely positioned overlay, never affects layout
     const controls=document.createElement('div');
-    controls.style.cssText='display:none;align-items:center;gap:2px;flex-shrink:0';
+    controls.style.cssText='display:none;position:absolute;right:0;top:50%;transform:translateY(-50%);align-items:center;gap:1px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:1px 3px;z-index:10;box-shadow:0 1px 4px rgba(0,0,0,.15)';
 
     const uBtn=document.createElement('button');
-    uBtn.className='lib-ed-btn';uBtn.textContent='▲';uBtn.title='Move up';uBtn.style.cssText='padding:1px 4px;font-size:9px';
+    uBtn.className='lib-ed-btn';uBtn.textContent='▲';uBtn.title='Move up';uBtn.style.cssText='padding:1px 4px;font-size:9px;border:none';
     uBtn.onclick=(function(cid){return function(){libMoveCat(cid,-1);};})(cat.id);
     const dBtn=document.createElement('button');
-    dBtn.className='lib-ed-btn';dBtn.textContent='▼';dBtn.title='Move down';dBtn.style.cssText='padding:1px 4px;font-size:9px';
+    dBtn.className='lib-ed-btn';dBtn.textContent='▼';dBtn.title='Move down';dBtn.style.cssText='padding:1px 4px;font-size:9px;border:none';
     dBtn.onclick=(function(cid){return function(){libMoveCat(cid,1);};})(cat.id);
     const rnBtn=document.createElement('button');
-    rnBtn.className='lib-ed-btn';rnBtn.textContent='✎';rnBtn.title='Rename';rnBtn.style.cssText='padding:1px 4px;font-size:11px';
+    rnBtn.className='lib-ed-btn';rnBtn.textContent='✎';rnBtn.title='Rename';rnBtn.style.cssText='padding:1px 4px;font-size:11px;border:none';
     rnBtn.onclick=(function(cid){return function(){libRenameCostCode(cid);};})(cat.id);
     const delBtn=document.createElement('button');
-    delBtn.className='lib-ed-btn danger';delBtn.textContent='×';delBtn.title='Delete';delBtn.style.cssText='padding:1px 5px;font-size:13px';
+    delBtn.className='lib-ed-btn danger';delBtn.textContent='×';delBtn.title='Delete';delBtn.style.cssText='padding:1px 5px;font-size:13px;border:none';
     delBtn.onclick=(function(cid){return function(){libDeleteCostCode(cid);};})(cat.id);
 
     controls.appendChild(uBtn);controls.appendChild(dBtn);controls.appendChild(rnBtn);controls.appendChild(delBtn);
