@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-10-02-v28-costcode-mgmt]</title>
+<title>Scope of Work Builder [2026-10-02-v29-hover-controls]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -5266,12 +5266,12 @@ function libRenderCatList(){
 
   CATS.forEach(function(cat,idx){
     const row=document.createElement('div');
-    row.style.cssText='display:flex;align-items:center;gap:4px;padding:4px 6px 4px 0;border-left:3px solid '+(libSelCat===cat.id?cat.color:'transparent');
+    row.style.cssText='display:flex;align-items:center;padding:2px 6px 2px 0;border-left:3px solid '+(libSelCat===cat.id?cat.color:'transparent');
     row.style.background=libSelCat===cat.id?'var(--bg2)':'';
 
     // Color dot + name (clickable)
     const nameArea=document.createElement('div');
-    nameArea.style.cssText='flex:1;display:flex;align-items:center;gap:8px;padding:5px 8px;cursor:pointer;font-size:12px;color:'+(libSelCat===cat.id?'var(--text)':'var(--text2)');
+    nameArea.style.cssText='flex:1;display:flex;align-items:center;gap:8px;padding:7px 8px;cursor:pointer;font-size:12px;color:'+(libSelCat===cat.id?'var(--text)':'var(--text2)');
     const dot=document.createElement('span');
     dot.style.cssText='width:8px;height:8px;border-radius:50%;background:'+cat.color+';flex-shrink:0';
     nameArea.appendChild(dot);
@@ -5279,26 +5279,28 @@ function libRenderCatList(){
     nameArea.onclick=(function(cid){return function(){libSelCat=cid;libRenderCatList();libRenderEditor();};})(cat.id);
     row.appendChild(nameArea);
 
-    // Reorder buttons
+    // Controls - hidden until hover
+    const controls=document.createElement('div');
+    controls.style.cssText='display:none;align-items:center;gap:2px;flex-shrink:0';
+
     const uBtn=document.createElement('button');
     uBtn.className='lib-ed-btn';uBtn.textContent='▲';uBtn.title='Move up';uBtn.style.cssText='padding:1px 4px;font-size:9px';
     uBtn.onclick=(function(cid){return function(){libMoveCat(cid,-1);};})(cat.id);
     const dBtn=document.createElement('button');
     dBtn.className='lib-ed-btn';dBtn.textContent='▼';dBtn.title='Move down';dBtn.style.cssText='padding:1px 4px;font-size:9px';
     dBtn.onclick=(function(cid){return function(){libMoveCat(cid,1);};})(cat.id);
-    row.appendChild(uBtn);row.appendChild(dBtn);
-
-    // Rename button
     const rnBtn=document.createElement('button');
     rnBtn.className='lib-ed-btn';rnBtn.textContent='✎';rnBtn.title='Rename';rnBtn.style.cssText='padding:1px 4px;font-size:11px';
     rnBtn.onclick=(function(cid){return function(){libRenameCostCode(cid);};})(cat.id);
-    row.appendChild(rnBtn);
-
-    // Delete button
     const delBtn=document.createElement('button');
     delBtn.className='lib-ed-btn danger';delBtn.textContent='×';delBtn.title='Delete';delBtn.style.cssText='padding:1px 5px;font-size:13px';
     delBtn.onclick=(function(cid){return function(){libDeleteCostCode(cid);};})(cat.id);
-    row.appendChild(delBtn);
+
+    controls.appendChild(uBtn);controls.appendChild(dBtn);controls.appendChild(rnBtn);controls.appendChild(delBtn);
+    row.appendChild(controls);
+
+    row.onmouseenter=function(){controls.style.display='flex';};
+    row.onmouseleave=function(){controls.style.display='none';};
 
     el.appendChild(row);
   });
