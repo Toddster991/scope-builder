@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-10-02-v31-delete-sync]</title>
+<title>Scope of Work Builder [2026-10-02-v32-delete-fix]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -5264,9 +5264,11 @@ function libDeleteCostCode(catId){
   const idx=CATS.findIndex(function(c){return c.id===catId;});
   if(idx!==-1)CATS.splice(idx,1);
   if(libSelCat===catId)libSelCat=CATS.length?CATS[0].id:null;
-  // Sync immediately - don't debounce deletions
+  // Cancel any pending debounced sync to prevent overwrite
+  clearTimeout(_syncTimer);
+  // Sync immediately with full CATS data (including name/color so libLoad applies correctly)
   try{
-    const libData=JSON.stringify(CATS.map(function(c){return {id:c.id,subs:c.subs};}));
+    const libData=JSON.stringify(CATS.map(function(c){return {id:c.id,code:c.code||'',name:c.name,color:c.color||'#888',subs:c.subs};}));
     localStorage.setItem(LIB_KEY,libData);
     const sb=getSB();
     if(sb){sb.from('library').upsert({id:'cats_overrides',data:JSON.parse(libData),updated_at:new Date().toISOString()})
