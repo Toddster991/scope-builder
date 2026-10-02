@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-10-02-v30-overlay-controls]</title>
+<title>Scope of Work Builder [2026-10-02-v31-delete-sync]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -4932,22 +4932,45 @@ function libLoad(){
     const s=localStorage.getItem(LIB_KEY);
     if(s){
       const overrides=JSON.parse(s);
-      overrides.forEach(function(ov){
-        const cat=CATS.find(function(c){return c.id===ov.id;});
-        if(cat)cat.subs=ov.subs;
-      });
+      // Check if overrides contain full CATS data (including name/color)
+      const hasFullData=overrides.length&&overrides[0].name;
+      if(hasFullData){
+        // Full replacement - overrides IS the CATS array (handles deletions/renames/reorder)
+        // Merge: keep base cat properties (color etc) but use override structure
+        CATS.length=0;
+        overrides.forEach(function(ov){
+          CATS.push({
+            id:ov.id,
+            code:ov.code||'',
+            name:ov.name||ov.id,
+            color:ov.color||'#888',
+            subs:ov.subs||[]
+          });
+        });
+      } else {
+        // Legacy: just subs override
+        overrides.forEach(function(ov){
+          const cat=CATS.find(function(c){return c.id===ov.id;});
+          if(cat)cat.subs=ov.subs;
+        });
+      }
     }
   }catch(e){}
 }
 
 function libSave(){
   try{
-    localStorage.setItem(LIB_KEY, JSON.stringify(CATS.map(function(c){
-      return {id:c.id, subs:c.subs};
-    })));
-    // Sync library to cloud
-    clearTimeout(_syncTimer);
-    _syncTimer=setTimeout(sbSync, 2000);
+    // Store full CATS structure including name, code, color so deletions/renames persist
+    const libData=JSON.stringify(CATS.map(function(c){
+      return {id:c.id, code:c.code||'', name:c.name, color:c.color||'#888', subs:c.subs};
+    }));
+    localStorage.setItem(LIB_KEY, libData);
+    // Sync to Supabase immediately - library changes are critical
+    const sb=getSB();
+    if(sb){
+      sb.from('library').upsert({id:'cats_overrides',data:JSON.parse(libData),updated_at:new Date().toISOString()})
+        .catch(function(e){console.warn('Library sync error:',e.message);});
+    }
   }catch(e){}
 }
 
@@ -5241,7 +5264,16 @@ function libDeleteCostCode(catId){
   const idx=CATS.findIndex(function(c){return c.id===catId;});
   if(idx!==-1)CATS.splice(idx,1);
   if(libSelCat===catId)libSelCat=CATS.length?CATS[0].id:null;
-  libSave();libRenderCatList();libRenderEditor();
+  // Sync immediately - don't debounce deletions
+  try{
+    const libData=JSON.stringify(CATS.map(function(c){return {id:c.id,subs:c.subs};}));
+    localStorage.setItem(LIB_KEY,libData);
+    const sb=getSB();
+    if(sb){sb.from('library').upsert({id:'cats_overrides',data:JSON.parse(libData),updated_at:new Date().toISOString()})
+      .then(function(){console.log('Cost code deletion synced to cloud');})
+      .catch(function(e){console.warn('Sync error:',e.message);});}
+  }catch(e){}
+  libRenderCatList();libRenderEditor();
 }
 
 function libResetToDefaults(){
