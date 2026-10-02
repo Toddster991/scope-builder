@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-09-01-v27-asm-opts]</title>
+<title>Scope of Work Builder [2026-10-02-v28-costcode-mgmt]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -5211,6 +5211,39 @@ function libShowTaskOptionDialog(title, defaults, onSave){
   });
 }());
 
+function libMoveCat(catId,dir){
+  const i=CATS.findIndex(function(c){return c.id===catId;});if(i===-1)return;
+  const j=i+parseInt(dir);if(j<0||j>=CATS.length)return;
+  var tmp=CATS[i];CATS[i]=CATS[j];CATS[j]=tmp;
+  libSave();libRenderCatList();
+}
+
+function libAddCostCode(){
+  const name=prompt('New cost code name:');
+  if(!name||!name.trim())return;
+  const colors=['#888780','#3B6D11','#1F4E79','#8B4513','#6B5A3E','#2E4057','#5C4033','#1B5E20','#4A148C','#B71C1C'];
+  const color=colors[CATS.length%colors.length];
+  CATS.push({id:'cat-'+Date.now(),code:'',name:name.trim(),color:color,subs:[]});
+  libSave();libRenderCatList();libRenderEditor();
+}
+
+function libRenameCostCode(catId){
+  const cat=CATS.find(function(c){return c.id===catId;});if(!cat)return;
+  const name=prompt('Rename cost code:',cat.name);
+  if(!name||!name.trim())return;
+  cat.name=name.trim();
+  libSave();libRenderCatList();
+}
+
+function libDeleteCostCode(catId){
+  const cat=CATS.find(function(c){return c.id===catId;});if(!cat)return;
+  if(!confirm('Delete cost code "'+cat.name+'" and ALL its sub-groups and tasks? This cannot be undone.'))return;
+  const idx=CATS.findIndex(function(c){return c.id===catId;});
+  if(idx!==-1)CATS.splice(idx,1);
+  if(libSelCat===catId)libSelCat=CATS.length?CATS[0].id:null;
+  libSave();libRenderCatList();libRenderEditor();
+}
+
 function libResetToDefaults(){
   if(!confirm('Reset all library edits to factory defaults? This cannot be undone.'))return;
   localStorage.removeItem(LIB_KEY);
@@ -5223,17 +5256,51 @@ function libRenderCatList(){
   const el=document.getElementById('lib-cat-list');
   if(!el)return;
   el.innerHTML='';
-  CATS.forEach(function(cat){
-    const btn=document.createElement('div');
-    btn.style.cssText='padding:9px 14px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:8px;border-left:3px solid '+(libSelCat===cat.id?cat.color:'transparent');
-    btn.style.background=libSelCat===cat.id?'var(--bg2)':'';
-    btn.style.color=libSelCat===cat.id?'var(--text)':'var(--text2)';
+
+  // Add "+ Cost Code" button at top
+  const addBtn=document.createElement('button');
+  addBtn.className='lib-ed-btn';addBtn.textContent='+ Cost Code';
+  addBtn.style.cssText='margin:8px 14px;font-size:11px;';
+  addBtn.onclick=function(){libAddCostCode();};
+  el.appendChild(addBtn);
+
+  CATS.forEach(function(cat,idx){
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:4px;padding:4px 6px 4px 0;border-left:3px solid '+(libSelCat===cat.id?cat.color:'transparent');
+    row.style.background=libSelCat===cat.id?'var(--bg2)':'';
+
+    // Color dot + name (clickable)
+    const nameArea=document.createElement('div');
+    nameArea.style.cssText='flex:1;display:flex;align-items:center;gap:8px;padding:5px 8px;cursor:pointer;font-size:12px;color:'+(libSelCat===cat.id?'var(--text)':'var(--text2)');
     const dot=document.createElement('span');
     dot.style.cssText='width:8px;height:8px;border-radius:50%;background:'+cat.color+';flex-shrink:0';
-    btn.appendChild(dot);
-    btn.appendChild(document.createTextNode(cat.name));
-    btn.onclick=function(){libSelCat=cat.id;libRenderCatList();libRenderEditor();};
-    el.appendChild(btn);
+    nameArea.appendChild(dot);
+    nameArea.appendChild(document.createTextNode(cat.name));
+    nameArea.onclick=(function(cid){return function(){libSelCat=cid;libRenderCatList();libRenderEditor();};})(cat.id);
+    row.appendChild(nameArea);
+
+    // Reorder buttons
+    const uBtn=document.createElement('button');
+    uBtn.className='lib-ed-btn';uBtn.textContent='▲';uBtn.title='Move up';uBtn.style.cssText='padding:1px 4px;font-size:9px';
+    uBtn.onclick=(function(cid){return function(){libMoveCat(cid,-1);};})(cat.id);
+    const dBtn=document.createElement('button');
+    dBtn.className='lib-ed-btn';dBtn.textContent='▼';dBtn.title='Move down';dBtn.style.cssText='padding:1px 4px;font-size:9px';
+    dBtn.onclick=(function(cid){return function(){libMoveCat(cid,1);};})(cat.id);
+    row.appendChild(uBtn);row.appendChild(dBtn);
+
+    // Rename button
+    const rnBtn=document.createElement('button');
+    rnBtn.className='lib-ed-btn';rnBtn.textContent='✎';rnBtn.title='Rename';rnBtn.style.cssText='padding:1px 4px;font-size:11px';
+    rnBtn.onclick=(function(cid){return function(){libRenameCostCode(cid);};})(cat.id);
+    row.appendChild(rnBtn);
+
+    // Delete button
+    const delBtn=document.createElement('button');
+    delBtn.className='lib-ed-btn danger';delBtn.textContent='×';delBtn.title='Delete';delBtn.style.cssText='padding:1px 5px;font-size:13px';
+    delBtn.onclick=(function(cid){return function(){libDeleteCostCode(cid);};})(cat.id);
+    row.appendChild(delBtn);
+
+    el.appendChild(row);
   });
 }
 
