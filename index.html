@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-10-06-v33-lib-sync-guard]</title>
+<title>Scope of Work Builder [2026-10-06-v34-sync-guard]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -1045,9 +1045,12 @@ function getSB(){if(!_sb&&window.supabase)_sb=window.supabase.createClient(SB_UR
 
 let _syncTimer=null;
 function persist(){
-  // 1. Save locally - instant
+  // 1. Stamp local timestamp on all projects so merge can pick the winner
+  const now=Date.now();
+  if(state.projects)state.projects.forEach(function(p){if(p&&p.id)p._localTs=p._localTs||now;});
+  // 2. Save locally - instant
   try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
-  // 2. Debounce sync to cloud
+  // 3. Debounce sync to cloud
   clearTimeout(_syncTimer);
   _syncTimer=setTimeout(sbSync,2000);
 }
@@ -1058,13 +1061,15 @@ async function sbSync(){
     // Sync all valid projects
     for(const proj of state.projects){
       if(!proj||!proj.id||!proj.client)continue;
+      const now=new Date().toISOString();
+      proj._localTs=new Date(now).getTime();
       await sb.from('projects').upsert({
         id:proj.id,
         client:proj.client||'',
         address:proj.address||'',
         status:proj.status||'active',
         data:proj,
-        updated_at:new Date().toISOString()
+        updated_at:now
       });
     }
     // Sync library
@@ -1089,16 +1094,30 @@ function loadState(){
 async function sbLoad(){
   const sb=getSB();if(!sb)return;
   try{
-    const {data,error}=await sb.from('projects').select('id,client,data').order('created_at',{ascending:false});
+    const {data,error}=await sb.from('projects').select('id,client,data,updated_at').order('created_at',{ascending:false});
     if(error||!data||!data.length)return;
-    // Merge: cloud wins per project ID
+    // Merge: newer timestamp wins per project ID
     const cloudMap={};
     data.forEach(function(row){
-      if(row.data&&row.data.id&&row.data.client)cloudMap[row.data.id]=row.data;
+      if(row.data&&row.data.id&&row.data.client){
+        cloudMap[row.data.id]={data:row.data,ts:row.updated_at?new Date(row.updated_at).getTime():0};
+      }
     });
-    // Keep local projects not in cloud, add/update with cloud versions
-    const localOnly=state.projects.filter(function(p){return p&&p.id&&!cloudMap[p.id];});
-    state.projects=[...Object.values(cloudMap),...localOnly];
+    // Build local map keyed by id with local updated_at timestamp
+    const localMap={};
+    state.projects.forEach(function(p){
+      if(p&&p.id)localMap[p.id]={data:p,ts:p._localTs||0};
+    });
+    // Winner: whichever has the newer timestamp; cloud wins ties
+    const merged={};
+    const allIds=new Set([...Object.keys(cloudMap),...Object.keys(localMap)]);
+    allIds.forEach(function(id){
+      const c=cloudMap[id],l=localMap[id];
+      if(c&&l){merged[id]=(l.ts>c.ts)?l.data:c.data;}
+      else if(c){merged[id]=c.data;}
+      else if(l){merged[id]=l.data;}
+    });
+    state.projects=Object.values(merged);
     state.projects=state.projects.filter(function(p){return p&&p.id&&p.client;});
     try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
     // Rebuild dashboard if visible
