@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-10-02-v32-delete-fix]</title>
+<title>Scope of Work Builder [2026-10-06-v33-lib-sync-guard]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -1104,14 +1104,19 @@ async function sbLoad(){
     // Rebuild dashboard if visible
     const dash=document.getElementById('page-dashboard');
     if(dash&&dash.classList.contains('active'))buildDashboard();
-    // Load shared library
-    const {data:lib}=await sb.from('library').select('data').eq('id','cats_overrides').maybeSingle();
+    // Load shared library - only overwrite local if cloud timestamp is newer
+    const {data:lib}=await sb.from('library').select('data,updated_at').eq('id','cats_overrides').maybeSingle();
     if(lib&&lib.data){
-      localStorage.setItem('trdb_lib_overrides_v1',JSON.stringify(lib.data));
-      libLoad();
-      // Rebuild library UI if open
-      if(typeof buildFpLibrary==='function')buildFpLibrary();
-      if(typeof libRenderCatList==='function'&&document.getElementById('page-library')?.classList.contains('active')){libRenderCatList();libRenderEditor();}
+      const cloudTs=lib.updated_at?new Date(lib.updated_at).getTime():0;
+      const localTs=parseInt(localStorage.getItem('trdb_lib_updated_at')||'0',10);
+      if(cloudTs>=localTs){
+        localStorage.setItem('trdb_lib_overrides_v1',JSON.stringify(lib.data));
+        localStorage.setItem('trdb_lib_updated_at',String(cloudTs));
+        libLoad();
+        // Rebuild library UI if open
+        if(typeof buildFpLibrary==='function')buildFpLibrary();
+        if(typeof libRenderCatList==='function'&&document.getElementById('page-library')?.classList.contains('active')){libRenderCatList();libRenderEditor();}
+      }
     }
   }catch(e){console.warn('Cloud load error:',e.message);}
 }
@@ -4965,6 +4970,7 @@ function libSave(){
       return {id:c.id, code:c.code||'', name:c.name, color:c.color||'#888', subs:c.subs};
     }));
     localStorage.setItem(LIB_KEY, libData);
+    localStorage.setItem('trdb_lib_updated_at',String(Date.now()));
     // Sync to Supabase immediately - library changes are critical
     const sb=getSB();
     if(sb){
@@ -5270,6 +5276,7 @@ function libDeleteCostCode(catId){
   try{
     const libData=JSON.stringify(CATS.map(function(c){return {id:c.id,code:c.code||'',name:c.name,color:c.color||'#888',subs:c.subs};}));
     localStorage.setItem(LIB_KEY,libData);
+    localStorage.setItem('trdb_lib_updated_at',String(Date.now()));
     const sb=getSB();
     if(sb){sb.from('library').upsert({id:'cats_overrides',data:JSON.parse(libData),updated_at:new Date().toISOString()})
       .then(function(){console.log('Cost code deletion synced to cloud');})
