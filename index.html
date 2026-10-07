@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-10-07-v52-sb-primary]</title>
+<title>Scope of Work Builder [2026-10-07-v54-sb-primary]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -435,8 +435,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
   </div>
 
   <div class="topbar-right">
-    <span id="sync-error-badge" style="display:none;font-size:11px;font-weight:600;color:#fff;background:#a32d2d;padding:3px 8px;border-radius:4px;cursor:pointer" onclick="syncNow()" title="Click to retry">⚠ Save failed — click to retry</span>
-    <span id="sync-ok-badge" style="display:none;font-size:11px;color:rgba(255,255,255,.5);padding:3px 6px">✓ Saved</span>
+    <span id="sync-error-badge" style="display:none;font-size:11px;font-weight:600;color:#fff;background:#a32d2d;padding:3px 8px;border-radius:4px;cursor:pointer" onclick="libSave()" title="Click to retry">⚠ Save failed — click to retry</span>
+    <span id="sync-saving-badge" style="display:none;font-size:11px;color:rgba(255,255,255,.5);padding:3px 6px">● Saving…</span>
+    <span id="sync-ok-badge" style="font-size:11px;font-weight:600;color:#fff;background:#3b6d11;padding:3px 10px;border-radius:4px">✓ Saved to Cloud</span>
     <button class="btn" id="btn-open-ver" onclick="reopenVersion()" style="display:none;color:rgba(255,255,255,.75);border-color:rgba(255,255,255,.2)"><i class="ti ti-versions"></i> Back to Work</button>
     <button class="btn primary" id="btn-gen-scope" onclick="generateScope()" style="display:none"><i class="ti ti-sparkles"></i> Generate Scope</button>
     <button class="btn" id="btn-save-ver" onclick="saveVersion()" style="display:none;color:rgba(255,255,255,.75);border-color:rgba(255,255,255,.2)"><i class="ti ti-device-floppy"></i> Save</button>
@@ -1069,17 +1070,29 @@ let _sb=null;
 function getSB(){if(!_sb&&window.supabase)_sb=window.supabase.createClient(SB_URL,SB_KEY);return _sb;}
 
 let _syncTimer=null;
+function showSyncSaving(){
+  const e=document.getElementById('sync-error-badge');
+  const s=document.getElementById('sync-saving-badge');
+  const o=document.getElementById('sync-ok-badge');
+  if(e)e.style.display='none';
+  if(s)s.style.display='';
+  if(o)o.style.display='none';
+}
 function showSyncError(){
   const e=document.getElementById('sync-error-badge');
+  const s=document.getElementById('sync-saving-badge');
   const o=document.getElementById('sync-ok-badge');
   if(e)e.style.display='';
+  if(s)s.style.display='none';
   if(o)o.style.display='none';
 }
 function showSyncOk(){
   const e=document.getElementById('sync-error-badge');
+  const s=document.getElementById('sync-saving-badge');
   const o=document.getElementById('sync-ok-badge');
   if(e)e.style.display='none';
-  if(o){o.style.display='';setTimeout(function(){o.style.display='none';},3000);}
+  if(s)s.style.display='none';
+  if(o){o.style.display='';o.textContent='✓ Saved to Cloud';}
 }
 function persist(){
   // Write to localStorage as cache
@@ -1209,6 +1222,9 @@ async function loadState(){
     return;
   }
   try{
+    // Wake up Supabase first (free tier pauses after inactivity)
+    setLoadingMsg('Waking up database…',15);
+    try{ await sb.from('library').select('id').limit(1); }catch(pingErr){}
     // Load projects from Supabase — this IS the source of truth
     setLoadingMsg('Loading projects…',30);
     const {data:projData,error:projErr}=await sb.from('projects').select('id,client,data,updated_at').order('created_at',{ascending:false});
@@ -1236,6 +1252,19 @@ async function loadState(){
       showSyncError();
     }
     libLoad();
+    // Check if tab-close backup is newer than what Supabase returned — recover if so
+    try{
+      const closeBackup=JSON.parse(localStorage.getItem('trdb_lib_closetime_backup')||'null');
+      const sbTime=lib&&lib.updated_at?new Date(lib.updated_at).getTime():0;
+      if(closeBackup&&closeBackup.ts&&closeBackup.ts>sbTime+5000){
+        // Tab was closed before Supabase save completed — restore and re-save
+        console.warn('[lib] Recovering unsaved close-time backup — re-saving to Supabase');
+        localStorage.setItem(LIB_KEY,JSON.stringify(closeBackup.data));
+        libLoad();
+        setTimeout(function(){ libSave(); },1000);
+      }
+      localStorage.removeItem('trdb_lib_closetime_backup');
+    }catch(rbErr){}
     setLoadingMsg('Ready',100);
   }catch(e){
     console.warn('Load error:',e.message);
@@ -5105,11 +5134,20 @@ setInterval(function(){
   if(_libDirty){ libSave(); }
 }, 30000);
 
-// Warn on page unload if unsaved changes
+// On tab close: cancel the debounce timer and save immediately, then warn if still dirty
 window.addEventListener('beforeunload', function(e){
   if(_libDirty){
+    if(_libSaveTimer){ clearTimeout(_libSaveTimer); _libSaveTimer=null; }
+    // Fire synchronous localStorage backup immediately so data is never lost locally
+    try{
+      const libObj=CATS.map(function(c){return {id:c.id,code:c.code||'',name:c.name,color:c.color||'#888',subs:c.subs};});
+      localStorage.setItem(LIB_KEY,JSON.stringify(libObj));
+      localStorage.setItem('trdb_lib_closetime_backup',JSON.stringify({ts:Date.now(),data:libObj}));
+    }catch(ex){}
+    // Also kick off async Supabase save (best-effort on close)
+    libSave();
     e.preventDefault();
-    e.returnValue = 'You have unsaved library changes. Are you sure you want to leave?';
+    e.returnValue = 'Saving your library — please wait a moment before closing.';
   }
 });
 
@@ -5259,31 +5297,48 @@ function libRestoreAutoBackup(){
   }catch(e){ alert('Restore failed: '+e.message); }
 }
 
-async function libSave(){
+async function libSave(attempt){
+  attempt = attempt||1;
+  if(attempt===1) showSyncSaving();
   try{
-    _libDirty = false; // optimistically clear — will re-set on error
     const libObj=CATS.map(function(c){
       return {id:c.id, code:c.code||'', name:c.name, color:c.color||'#888', subs:c.subs};
     });
     const libData=JSON.stringify(libObj);
-    // Write to Supabase FIRST — this is the source of truth
+    // Always write to localStorage immediately as safety net
+    try{ localStorage.setItem(LIB_KEY,libData); }catch(le){}
+    // Write to Supabase — this is the source of truth
     const sb=getSB();
     if(sb){
       const {error}=await sb.from('library').upsert({id:'cats_overrides',data:libObj,updated_at:new Date().toISOString()});
       if(error){
-        console.warn('Library save failed:',error.message);
-        _libDirty = true; // save failed — mark dirty so retry fires
+        console.warn('Library save failed (attempt '+attempt+'):',error.message);
+        if(attempt < 3){
+          // Retry with backoff: 2s, then 5s
+          var delay = attempt===1 ? 2000 : 5000;
+          setTimeout(function(){ libSave(attempt+1); }, delay);
+          return;
+        }
+        _libDirty = true;
         showSyncError();
-        return; // Do NOT update localStorage with data that didn't save to cloud
+        return;
       }
     }
-    // Only update localStorage cache after confirmed cloud save
-    localStorage.setItem(LIB_KEY, libData);
+    // Confirmed cloud save
+    _libDirty = false;
     localStorage.setItem('trdb_lib_updated_at',String(Date.now()));
-    // Write rolling auto-backup on every successful save
     libWriteAutoBackup(libObj);
     showSyncOk();
-  } catch(e){ _libDirty = true; console.warn('libSave error:',e.message); showSyncError(); }
+  } catch(e){
+    console.warn('libSave error (attempt '+attempt+'):',e.message);
+    if(attempt < 3){
+      var delay = attempt===1 ? 2000 : 5000;
+      setTimeout(function(){ libSave(attempt+1); }, delay);
+      return;
+    }
+    _libDirty = true;
+    showSyncError();
+  }
 }
 
 // Debounced autosave — fires 1.5s after any library edit action
