@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-10-07-v46-sb-primary]</title>
+<title>Scope of Work Builder [2026-10-07-v47-sb-primary]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -507,7 +507,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <button class="btn sm" onclick="goToDashboard()" style="margin-right:4px"><i class="ti ti-arrow-left"></i></button>
         <span style="font-size:14px;font-weight:600;color:var(--text)">Scope Library Editor</span>
         <span style="font-size:12px;color:var(--text3)">Build and manage your standard scope items</span>
-        <div style="margin-left:auto;display:flex;gap:8px">
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+          <span id="lib-backup-stamp" style="display:none;font-size:11px;color:var(--text3)"></span>
+          <button class="btn sm" onclick="libRestoreAutoBackup()" title="Restore from one of the last 5 auto-backups saved locally in your browser"><i class="ti ti-history"></i> Restore Auto-Backup</button>
           <button class="btn sm" onclick="libExportJSON()" title="Download a backup of your entire library as a JSON file"><i class="ti ti-download"></i> Export Backup</button>
           <label class="btn sm" title="Restore library from a previously exported JSON backup" style="cursor:pointer"><i class="ti ti-upload"></i> Import Backup<input type="file" accept=".json" style="display:none" onchange="libImportJSON(this)"></label>
           <button class="btn sm" onclick="libResetToDefaults()" style="color:var(--text3)">Reset to defaults</button>
@@ -1336,7 +1338,7 @@ let fpZoom=1,fpPanX=20,fpPanY=20,fpPanning=false,fpPanStartX=0,fpPanStartY=0,fpP
 let activeElevId=null,activeElevCatId='elevations';
 let pdfDoc=null;
 
-function showPage(name){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');if(name==='library'){libRenderCatList();libRenderEditor();}if(name==='contacts')renderContacts();if(name==='import')importReset();if(name==='rfp'){buildRFPPage();}}
+function showPage(name){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');if(name==='library'){libRenderCatList();libRenderEditor();libUpdateBackupStamp();}if(name==='contacts')renderContacts();if(name==='import')importReset();if(name==='rfp'){buildRFPPage();}}
 function activePage(){const p=document.querySelector('.page.active');return p?p.id:'';}
 
 function updateTopbar(){
@@ -5119,6 +5121,59 @@ function libLoad(){
   }catch(e){}
 }
 
+const LIB_AUTOBACKUP_KEY = 'trdb_lib_autobackups';
+const LIB_AUTOBACKUP_MAX = 5;
+
+function libWriteAutoBackup(libObj){
+  try{
+    const backups = JSON.parse(localStorage.getItem(LIB_AUTOBACKUP_KEY)||'[]');
+    backups.unshift({ts: Date.now(), data: libObj});
+    if(backups.length > LIB_AUTOBACKUP_MAX) backups.length = LIB_AUTOBACKUP_MAX;
+    localStorage.setItem(LIB_AUTOBACKUP_KEY, JSON.stringify(backups));
+    libUpdateBackupStamp();
+  }catch(e){console.warn('auto-backup write failed:',e.message);}
+}
+
+function libUpdateBackupStamp(){
+  try{
+    const backups = JSON.parse(localStorage.getItem(LIB_AUTOBACKUP_KEY)||'[]');
+    const el = document.getElementById('lib-backup-stamp');
+    if(el && backups.length){
+      const d = new Date(backups[0].ts);
+      el.textContent = 'Auto-backed up ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      el.style.display = '';
+    }
+  }catch(e){}
+}
+
+function libRestoreAutoBackup(){
+  try{
+    const backups = JSON.parse(localStorage.getItem(LIB_AUTOBACKUP_KEY)||'[]');
+    if(!backups.length){ alert('No auto-backups found yet. Save your library at least once to create one.'); return; }
+    const opts = backups.map(function(b,i){
+      const d = new Date(b.ts);
+      const cats = b.data.length;
+      const tasks = b.data.reduce(function(sum,c){ return sum + (c.subs||[]).reduce(function(s2,sb){ return s2 + (sb.tasks||[]).length; },0); },0);
+      return (i+1) + ') ' + d.toLocaleString() + ' — ' + cats + ' categories, ' + tasks + ' tasks';
+    }).join('\n');
+    const choice = prompt('Choose a backup to restore (enter 1–' + backups.length + '):\n\n' + opts);
+    if(!choice) return;
+    const idx = parseInt(choice) - 1;
+    if(isNaN(idx) || idx < 0 || idx >= backups.length){ alert('Invalid choice.'); return; }
+    if(!confirm('Restore backup from ' + new Date(backups[idx].ts).toLocaleString() + '?\n\nThis will overwrite your current library and save to Supabase.')) return;
+    const data = backups[idx].data;
+    CATS.length = 0;
+    data.forEach(function(ov){
+      CATS.push({id:ov.id, code:ov.code||'', name:ov.name||ov.id, color:ov.color||'#888', subs:ov.subs||[]});
+    });
+    libSave().then(function(){
+      libRenderCatList();
+      libRenderEditor();
+      alert('Library restored from auto-backup.');
+    });
+  }catch(e){ alert('Restore failed: '+e.message); }
+}
+
 async function libSave(){
   try{
     const libObj=CATS.map(function(c){
@@ -5138,6 +5193,8 @@ async function libSave(){
     // Only update localStorage cache after confirmed cloud save
     localStorage.setItem(LIB_KEY, libData);
     localStorage.setItem('trdb_lib_updated_at',String(Date.now()));
+    // Write rolling auto-backup on every successful save
+    libWriteAutoBackup(libObj);
     showSyncOk();
   }catch(e){console.warn('libSave error:',e.message);showSyncError();}
 }
