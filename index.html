@@ -5098,6 +5098,20 @@ async function downloadWord() {
 const LIB_KEY = 'trdb_lib_overrides_v1';
 const LIB_DAILY_BACKUP_KEY = 'trdb_lib_daily_backup_date';
 let libSelCat = null;
+let _libDirty = false; // true = unsaved changes exist
+
+// Periodic autosave — flushes to Supabase every 30s if dirty
+setInterval(function(){
+  if(_libDirty){ libSave(); }
+}, 30000);
+
+// Warn on page unload if unsaved changes
+window.addEventListener('beforeunload', function(e){
+  if(_libDirty){
+    e.preventDefault();
+    e.returnValue = 'You have unsaved library changes. Are you sure you want to leave?';
+  }
+});
 
 function libMaybeDailyBackup(){
   try{
@@ -5202,6 +5216,7 @@ function libRestoreAutoBackup(){
 
 async function libSave(){
   try{
+    _libDirty = false; // optimistically clear — will re-set on error
     const libObj=CATS.map(function(c){
       return {id:c.id, code:c.code||'', name:c.name, color:c.color||'#888', subs:c.subs};
     });
@@ -5212,6 +5227,7 @@ async function libSave(){
       const {error}=await sb.from('library').upsert({id:'cats_overrides',data:libObj,updated_at:new Date().toISOString()});
       if(error){
         console.warn('Library save failed:',error.message);
+        _libDirty = true; // save failed — mark dirty so retry fires
         showSyncError();
         return; // Do NOT update localStorage with data that didn't save to cloud
       }
@@ -5222,7 +5238,15 @@ async function libSave(){
     // Write rolling auto-backup on every successful save
     libWriteAutoBackup(libObj);
     showSyncOk();
-  }catch(e){console.warn('libSave error:',e.message);showSyncError();}
+  } catch(e){ _libDirty = true; console.warn('libSave error:',e.message); showSyncError(); }
+}
+
+// Debounced autosave — fires 1.5s after any library edit action
+var _libSaveTimer = null;
+function libSaveDebounced(){
+  _libDirty = true;
+  if(_libSaveTimer) clearTimeout(_libSaveTimer);
+  _libSaveTimer = setTimeout(function(){ libSave(); }, 1500);
 }
 
 function libExportJSON(){
@@ -5286,7 +5310,7 @@ function libAddAssembly(catId, subId){
       components:data.components,
       variants:[]
     });
-    libSave();libRenderEditor();
+    libSaveDebounced();libRenderEditor();
   });
 }
 
@@ -5403,7 +5427,7 @@ function libEditAssembly(catId, subId, taskId){
     task.label=data.label;
     task.scope=data.scope;
     task.components=data.components;
-    libSave();libRenderEditor();
+    libSaveDebounced();libRenderEditor();
   });
 }
 
@@ -5414,7 +5438,7 @@ function libAddTaskOption(catId, subId, taskId){
     const task=(sub.tasks||[]).find(function(t){return t.id===taskId;});if(!task)return;
     if(!task.options)task.options=[];
     task.options.push({id:'opt-'+Date.now(), label:data.label, price:data.price, unit:data.unit});
-    libSave();libRenderEditor();
+    libSaveDebounced();libRenderEditor();
   });
 }
 
@@ -5425,7 +5449,7 @@ function libEditTaskOption(catId, subId, taskId, optId){
   const opt=(task.options||[]).find(function(o){return o.id===optId;});if(!opt)return;
   libShowTaskOptionDialog('Edit Option', opt, function(data){
     opt.label=data.label;opt.price=data.price;opt.unit=data.unit;
-    libSave();libRenderEditor();
+    libSaveDebounced();libRenderEditor();
   });
 }
 
@@ -5435,7 +5459,7 @@ function libDeleteTaskOption(catId, subId, taskId, optId){
   const sub=cat.subs.find(function(s){return s.id===subId;});if(!sub)return;
   const task=(sub.tasks||[]).find(function(t){return t.id===taskId;});if(!task)return;
   task.options=(task.options||[]).filter(function(o){return o.id!==optId;});
-  libSave();libRenderEditor();
+  libSaveDebounced();libRenderEditor();
 }
 
 function libShowTaskOptionDialog(title, defaults, onSave){
@@ -5519,7 +5543,7 @@ function libShowTaskOptionDialog(title, defaults, onSave){
       var ti=sub.tasks.findIndex(function(t){return t.id===tgt.taskId;});
       if(si===-1||ti===-1)return;
       var tmp=sub.tasks[si];sub.tasks[si]=sub.tasks[ti];sub.tasks[ti]=tmp;
-      libSave();libRenderEditor();
+      libSaveDebounced();libRenderEditor();
     } else if(src.dtype==='sub'){
       var cat=CATS.find(function(c){return c.id===src.catId;});
       if(!cat)return;
@@ -5527,7 +5551,7 @@ function libShowTaskOptionDialog(title, defaults, onSave){
       var ti=cat.subs.findIndex(function(s){return s.id===tgt.subId;});
       if(si===-1||ti===-1)return;
       var tmp=cat.subs[si];cat.subs[si]=cat.subs[ti];cat.subs[ti]=tmp;
-      libSave();libRenderEditor();
+      libSaveDebounced();libRenderEditor();
     }
   });
 }());
@@ -5536,7 +5560,7 @@ function libMoveCat(catId,dir){
   const i=CATS.findIndex(function(c){return c.id===catId;});if(i===-1)return;
   const j=i+parseInt(dir);if(j<0||j>=CATS.length)return;
   var tmp=CATS[i];CATS[i]=CATS[j];CATS[j]=tmp;
-  libSave();libRenderCatList();
+  libSaveDebounced();libRenderCatList();
 }
 
 function libAddCostCode(){
@@ -5545,7 +5569,7 @@ function libAddCostCode(){
   const colors=['#888780','#3B6D11','#1F4E79','#8B4513','#6B5A3E','#2E4057','#5C4033','#1B5E20','#4A148C','#B71C1C'];
   const color=colors[CATS.length%colors.length];
   CATS.push({id:'cat-'+Date.now(),code:'',name:name.trim(),color:color,subs:[]});
-  libSave();libRenderCatList();libRenderEditor();
+  libSaveDebounced();libRenderCatList();libRenderEditor();
 }
 
 function libRenameCostCode(catId){
@@ -5553,7 +5577,7 @@ function libRenameCostCode(catId){
   const name=prompt('Rename cost code:',cat.name);
   if(!name||!name.trim())return;
   cat.name=name.trim();
-  libSave();libRenderCatList();
+  libSaveDebounced();libRenderCatList();
 }
 
 function libDeleteCostCode(catId){
@@ -5786,21 +5810,21 @@ function libAddSub(catId){
   const name=prompt('Group name:');if(!name)return;
   const cat=CATS.find(function(c){return c.id===catId;});if(!cat)return;
   cat.subs.push({id:'sub-'+Date.now(),name:name.trim(),tasks:[]});
-  libSave();libRenderEditor();
+  libSaveDebounced();libRenderEditor();
 }
 
 function libRenameSub(catId,subId){
   const cat=CATS.find(function(c){return c.id===catId;});if(!cat)return;
   const sub=cat.subs.find(function(s){return s.id===subId;});if(!sub)return;
   const name=prompt('Rename group:',sub.name);if(!name)return;
-  sub.name=name.trim();libSave();libRenderEditor();
+  sub.name=name.trim();libSaveDebounced();libRenderEditor();
 }
 
 function libDeleteSub(catId,subId){
   if(!confirm('Delete this group and all its tasks?'))return;
   const cat=CATS.find(function(c){return c.id===catId;});if(!cat)return;
   cat.subs=cat.subs.filter(function(s){return s.id!==subId;});
-  libSave();libRenderEditor();
+  libSaveDebounced();libRenderEditor();
 }
 
 function libShowTaskDialog(title, defaults, onSave, showOptions){
@@ -5914,7 +5938,7 @@ function libAddTask(catId,subId){
     const sub=cat.subs.find(function(s){return s.id===subId;});if(!sub)return;
     if(!sub.tasks)sub.tasks=[];
     sub.tasks.push({id:'t-'+Date.now(),label:data.label,scope:data.scope,unit:data.unit,price:data.price,variants:[]});
-    libSave();libRenderEditor();
+    libSaveDebounced();libRenderEditor();
   });
 }
 
@@ -5924,7 +5948,7 @@ function libEditTask(catId,subId,taskId){
   const task=(sub.tasks||[]).find(function(t){return t.id===taskId;});if(!task)return;
   libShowTaskDialog('Edit Task',task,function(data){
     task.label=data.label;task.scope=data.scope;task.unit=data.unit;task.price=data.price;
-    libSave();libRenderEditor();
+    libSaveDebounced();libRenderEditor();
   });
 }
 
@@ -5933,7 +5957,7 @@ function libDeleteTask(catId,subId,taskId){
   const cat=CATS.find(function(c){return c.id===catId;});if(!cat)return;
   const sub=cat.subs.find(function(s){return s.id===subId;});if(!sub)return;
   sub.tasks=(sub.tasks||[]).filter(function(t){return t.id!==taskId;});
-  libSave();libRenderEditor();
+  libSaveDebounced();libRenderEditor();
 }
 
 function libAddVariant(catId,subId,taskId){
@@ -5943,7 +5967,7 @@ function libAddVariant(catId,subId,taskId){
     const task=(sub.tasks||[]).find(function(t){return t.id===taskId;});if(!task)return;
     if(!task.variants)task.variants=[];
     task.variants.push({id:'v-'+Date.now(),label:data.label,scope:data.scope,unit:data.unit,price:data.price,options:data.options||[]});
-    libSave();libRenderEditor();
+    libSaveDebounced();libRenderEditor();
   }, true);
 }
 
@@ -5954,7 +5978,7 @@ function libEditVariant(catId,subId,taskId,varId){
   const v=(task.variants||[]).find(function(x){return x.id===varId;});if(!v)return;
   libShowTaskDialog('Edit Variant',v,function(data){
     v.label=data.label;v.scope=data.scope;v.unit=data.unit;v.price=data.price;v.options=data.options||v.options||[];
-    libSave();libRenderEditor();
+    libSaveDebounced();libRenderEditor();
   }, true);
 }
 
@@ -5964,7 +5988,7 @@ function libDeleteVariant(catId,subId,taskId,varId){
   const sub=cat.subs.find(function(s){return s.id===subId;});if(!sub)return;
   const task=(sub.tasks||[]).find(function(t){return t.id===taskId;});if(!task)return;
   task.variants=(task.variants||[]).filter(function(x){return x.id!==varId;});
-  libSave();libRenderEditor();
+  libSaveDebounced();libRenderEditor();
 }
 
 
