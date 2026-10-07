@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-10-06-v35-auto-sync]</title>
+<title>Scope of Work Builder [2026-10-07-v36-lib-sort]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -4134,7 +4134,13 @@ function buildScopeHtml() {
   if(!Object.keys(byCode).length) return '';
 
   let html = '';
-  Object.entries(byCode).forEach(function([code, roomMap]){
+  // Sort cost codes by CATS library order
+  const catOrder=CATS.map(function(c){return c.code;});
+  const sortedByCode=Object.entries(byCode).sort(function(a,b){
+    const ai=catOrder.indexOf(a[0]);const bi=catOrder.indexOf(b[0]);
+    return (ai===-1?9999:ai)-(bi===-1?9999:bi);
+  });
+  sortedByCode.forEach(function([code, roomMap]){
     const cat = CATS.find(c=>c.code===code);
     const catName = cat ? cat.name : code;
 
@@ -4161,7 +4167,14 @@ function buildScopeHtml() {
         html += '<div style="font-size:12pt;font-weight:600;color:#555;margin-bottom:4px;padding-left:24px">'+subName+'</div>';
 
         // Tasks
-        Object.entries(parents).forEach(function([parentLabel, tasks]){
+        // Sort tasks by library order within this sub-group
+        const libSub=catForSort?catForSort.subs.find(function(s){return s.name===subName;}):null;
+        const taskOrder=libSub&&libSub.tasks?libSub.tasks.map(function(t){return t.label;}):[];
+        const sortedParents=Object.entries(parents).sort(function(a,b){
+          const ai=taskOrder.indexOf(a[0]);const bi=taskOrder.indexOf(b[0]);
+          return (ai===-1?9999:ai)-(bi===-1?9999:bi);
+        });
+        sortedParents.forEach(function([parentLabel, tasks]){
           html += '<div style="padding-left:0;margin-bottom:4px">';
 
           // Count identical tasks
