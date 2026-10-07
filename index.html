@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-10-07-v37-sync-btn]</title>
+<title>Scope of Work Builder [2026-10-07-v38-persist-ts]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -1047,9 +1047,15 @@ function getSB(){if(!_sb&&window.supabase)_sb=window.supabase.createClient(SB_UR
 
 let _syncTimer=null;
 function persist(){
-  // 1. Stamp local timestamp on all projects so merge can pick the winner
+  // 1. Always stamp _localTs = now on the current project so cloud never overwrites newer local work
   const now=Date.now();
-  if(state.projects)state.projects.forEach(function(p){if(p&&p.id)p._localTs=p._localTs||now;});
+  if(state.projects)state.projects.forEach(function(p){
+    if(p&&p.id){
+      // Always update timestamp - not just if missing - so any edit marks the project as newer than cloud
+      if(p.id===currentProjectId)p._localTs=now;
+      else if(!p._localTs)p._localTs=now;
+    }
+  });
   // 2. Save locally - instant
   try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
   // 3. Debounce sync to cloud
