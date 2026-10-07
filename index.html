@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-10-07-v48-sb-primary]</title>
+<title>Scope of Work Builder [2026-10-07-v50-sb-primary]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -441,6 +441,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
     <button class="btn primary" id="btn-gen-scope" onclick="generateScope()" style="display:none"><i class="ti ti-sparkles"></i> Generate Scope</button>
     <button class="btn" id="btn-save-ver" onclick="saveVersion()" style="display:none;color:rgba(255,255,255,.75);border-color:rgba(255,255,255,.2)"><i class="ti ti-device-floppy"></i> Save</button>
   </div>
+</div>
+
+<!-- DAILY BACKUP BANNER -->
+<div id="backup-banner" style="display:none;position:fixed;bottom:16px;right:16px;z-index:9999;background:#1a1a18;color:#fff;padding:12px 16px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.35);display:none;align-items:center;gap:12px;font-size:13px;max-width:340px">
+  <i class="ti ti-shield-check" style="font-size:18px;color:#3b6d11;flex-shrink:0"></i>
+  <span style="flex:1;line-height:1.4">Back up your library today?<br><span style="font-size:11px;color:rgba(255,255,255,.5)">Last backup: <span id="banner-last-date">never</span></span></span>
+  <button class="btn sm" onclick="libExportJSON();document.getElementById('backup-banner').style.display='none'" style="background:#3b6d11;color:#eaf3de;border-color:#3b6d11;white-space:nowrap">Download</button>
+  <button onclick="document.getElementById('backup-banner').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:16px;padding:0 2px;line-height:1">✕</button>
 </div>
 
 <!-- LOADING OVERLAY -->
@@ -5095,21 +5103,16 @@ function libMaybeDailyBackup(){
   try{
     const today = new Date().toISOString().slice(0,10);
     const last = localStorage.getItem(LIB_DAILY_BACKUP_KEY);
-    if(last === today) return; // already downloaded today
-    // Wait a moment so the library is fully loaded before downloading
+    if(last === today) return; // already backed up today
+    // Show the banner after a short delay
     setTimeout(function(){
-      const libObj = CATS.map(function(c){
-        return {id:c.id, code:c.code||'', name:c.name, color:c.color||'#888', subs:c.subs};
-      });
-      const filename = 'scope-library-backup-' + today + '.json';
-      const blob = new Blob([JSON.stringify(libObj,null,2)],{type:'application/json'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = filename; a.click();
-      URL.revokeObjectURL(url);
-      localStorage.setItem(LIB_DAILY_BACKUP_KEY, today);
-    }, 2000);
-  }catch(e){ console.warn('daily backup failed:',e.message); }
+      const banner = document.getElementById('backup-banner');
+      if(!banner) return;
+      const lastEl = document.getElementById('banner-last-date');
+      if(lastEl) lastEl.textContent = last ? last : 'never';
+      banner.style.display = 'flex';
+    }, 2500);
+  }catch(e){ console.warn('daily backup check failed:',e.message); }
 }
 
 function libLoad(){
@@ -5233,8 +5236,12 @@ function libExportJSON(){
     const blob=new Blob([JSON.stringify(libObj,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    a.href=url; a.download=filename; a.click();
-    URL.revokeObjectURL(url);
+    a.href=url; a.download=filename;
+    a.style.display='none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},100);
+    localStorage.setItem(LIB_DAILY_BACKUP_KEY, new Date().toISOString().slice(0,10));
     showSyncOk();
   }catch(e){alert('Export failed: '+e.message);}
 }
