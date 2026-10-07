@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-10-07-v39-persist-ts]</title>
+<title>Scope of Work Builder [2026-10-07-v41-custom-scope-btn]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -1085,6 +1085,75 @@ function updateSyncStatus(){
   status.style.color='#888';
   status.textContent=mins<=1?'Synced just now':'Synced '+mins+'m ago';
 }
+
+// ── CUSTOM SCOPE ────────────────────────────────────────────────────────────
+function openCustomScopeModal(){
+  if(!selectedRoom){
+    alert('Please select a room on the floor plan first.');
+    return;
+  }
+  // Populate cost code dropdown
+  const catSel=document.getElementById('csm-cat');
+  catSel.innerHTML='<option value="">— select cost code —</option>'+
+    CATS.map(function(c){return '<option value="'+c.id+'">'+c.name+'</option>';}).join('');
+  document.getElementById('csm-sub').innerHTML='<option value="">— select sub-category —</option>';
+  document.getElementById('csm-text').value='';
+  const modal=document.getElementById('custom-scope-modal');
+  modal.style.display='flex';
+  setTimeout(function(){catSel.focus();},50);
+}
+
+function closeCustomScopeModal(){
+  document.getElementById('custom-scope-modal').style.display='none';
+}
+
+function csmCatChange(){
+  const catId=document.getElementById('csm-cat').value;
+  const subSel=document.getElementById('csm-sub');
+  subSel.innerHTML='<option value="">— select sub-category —</option>';
+  if(!catId)return;
+  const cat=CATS.find(function(c){return c.id===catId;});
+  if(!cat||!cat.subs)return;
+  cat.subs.forEach(function(s){
+    const opt=document.createElement('option');
+    opt.value=s.name;
+    opt.textContent=s.name;
+    subSel.appendChild(opt);
+  });
+}
+
+function saveCustomScope(){
+  const catId=document.getElementById('csm-cat').value;
+  const subName=document.getElementById('csm-sub').value;
+  const text=(document.getElementById('csm-text').value||'').trim();
+  if(!catId){alert('Please select a cost code.');return;}
+  if(!subName){alert('Please select a sub-category.');return;}
+  if(!text){alert('Please enter scope language.');return;}
+  const cat=CATS.find(function(c){return c.id===catId;});
+  if(!cat)return;
+  const task={
+    taskId:'custom-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),
+    label:text,
+    scope:text,
+    catCode:cat.code,
+    catName:cat.name,
+    catColor:cat.color,
+    subName:subName,
+    unit:'EA',
+    price:0,
+    isCustom:true
+  };
+  addTaskToRoom(selectedRoom,task,null,null);
+  closeCustomScopeModal();
+}
+
+// Close modal on backdrop click
+document.addEventListener('click',function(e){
+  const modal=document.getElementById('custom-scope-modal');
+  if(modal&&e.target===modal)closeCustomScopeModal();
+});
+// ── END CUSTOM SCOPE ─────────────────────────────────────────────────────────
+
 // Update sync status display every minute
 setInterval(updateSyncStatus,60000);
 async function sbSync(){
@@ -2793,7 +2862,15 @@ function buildFpLibrary(){
   // Build cost code list (panel 1)
   const p1 = document.getElementById('fp-p1');
   if(!p1) return;
-  p1.innerHTML = CATS.map(cat => `
+  const customBtn = `<div onclick="openCustomScopeModal()" title="Add a one-off scope item for this project only"
+    style="padding:8px 12px;cursor:pointer;font-size:12px;font-weight:600;color:#fff;
+           background:#1a6b3a;border-radius:4px;margin:8px 8px 2px 8px;display:flex;
+           align-items:center;gap:6px"
+    onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+    <span style="font-size:15px;line-height:1">+</span> Custom Scope
+  </div>
+  <div style="border-top:1px solid var(--border);margin:6px 8px 4px 8px"></div>`;
+  p1.innerHTML = customBtn + CATS.map(cat => `
     <div class="lib-cat-btn" onclick="fpPickCat('${cat.id}')" id="fp-cat-${cat.id}"
       style="padding:8px 12px;cursor:pointer;font-size:12px;font-weight:500;color:var(--text2);
              border-left:3px solid transparent;display:flex;align-items:center;gap:8px;
@@ -3507,6 +3584,14 @@ function renderRoomDetail(){
       html+='</div>';
     });
   }
+  // Add custom scope button at bottom of room detail panel
+  html+='<div style="margin-top:12px;padding-top:8px;border-top:1px solid var(--border)">';
+  html+='<button onclick="openCustomScopeModal()" style="width:100%;padding:7px 10px;border-radius:5px;';
+  html+='border:1px dashed #1a6b3a;background:none;color:#1a6b3a;font-size:12px;font-weight:600;';
+  html+='cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s"';
+  html+=' onmouseover="this.style.background='rgba(26,107,58,.08)'" onmouseout="this.style.background='none'">';
+  html+='<span style="font-size:15px;line-height:1">+</span> Custom Scope</button>';
+  html+='</div>';
   body.innerHTML=html;
   body.querySelectorAll('.fp-rm-task').forEach(function(btn){
     btn.onclick=function(){removeTaskFromRoom(this.dataset.room, this.dataset.task, this.dataset.instance);};
@@ -4529,7 +4614,52 @@ function downloadPDF(){
       'body { font-family:\'Times New Roman\',serif; font-size:12pt; line-height:1.33; color:#1a1a18; margin:0; padding:0; }' +
       'img { max-width:100%; }' +
     '</style>' +
-    '</head><body>' + contractHtml + '</body></html>'
+    '</head><body>' + contractHtml + '
+  <!-- CUSTOM SCOPE MODAL -->
+  <div id="custom-scope-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);
+       z-index:9000;align-items:center;justify-content:center">
+    <div style="background:var(--surface);border-radius:10px;padding:24px;width:420px;max-width:95vw;
+                box-shadow:0 8px 32px rgba(0,0,0,.25);border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <span style="font-size:15px;font-weight:600;color:var(--text1)">Add Custom Scope</span>
+        <span onclick="closeCustomScopeModal()" style="cursor:pointer;font-size:20px;color:var(--text3);line-height:1">&times;</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:16px;background:var(--bg);
+                  border-radius:5px;padding:8px 10px;border:1px solid var(--border)">
+        This scope is saved to this project only — it won't be added to your library.
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">Cost Code</label>
+        <select id="csm-cat" onchange="csmCatChange()"
+          style="width:100%;padding:7px 10px;border-radius:5px;border:1px solid var(--border);
+                 background:var(--bg);color:var(--text1);font-size:13px">
+          <option value="">— select cost code —</option>
+        </select>
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">Sub-category</label>
+        <select id="csm-sub"
+          style="width:100%;padding:7px 10px;border-radius:5px;border:1px solid var(--border);
+                 background:var(--bg);color:var(--text1);font-size:13px">
+          <option value="">— select sub-category —</option>
+        </select>
+      </div>
+      <div style="margin-bottom:18px">
+        <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">Scope Language</label>
+        <textarea id="csm-text" rows="4" placeholder="Describe the work to be performed..."
+          style="width:100%;padding:7px 10px;border-radius:5px;border:1px solid var(--border);
+                 background:var(--bg);color:var(--text1);font-size:13px;resize:vertical;
+                 box-sizing:border-box;font-family:inherit"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button onclick="closeCustomScopeModal()" class="btn" style="background:none">Cancel</button>
+        <button onclick="saveCustomScope()" class="btn"
+          style="background:#1a6b3a;color:#fff;border-color:#1a6b3a">Add to Room</button>
+      </div>
+    </div>
+  </div>
+
+</body></html>'
   );
   printWin.document.close();
 
