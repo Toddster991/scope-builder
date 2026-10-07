@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-10-07-v44-custom-scope]</title>
+<title>Scope of Work Builder [2026-10-07-v45-sb-primary]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -435,9 +435,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
   </div>
 
   <div class="topbar-right">
+    <span id="sync-error-badge" style="display:none;font-size:11px;font-weight:600;color:#fff;background:#a32d2d;padding:3px 8px;border-radius:4px;cursor:pointer" onclick="syncNow()" title="Click to retry">⚠ Save failed — click to retry</span>
+    <span id="sync-ok-badge" style="display:none;font-size:11px;color:rgba(255,255,255,.5);padding:3px 6px">✓ Saved</span>
     <button class="btn" id="btn-open-ver" onclick="reopenVersion()" style="display:none;color:rgba(255,255,255,.75);border-color:rgba(255,255,255,.2)"><i class="ti ti-versions"></i> Back to Work</button>
     <button class="btn primary" id="btn-gen-scope" onclick="generateScope()" style="display:none"><i class="ti ti-sparkles"></i> Generate Scope</button>
     <button class="btn" id="btn-save-ver" onclick="saveVersion()" style="display:none;color:rgba(255,255,255,.75);border-color:rgba(255,255,255,.2)"><i class="ti ti-device-floppy"></i> Save</button>
+  </div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay" style="display:flex;position:fixed;inset:0;background:#1a1a18;z-index:99999;align-items:center;justify-content:center;flex-direction:column;gap:16px">
+  <div style="font-size:18px;font-weight:700;color:#fff;letter-spacing:-.02em">Scope Builder</div>
+  <div style="font-size:13px;color:rgba(255,255,255,.5)" id="loading-msg">Loading your data…</div>
+  <div style="width:200px;height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden">
+    <div id="loading-bar" style="height:100%;width:0%;background:#185fa5;border-radius:2px;transition:width .4s ease"></div>
   </div>
 </div>
 
@@ -1046,45 +1057,42 @@ let _sb=null;
 function getSB(){if(!_sb&&window.supabase)_sb=window.supabase.createClient(SB_URL,SB_KEY);return _sb;}
 
 let _syncTimer=null;
+function showSyncError(){
+  const e=document.getElementById('sync-error-badge');
+  const o=document.getElementById('sync-ok-badge');
+  if(e)e.style.display='';
+  if(o)o.style.display='none';
+}
+function showSyncOk(){
+  const e=document.getElementById('sync-error-badge');
+  const o=document.getElementById('sync-ok-badge');
+  if(e)e.style.display='none';
+  if(o){o.style.display='';setTimeout(function(){o.style.display='none';},3000);}
+}
 function persist(){
-  // 1. Always stamp _localTs = now on the current project so cloud never overwrites newer local work
-  const now=Date.now();
-  if(state.projects)state.projects.forEach(function(p){
-    if(p&&p.id){
-      // Always update timestamp - not just if missing - so any edit marks the project as newer than cloud
-      if(p.id===currentProjectId)p._localTs=now;
-      else if(!p._localTs)p._localTs=now;
-    }
-  });
-  // 2. Save locally - instant
+  // Write to localStorage as cache
   try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
-  // 3. Debounce sync to cloud
+  // Write to Supabase immediately (debounced 800ms to avoid hammering on rapid edits)
   clearTimeout(_syncTimer);
-  _syncTimer=setTimeout(sbSync,2000);
+  _syncTimer=setTimeout(function(){
+    sbSync().then(function(){showSyncOk();}).catch(function(){showSyncError();});
+  },800);
 }
 
 let _lastSyncedAt = 0;
 function syncNow(){
   const btn=document.getElementById('sync-now-btn');
-  const status=document.getElementById('sync-status');
   if(btn){btn.disabled=true;btn.textContent='↑ Syncing...';}
   sbSync().then(function(){
     _lastSyncedAt=Date.now();
     if(btn){btn.disabled=false;btn.textContent='↑ Sync Now';}
-    if(status){status.textContent='Synced just now';}
-    setTimeout(updateSyncStatus,60000);
+    showSyncOk();
   }).catch(function(){
     if(btn){btn.disabled=false;btn.textContent='↑ Sync Now';}
-    if(status){status.style.color='#a32d2d';status.textContent='Sync failed';}
+    showSyncError();
   });
 }
-function updateSyncStatus(){
-  const status=document.getElementById('sync-status');
-  if(!status||!_lastSyncedAt)return;
-  const mins=Math.round((Date.now()-_lastSyncedAt)/60000);
-  status.style.color='#888';
-  status.textContent=mins<=1?'Synced just now':'Synced '+mins+'m ago';
-}
+function updateSyncStatus(){}
 // ── CUSTOM SCOPE ─────────────────────────────────────────────────────────────
 function openCustomScopeModal(){
   if(!selectedRoom){alert('Please select a room on the floor plan first.');return;}
@@ -1159,66 +1167,97 @@ async function sbSync(){
   }catch(e){console.warn('Sync error:',e.message);}
 }
 
-function loadState(){
-  // Load from localStorage immediately
+function setLoadingMsg(msg,pct){
+  const m=document.getElementById('loading-msg');
+  const b=document.getElementById('loading-bar');
+  if(m)m.textContent=msg;
+  if(b)b.style.width=pct+'%';
+}
+function hideLoadingOverlay(){
+  const o=document.getElementById('loading-overlay');
+  if(o){o.style.opacity='0';o.style.transition='opacity .3s';setTimeout(function(){o.style.display='none';},300);}
+}
+
+async function loadState(){
+  // Show loading overlay
+  setLoadingMsg('Connecting to database…',10);
+  const sb=getSB();
+  if(!sb){
+    // No Supabase — fall back to localStorage
+    setLoadingMsg('Offline — loading local cache…',50);
+    try{
+      const s=localStorage.getItem(LS_KEY);
+      if(s){const p=JSON.parse(s);if(p.projects){p.projects=p.projects.filter(function(x){return x&&x.id&&x.client;});state=p;}}
+    }catch(e){}
+    libLoad();
+    hideLoadingOverlay();
+    buildDashboard();buildAbSidebar();buildDrawingNav();
+    showSyncError();
+    return;
+  }
   try{
-    const s=localStorage.getItem(LS_KEY);
-    if(s){const p=JSON.parse(s);if(p.assemblies&&p.projects){
-      p.projects=p.projects.filter(function(x){return x&&x.id&&x.client;});
-      state=p;
-    }}
-  }catch(e){}
-  // Then refresh from cloud in background
-  sbLoad();
+    // Load projects from Supabase — this IS the source of truth
+    setLoadingMsg('Loading projects…',30);
+    const {data:projData,error:projErr}=await sb.from('projects').select('id,client,data,updated_at').order('created_at',{ascending:false});
+    if(!projErr&&projData&&projData.length){
+      const projects=projData.map(function(row){return row.data;}).filter(function(p){return p&&p.id&&p.client;});
+      state.projects=projects;
+      try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
+    } else if(projErr){
+      // Supabase failed — fall back to localStorage
+      console.warn('Supabase projects load failed:',projErr.message);
+      try{
+        const s=localStorage.getItem(LS_KEY);
+        if(s){const p=JSON.parse(s);if(p.projects){p.projects=p.projects.filter(function(x){return x&&x.id&&x.client;});state=p;}}
+      }catch(e){}
+      showSyncError();
+    }
+    // Load library from Supabase — always authoritative
+    setLoadingMsg('Loading scope library…',65);
+    const {data:lib,error:libErr}=await sb.from('library').select('data,updated_at').eq('id','cats_overrides').maybeSingle();
+    if(!libErr&&lib&&lib.data){
+      localStorage.setItem('trdb_lib_overrides_v1',JSON.stringify(lib.data));
+      localStorage.setItem('trdb_lib_updated_at',String(lib.updated_at?new Date(lib.updated_at).getTime():Date.now()));
+    } else if(libErr){
+      console.warn('Supabase library load failed:',libErr.message);
+      showSyncError();
+    }
+    libLoad();
+    setLoadingMsg('Ready',100);
+  }catch(e){
+    console.warn('Load error:',e.message);
+    // Fall back to localStorage on any exception
+    try{
+      const s=localStorage.getItem(LS_KEY);
+      if(s){const p=JSON.parse(s);if(p.projects){p.projects=p.projects.filter(function(x){return x&&x.id&&x.client;});state=p;}}
+    }catch(e2){}
+    libLoad();
+    showSyncError();
+  }
+  hideLoadingOverlay();
+  buildDashboard();buildAbSidebar();buildDrawingNav();
 }
 
 async function sbLoad(){
+  // Background refresh — used by the Refresh button on dashboard
   const sb=getSB();if(!sb)return;
   try{
     const {data,error}=await sb.from('projects').select('id,client,data,updated_at').order('created_at',{ascending:false});
-    if(error||!data||!data.length)return;
-    // Merge: newer timestamp wins per project ID
-    const cloudMap={};
-    data.forEach(function(row){
-      if(row.data&&row.data.id&&row.data.client){
-        cloudMap[row.data.id]={data:row.data,ts:row.updated_at?new Date(row.updated_at).getTime():0};
-      }
-    });
-    // Build local map keyed by id with local updated_at timestamp
-    const localMap={};
-    state.projects.forEach(function(p){
-      if(p&&p.id)localMap[p.id]={data:p,ts:p._localTs||0};
-    });
-    // Winner: whichever has the newer timestamp; cloud wins ties
-    const merged={};
-    const allIds=new Set([...Object.keys(cloudMap),...Object.keys(localMap)]);
-    allIds.forEach(function(id){
-      const c=cloudMap[id],l=localMap[id];
-      if(c&&l){merged[id]=(l.ts>c.ts)?l.data:c.data;}
-      else if(c){merged[id]=c.data;}
-      else if(l){merged[id]=l.data;}
-    });
-    state.projects=Object.values(merged);
-    state.projects=state.projects.filter(function(p){return p&&p.id&&p.client;});
-    try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
-    // Rebuild dashboard if visible
-    const dash=document.getElementById('page-dashboard');
-    if(dash&&dash.classList.contains('active'))buildDashboard();
-    // Load shared library - only overwrite local if cloud timestamp is newer
+    if(!error&&data&&data.length){
+      state.projects=data.map(function(row){return row.data;}).filter(function(p){return p&&p.id&&p.client;});
+      try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
+      const dash=document.getElementById('page-dashboard');
+      if(dash&&dash.classList.contains('active'))buildDashboard();
+    }
     const {data:lib}=await sb.from('library').select('data,updated_at').eq('id','cats_overrides').maybeSingle();
     if(lib&&lib.data){
-      const cloudTs=lib.updated_at?new Date(lib.updated_at).getTime():0;
-      const localTs=parseInt(localStorage.getItem('trdb_lib_updated_at')||'0',10);
-      if(cloudTs>=localTs){
-        localStorage.setItem('trdb_lib_overrides_v1',JSON.stringify(lib.data));
-        localStorage.setItem('trdb_lib_updated_at',String(cloudTs));
-        libLoad();
-        // Rebuild library UI if open
-        if(typeof buildFpLibrary==='function')buildFpLibrary();
-        if(typeof libRenderCatList==='function'&&document.getElementById('page-library')?.classList.contains('active')){libRenderCatList();libRenderEditor();}
-      }
+      localStorage.setItem('trdb_lib_overrides_v1',JSON.stringify(lib.data));
+      localStorage.setItem('trdb_lib_updated_at',String(lib.updated_at?new Date(lib.updated_at).getTime():Date.now()));
+      libLoad();
+      if(typeof buildFpLibrary==='function')buildFpLibrary();
+      if(typeof libRenderCatList==='function'&&document.getElementById('page-library')?.classList.contains('active')){libRenderCatList();libRenderEditor();}
     }
-  }catch(e){console.warn('Cloud load error:',e.message);}
+  }catch(e){console.warn('sbLoad error:',e.message);}
 }
 
 /* PDF storage via IndexedDB */
@@ -3712,9 +3751,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElement
 document.getElementById('full-viewer').addEventListener('click',function(e){if(e.target===this||e.target===document.getElementById('fv-body'))closeFV();});
 
 /* ════ INIT ════ */
-loadState();libLoad();buildDashboard();buildAbSidebar();buildDrawingNav();
-// Auto-sync every 3 minutes while tab is open
-setInterval(function(){sbSync().then(function(){_lastSyncedAt=Date.now();updateSyncStatus();});},3*60*1000);
+loadState(); // async — loads from Supabase first, hides overlay when done
+// Auto-sync every 3 minutes while tab is open as a safety net
+setInterval(function(){sbSync().then(function(){_lastSyncedAt=Date.now();}).catch(function(){showSyncError();});},3*60*1000);
 
 
 /* ════ PROJECT INFO ════ */
@@ -5078,21 +5117,27 @@ function libLoad(){
   }catch(e){}
 }
 
-function libSave(){
+async function libSave(){
   try{
-    // Store full CATS structure including name, code, color so deletions/renames persist
-    const libData=JSON.stringify(CATS.map(function(c){
+    const libObj=CATS.map(function(c){
       return {id:c.id, code:c.code||'', name:c.name, color:c.color||'#888', subs:c.subs};
-    }));
-    localStorage.setItem(LIB_KEY, libData);
-    localStorage.setItem('trdb_lib_updated_at',String(Date.now()));
-    // Sync to Supabase immediately - library changes are critical
+    });
+    const libData=JSON.stringify(libObj);
+    // Write to Supabase FIRST — this is the source of truth
     const sb=getSB();
     if(sb){
-      sb.from('library').upsert({id:'cats_overrides',data:JSON.parse(libData),updated_at:new Date().toISOString()})
-        .catch(function(e){console.warn('Library sync error:',e.message);});
+      const {error}=await sb.from('library').upsert({id:'cats_overrides',data:libObj,updated_at:new Date().toISOString()});
+      if(error){
+        console.warn('Library save failed:',error.message);
+        showSyncError();
+        return; // Do NOT update localStorage with data that didn't save to cloud
+      }
     }
-  }catch(e){}
+    // Only update localStorage cache after confirmed cloud save
+    localStorage.setItem(LIB_KEY, libData);
+    localStorage.setItem('trdb_lib_updated_at',String(Date.now()));
+    showSyncOk();
+  }catch(e){console.warn('libSave error:',e.message);showSyncError();}
 }
 
 function libAddAssembly(catId, subId){
@@ -5385,19 +5430,7 @@ function libDeleteCostCode(catId){
   const idx=CATS.findIndex(function(c){return c.id===catId;});
   if(idx!==-1)CATS.splice(idx,1);
   if(libSelCat===catId)libSelCat=CATS.length?CATS[0].id:null;
-  // Cancel any pending debounced sync to prevent overwrite
-  clearTimeout(_syncTimer);
-  // Sync immediately with full CATS data (including name/color so libLoad applies correctly)
-  try{
-    const libData=JSON.stringify(CATS.map(function(c){return {id:c.id,code:c.code||'',name:c.name,color:c.color||'#888',subs:c.subs};}));
-    localStorage.setItem(LIB_KEY,libData);
-    localStorage.setItem('trdb_lib_updated_at',String(Date.now()));
-    const sb=getSB();
-    if(sb){sb.from('library').upsert({id:'cats_overrides',data:JSON.parse(libData),updated_at:new Date().toISOString()})
-      .then(function(){console.log('Cost code deletion synced to cloud');})
-      .catch(function(e){console.warn('Sync error:',e.message);});}
-  }catch(e){}
-  libRenderCatList();libRenderEditor();
+  libSave().then(function(){libRenderCatList();libRenderEditor();});
 }
 
 function libResetToDefaults(){
