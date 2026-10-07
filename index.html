@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-10-07-v51-sb-primary]</title>
+<title>Scope of Work Builder [2026-10-07-v52-sb-primary]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -5159,6 +5159,51 @@ function libLoad(){
       }
     }
   }catch(e){}
+  // After loading, promote any tasks buried in children[] up to the parent sub's tasks[]
+  libMigrateChildrenTasks();
+}
+
+function libMigrateChildrenTasks(){
+  // Tasks inside sub.children[].tasks are invisible in the library editor.
+  // This migrates them up to the parent sub's tasks[] so they appear and are editable.
+  // Only adds tasks not already present (by id). Marks the library dirty so it saves back.
+  let changed=false;
+  CATS.forEach(function(cat){
+    (cat.subs||[]).forEach(function(sub){
+      if(!sub.children||!sub.children.length) return;
+      if(!sub.tasks) sub.tasks=[];
+      const existingIds=new Set(sub.tasks.map(function(t){return t.id;}));
+      sub.children.forEach(function(folder){
+        (folder.tasks||[]).forEach(function(task){
+          if(!existingIds.has(task.id)){
+            // Add a unit/price/variants/options if missing so editor handles it
+            sub.tasks.push({
+              id:task.id,
+              unit:task.unit||'EA',
+              label:task.label||'',
+              price:task.price||0,
+              scope:task.scope||'',
+              options:task.options||[],
+              variants:task.variants||[]
+            });
+            existingIds.add(task.id);
+            changed=true;
+          }
+        });
+      });
+    });
+  });
+  if(changed){
+    // Persist migrated data
+    try{
+      localStorage.setItem(LIB_KEY,JSON.stringify(CATS));
+    }catch(e){}
+    // Save to Supabase in background
+    setTimeout(function(){
+      libSave('children-migration');
+    },500);
+    console.log('[lib] Migrated children tasks to top-level — saving to Supabase');
+  }
 }
 
 const LIB_AUTOBACKUP_KEY = 'trdb_lib_autobackups';
