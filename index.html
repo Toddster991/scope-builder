@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-10-07-v47-sb-primary]</title>
+<title>Scope of Work Builder [2026-10-07-v48-sb-primary]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -1180,6 +1180,7 @@ function setLoadingMsg(msg,pct){
 function hideLoadingOverlay(){
   const o=document.getElementById('loading-overlay');
   if(o){o.style.opacity='0';o.style.transition='opacity .3s';setTimeout(function(){o.style.display='none';},300);}
+  libMaybeDailyBackup();
 }
 
 async function loadState(){
@@ -5087,7 +5088,29 @@ async function downloadWord() {
 
 /* ════ LIBRARY EDITOR ════ */
 const LIB_KEY = 'trdb_lib_overrides_v1';
+const LIB_DAILY_BACKUP_KEY = 'trdb_lib_daily_backup_date';
 let libSelCat = null;
+
+function libMaybeDailyBackup(){
+  try{
+    const today = new Date().toISOString().slice(0,10);
+    const last = localStorage.getItem(LIB_DAILY_BACKUP_KEY);
+    if(last === today) return; // already downloaded today
+    // Wait a moment so the library is fully loaded before downloading
+    setTimeout(function(){
+      const libObj = CATS.map(function(c){
+        return {id:c.id, code:c.code||'', name:c.name, color:c.color||'#888', subs:c.subs};
+      });
+      const filename = 'scope-library-backup-' + today + '.json';
+      const blob = new Blob([JSON.stringify(libObj,null,2)],{type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+      localStorage.setItem(LIB_DAILY_BACKUP_KEY, today);
+    }, 2000);
+  }catch(e){ console.warn('daily backup failed:',e.message); }
+}
 
 function libLoad(){
   // Load any saved overrides and merge into CATS
