@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-10-07-v54-sb-primary]</title>
+<title>Scope of Work Builder [2026-10-08-v55-sb-primary]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -5599,9 +5599,29 @@ function libShowTaskOptionDialog(title, defaults, onSave){
 /* ════ LIBRARY DRAG REORDER ════ */
 (function(){
   var dragSrc=null;
+  var dropIndicator=null;
+
+  function getIndicator(){
+    if(!dropIndicator){
+      dropIndicator=document.createElement('div');
+      dropIndicator.id='lib-drop-indicator';
+      dropIndicator.style.cssText='height:2px;background:#185fa5;border-radius:2px;margin:0 4px;pointer-events:none;position:relative;z-index:10;';
+    }
+    return dropIndicator;
+  }
+
+  function clearIndicator(){
+    if(dropIndicator&&dropIndicator.parentNode)dropIndicator.parentNode.removeChild(dropIndicator);
+  }
 
   function getDragData(el){
     return {catId:el.dataset.catId, subId:el.dataset.subId, taskId:el.dataset.taskId, dtype:el.dataset.dtype};
+  }
+
+  // Returns true if cursor is in the bottom half of el
+  function isAfter(e,el){
+    var r=el.getBoundingClientRect();
+    return e.clientY>r.top+r.height/2;
   }
 
   document.addEventListener('dragstart',function(e){
@@ -5614,25 +5634,44 @@ function libShowTaskOptionDialog(title, defaults, onSave){
 
   document.addEventListener('dragend',function(e){
     var el=e.target.closest('[data-dtype]');
-    if(!el)return;
-    el.style.opacity='';
+    if(el)el.style.opacity='';
+    clearIndicator();
     dragSrc=null;
   });
 
   document.addEventListener('dragover',function(e){
     var el=e.target.closest('[data-dtype]');
     if(!el||!dragSrc||el===dragSrc)return;
+    var src=getDragData(dragSrc);
+    var tgt=getDragData(el);
+    if(src.dtype!==tgt.dtype||src.catId!==tgt.catId)return;
+    if(src.dtype==='task'&&src.subId!==tgt.subId)return;
     e.preventDefault();
     e.dataTransfer.dropEffect='move';
+    // Show blue line above or below target
+    var ind=getIndicator();
+    if(isAfter(e,el)){
+      el.parentNode.insertBefore(ind,el.nextSibling);
+    } else {
+      el.parentNode.insertBefore(ind,el);
+    }
+  });
+
+  document.addEventListener('dragleave',function(e){
+    // Only clear if leaving entirely outside a valid target
+    var rel=e.relatedTarget;
+    if(!rel||!rel.closest('[data-dtype]'))clearIndicator();
   });
 
   document.addEventListener('drop',function(e){
+    clearIndicator();
     var el=e.target.closest('[data-dtype]');
     if(!el||!dragSrc||el===dragSrc)return;
     e.preventDefault();
     var src=getDragData(dragSrc);
     var tgt=getDragData(el);
     if(src.dtype!==tgt.dtype||src.catId!==tgt.catId)return;
+    var after=isAfter(e,el);
 
     if(src.dtype==='task'&&src.subId===tgt.subId){
       var cat=CATS.find(function(c){return c.id===src.catId;});
@@ -5642,7 +5681,11 @@ function libShowTaskOptionDialog(title, defaults, onSave){
       var si=sub.tasks.findIndex(function(t){return t.id===src.taskId;});
       var ti=sub.tasks.findIndex(function(t){return t.id===tgt.taskId;});
       if(si===-1||ti===-1)return;
-      var tmp=sub.tasks[si];sub.tasks[si]=sub.tasks[ti];sub.tasks[ti]=tmp;
+      var item=sub.tasks.splice(si,1)[0];
+      // Recalculate ti after removal
+      ti=sub.tasks.findIndex(function(t){return t.id===tgt.taskId;});
+      var insertAt=after?ti+1:ti;
+      sub.tasks.splice(insertAt,0,item);
       libSaveDebounced();libRenderEditor();
     } else if(src.dtype==='sub'){
       var cat=CATS.find(function(c){return c.id===src.catId;});
@@ -5650,7 +5693,11 @@ function libShowTaskOptionDialog(title, defaults, onSave){
       var si=cat.subs.findIndex(function(s){return s.id===src.subId;});
       var ti=cat.subs.findIndex(function(s){return s.id===tgt.subId;});
       if(si===-1||ti===-1)return;
-      var tmp=cat.subs[si];cat.subs[si]=cat.subs[ti];cat.subs[ti]=tmp;
+      var item=cat.subs.splice(si,1)[0];
+      // Recalculate ti after removal
+      ti=cat.subs.findIndex(function(s){return s.id===tgt.subId;});
+      var insertAt=after?ti+1:ti;
+      cat.subs.splice(insertAt,0,item);
       libSaveDebounced();libRenderEditor();
     }
   });
