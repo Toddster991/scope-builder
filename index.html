@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-10-08-v55-sb-primary]</title>
+<title>Scope of Work Builder [2026-10-09-v56-sb-primary]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -1253,11 +1253,13 @@ async function loadState(){
     }
     libLoad();
     // Check if tab-close backup is newer than what Supabase returned — recover if so
+    // Only recover if backup is significantly newer (>30s gap) to avoid overwriting
+    // intentional saves like deletes that completed within the debounce window.
     try{
       const closeBackup=JSON.parse(localStorage.getItem('trdb_lib_closetime_backup')||'null');
       const sbTime=lib&&lib.updated_at?new Date(lib.updated_at).getTime():0;
-      if(closeBackup&&closeBackup.ts&&closeBackup.ts>sbTime+5000){
-        // Tab was closed before Supabase save completed — restore and re-save
+      if(closeBackup&&closeBackup.ts&&closeBackup.ts>sbTime+30000){
+        // Tab was closed well before Supabase save completed — restore and re-save
         console.warn('[lib] Recovering unsaved close-time backup — re-saving to Supabase');
         localStorage.setItem(LIB_KEY,JSON.stringify(closeBackup.data));
         libLoad();
@@ -6103,7 +6105,12 @@ function libDeleteTask(catId,subId,taskId){
   if(!confirm('Delete this task?'))return;
   const cat=CATS.find(function(c){return c.id===catId;});if(!cat)return;
   const sub=cat.subs.find(function(s){return s.id===subId;});if(!sub)return;
+  // Remove from top-level tasks[]
   sub.tasks=(sub.tasks||[]).filter(function(t){return t.id!==taskId;});
+  // Also remove from any children[] folders so migrate won't resurrect it on next load
+  (sub.children||[]).forEach(function(folder){
+    folder.tasks=(folder.tasks||[]).filter(function(t){return t.id!==taskId;});
+  });
   libSaveDebounced();libRenderEditor();
 }
 
