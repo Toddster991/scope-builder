@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scope of Work Builder [2026-10-09-v56-sb-primary]</title>
+<title>Scope of Work Builder [2026-10-09-v57-sb-primary]</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
@@ -1186,9 +1186,9 @@ async function sbSync(){
         updated_at:now
       });
     }
-    // Sync library
-    const lib=localStorage.getItem('trdb_lib_overrides_v1');
-    if(lib)await sb.from('library').upsert({id:'cats_overrides',data:JSON.parse(lib),updated_at:new Date().toISOString()});
+    // NOTE: Library (CATS) is NOT synced here — it has its own dedicated libSave() path.
+    // sbSync() only handles projects. Syncing library here caused deleted items to be
+    // restored by overwriting Supabase with a stale localStorage snapshot.
   }catch(e){console.warn('Sync error:',e.message);}
 }
 
